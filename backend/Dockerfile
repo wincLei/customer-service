@@ -4,11 +4,11 @@ FROM maven:3.9-eclipse-temurin-21 AS builder
 WORKDIR /build
 
 # 复制 pom.xml
-COPY pom.xml .
-COPY admin-module ./admin-module
-COPY portal-module ./portal-module
-COPY scheduler ./scheduler
-COPY shared ./shared
+COPY backend/pom.xml .
+COPY backend/admin-module ./admin-module
+COPY backend/portal-module ./portal-module
+COPY backend/scheduler ./scheduler
+COPY backend/shared ./shared
 
 # 构建项目
 RUN mvn clean package -DskipTests

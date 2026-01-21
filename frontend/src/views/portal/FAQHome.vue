@@ -73,10 +73,18 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
+interface FAQ {
+  id: number
+  title: string
+  content?: string
+  excerpt?: string
+  views?: number
+}
+
 const router = useRouter()
 const searchQuery = ref('')
 const showFAQDetail = ref(false)
-const selectedFAQ = ref(null)
+const selectedFAQ = ref<FAQ | null>(null)
 
 const hotFAQs = ref([
   { id: 1, title: '如何联系客服？', views: 1250, excerpt: '...' },

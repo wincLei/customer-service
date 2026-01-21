@@ -23,14 +23,5 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'admin': ['./src/views/admin'],
-          'portal': ['./src/views/portal'],
-          'h5': ['./src/views/h5'],
-        },
-      },
-    },
   },
 })

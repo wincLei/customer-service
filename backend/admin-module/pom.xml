@@ -7,6 +7,7 @@
     <groupId>com.customer-service</groupId>
     <artifactId>admin-module</artifactId>
     <version>1.0.0</version>
+    <packaging>jar</packaging>
     <name>Admin Module</name>
 
     <parent>

@@ -130,12 +130,12 @@ const addAgent = () => {
   ElMessage.success('客服添加成功')
 }
 
-const editAgent = (agent: any) => {
+const editAgent = (_agent: any) => {
   ElMessage.info('编辑功能开发中')
 }
 
-const deleteAgent = (agent: any) => {
-  agents.value = agents.value.filter(a => a.username !== agent.username)
+const deleteAgent = (_agent: any) => {
+  agents.value = agents.value.filter(a => a.username !== _agent.username)
   ElMessage.success('客服删除成功')
 }
 </script>

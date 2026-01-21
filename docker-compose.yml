@@ -76,9 +76,9 @@ services:
     image: wukongim/wukongim:latest
     container_name: wukongim
     ports:
-      - "5000:5000"  # HTTP API
-      - "5100:5100"  # TCP 连接
-      - "5200:5200"  # WebSocket 连接
+      - "5001:5000"  # HTTP API
+      - "5101:5100"  # TCP 连接
+      - "5201:5200"  # WebSocket 连接
     environment:
       MYSQL_HOST: postgres
       MYSQL_PORT: 5432
@@ -94,8 +94,8 @@ services:
   # 后端 API 服务
   backend-api:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./backend/Dockerfile
     container_name: customer-service-backend
     ports:
       - "8080:8080"
@@ -120,8 +120,8 @@ services:
   # 前端 Nginx 服务
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./frontend/Dockerfile
     container_name: customer-service-frontend
     ports:
       - "80:80"
