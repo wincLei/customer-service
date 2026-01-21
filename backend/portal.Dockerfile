@@ -19,10 +19,10 @@ FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
 
 # 从构建阶段复制 JAR 文件
-COPY --from=builder /build/admin-module/target/admin-module-1.0.0.jar app.jar
+COPY --from=builder /build/portal-module/target/portal-module-1.0.0.jar app.jar
 
 # 暴露端口
-EXPOSE 8080
+EXPOSE 8081
 
 # 启动应用
 ENTRYPOINT ["java", "-jar", "app.jar"]

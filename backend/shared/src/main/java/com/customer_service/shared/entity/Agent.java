@@ -10,8 +10,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "agents", indexes = {
-    @Index(name = "idx_agents_project_username", columnList = "project_id,username"),
-    @Index(name = "idx_agents_status", columnList = "project_id,status")
+        @Index(name = "idx_agents_project_username", columnList = "project_id,username"),
+        @Index(name = "idx_agents_status", columnList = "project_id,status"),
+        @Index(name = "idx_agents_username", columnList = "username")
 })
 @Data
 @Builder
@@ -25,7 +26,7 @@ public class Agent {
     @Column(nullable = false)
     private Long projectId;
 
-    @Column(nullable = false, length = 50)
+    @Column(nullable = false, length = 50, unique = true)
     private String username;
 
     @Column(nullable = false, length = 255)
@@ -57,6 +58,9 @@ public class Agent {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
 
     @PrePersist
     protected void onCreate() {

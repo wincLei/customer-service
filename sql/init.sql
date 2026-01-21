@@ -32,11 +32,13 @@ CREATE TABLE IF NOT EXISTS agents (
     current_load INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TIMESTAMP WITH TIME ZONE,
     UNIQUE(project_id, username)
 );
 
 CREATE INDEX IF NOT EXISTS idx_agents_project_username ON agents(project_id, username);
 CREATE INDEX IF NOT EXISTS idx_agents_status ON agents(project_id, status);
+CREATE INDEX IF NOT EXISTS idx_agents_username ON agents(username);
 
 -- 快捷回复表
 CREATE TABLE IF NOT EXISTS quick_replies (
@@ -360,5 +362,57 @@ VALUES (
     '如何查询订单？',
     '<p>登录后在"我的订单"页面可以查看所有订单状态...</p>',
     TRUE
+)
+ON CONFLICT DO NOTHING;
+-- ============================================================
+-- 插入演示数据
+-- ============================================================
+
+-- 插入项目
+INSERT INTO projects (name, description, app_key, app_secret) VALUES
+(
+    'Demo Project',
+    '演示项目',
+    'demo_project_key_2024',
+    'demo_project_secret_2024'
+)
+ON CONFLICT (app_key) DO NOTHING;
+
+-- 获取项目ID（用于插入客服）
+-- 注意：PostgreSQL 中需要通过子查询获取
+-- 密码: admin123 的 bcrypt hash (包含盐值 $2a$10$0/cUTVf4vvGZ...)
+INSERT INTO agents (project_id, username, password_hash, nickname, email, role, status, max_load, current_load) VALUES
+(
+    (SELECT id FROM projects WHERE app_key = 'demo_project_key_2024'),
+    'admin',
+    '$2a$10$Sq8K3HPPwVFwx2t8d6bQAODe8I6mKdwfE8F1Ks7mKk6vQ1v.gwhHe',
+    '管理员',
+    'admin@example.com',
+    'admin',
+    'online',
+    10,
+    0
+),
+(
+    (SELECT id FROM projects WHERE app_key = 'demo_project_key_2024'),
+    'agent1',
+    '$2a$10$Sq8K3HPPwVFwx2t8d6bQAODe8I6mKdwfE8F1Ks7mKk6vQ1v.gwhHe',
+    '客服1',
+    'agent1@example.com',
+    'agent',
+    'online',
+    5,
+    0
+),
+(
+    (SELECT id FROM projects WHERE app_key = 'demo_project_key_2024'),
+    'agent2',
+    '$2a$10$Sq8K3HPPwVFwx2t8d6bQAODe8I6mKdwfE8F1Ks7mKk6vQ1v.gwhHe',
+    '客服2',
+    'agent2@example.com',
+    'agent',
+    'online',
+    5,
+    0
 )
 ON CONFLICT DO NOTHING;

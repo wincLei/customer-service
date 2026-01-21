@@ -1,73 +1,116 @@
 package com.customer_service.portal.controller;
 
 import com.customer_service.shared.dto.ApiResponse;
-import lombok.extern.slf4j.Slf4j;
+import com.customer_service.shared.dto.LoginRequest;
+import com.customer_service.shared.dto.LoginResponse;
+import com.customer_service.shared.entity.Agent;
+import com.customer_service.shared.util.JwtTokenProvider;
+import com.customer_service.portal.service.PortalAgentService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-@Slf4j
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
 @RestController
 @RequestMapping("/api/pub/auth")
+@RequiredArgsConstructor
 public class PublicAuthController {
 
-    @PostMapping("/visitor")
-    public ApiResponse<?> visitorLogin(@RequestBody VisitorLoginRequest request) {
-        log.info("Visitor login attempt");
-        // TODO: 实现访客登录逻辑
-        return ApiResponse.success(new VisitorLoginResponse("mock-token-123"));
+    private final PortalAgentService agentService;
+    private final JwtTokenProvider jwtTokenProvider;
+
+    @PostMapping("/login")
+    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request) {
+        if (request.getUsername() == null || request.getUsername().isEmpty()) {
+            return ApiResponse.fail(400, "用户名不能为空");
+        }
+        
+        if (request.getPassword() == null || request.getPassword().isEmpty()) {
+            return ApiResponse.fail(400, "密码不能为空");
+        }
+
+        Optional<Agent> agent = agentService.authenticate(request.getUsername(), request.getPassword());
+        
+        if (agent.isEmpty()) {
+            return ApiResponse.fail(401, "用户名或密码错误");
+        }
+
+        Agent a = agent.get();
+        
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("id", a.getId());
+        claims.put("role", a.getRole());
+
+        String token = jwtTokenProvider.generateToken(a.getUsername(), claims);
+
+        LoginResponse.UserInfo userInfo = LoginResponse.UserInfo.builder()
+                .id(a.getId())
+                .username(a.getUsername())
+                .nickname(a.getNickname())
+                .email(a.getEmail())
+                .avatar(a.getAvatar())
+                .role(a.getRole())
+                .status(a.getStatus())
+                .build();
+
+        LoginResponse response = LoginResponse.builder()
+                .token(token)
+                .user(userInfo)
+                .build();
+
+        return ApiResponse.success(response);
     }
 
-    public static class VisitorLoginRequest {
-        private String projectId;
-        private String deviceType;
-        private String nickName;
-        private String phone;
-
-        public String getProjectId() {
-            return projectId;
+    @PostMapping("/refresh")
+    public ApiResponse<LoginResponse> refreshToken(@RequestHeader("Authorization") String authHeader) {
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ApiResponse.fail(401, "无效的令牌");
         }
 
-        public void setProjectId(String projectId) {
-            this.projectId = projectId;
+        String token = authHeader.substring(7);
+
+        if (!jwtTokenProvider.validateToken(token)) {
+            return ApiResponse.fail(401, "令牌已过期");
         }
 
-        public String getDeviceType() {
-            return deviceType;
+        String username = jwtTokenProvider.getUsernameFromToken(token);
+        Optional<Agent> agent = agentService.findByUsername(username);
+
+        if (agent.isEmpty()) {
+            return ApiResponse.fail(401, "用户不存在");
         }
 
-        public void setDeviceType(String deviceType) {
-            this.deviceType = deviceType;
-        }
+        Agent a = agent.get();
 
-        public String getNickName() {
-            return nickName;
-        }
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("id", a.getId());
+        claims.put("role", a.getRole());
 
-        public void setNickName(String nickName) {
-            this.nickName = nickName;
-        }
+        String newToken = jwtTokenProvider.generateToken(a.getUsername(), claims);
 
-        public String getPhone() {
-            return phone;
-        }
+        LoginResponse.UserInfo userInfo = LoginResponse.UserInfo.builder()
+                .id(a.getId())
+                .username(a.getUsername())
+                .nickname(a.getNickname())
+                .email(a.getEmail())
+                .avatar(a.getAvatar())
+                .role(a.getRole())
+                .status(a.getStatus())
+                .build();
 
-        public void setPhone(String phone) {
-            this.phone = phone;
-        }
+        LoginResponse response = LoginResponse.builder()
+                .token(newToken)
+                .user(userInfo)
+                .build();
+
+        return ApiResponse.success(response);
     }
 
-    public static class VisitorLoginResponse {
-        private String token;
-
-        public VisitorLoginResponse(String token) {
-            this.token = token;
-        }
-
-        public String getToken() {
-            return token;
-        }
-
-        public void setToken(String token) {
-            this.token = token;
-        }
+    @GetMapping("/visitor")
+    public ApiResponse<LoginResponse> visitorLogin() {
+        // TODO: Implement visitor login
+        return ApiResponse.fail(500, "Not implemented");
     }
 }

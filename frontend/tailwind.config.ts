@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite'
+import type { Config } from 'tailwindcss'
 
-export default defineConfig({
+const config: Config = {
   content: [
-    "./index.html",
-    "./src/**/*.{vue,js,ts,jsx,tsx}",
+    './index.html',
+    './src/**/*.{vue,js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
@@ -16,4 +16,6 @@ export default defineConfig({
     },
   },
   plugins: [],
-})
+}
+
+export default config

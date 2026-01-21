@@ -1,9 +1,16 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { authService } from '@/api/auth'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/admin',
+    redirect: '/admin/dashboard',
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/Login.vue'),
+    meta: { title: '登录' },
   },
   {
     path: '/admin',
@@ -63,17 +70,23 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth)
-  
+  const isAuthenticated = authService.isAuthenticated()
+
+  // 如果要访问需要认证的页面
   if (requiresAuth) {
-    // TODO: 检查认证状态
-    const isAuthenticated = !!localStorage.getItem('auth_token')
     if (!isAuthenticated) {
+      // 未登录，重定向到登录页
       next('/login')
     } else {
       next()
     }
   } else {
-    next()
+    // 如果已登录且访问登录页，重定向到仪表板
+    if (isAuthenticated && to.path === '/login') {
+      next('/admin/dashboard')
+    } else {
+      next()
+    }
   }
 })
 

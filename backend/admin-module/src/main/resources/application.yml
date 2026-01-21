@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -30,6 +30,13 @@ spring:
       max-file-size: 50MB
       max-request-size: 100MB
 
+  security:
+    debug: true
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
 server:
   port: 8080
   servlet:
@@ -37,6 +44,11 @@ server:
   compression:
     enabled: true
     min-response-size: 1024
+
+app:
+  jwt:
+    secret: customer-service-secret-key-for-jwt-token-generation-and-validation-2024-2025
+    expiration: 86400000 # 24 hours in milliseconds
 
 logging:
   level:
