@@ -11,9 +11,6 @@ spring:
   jpa:
     hibernate:
       ddl-auto: validate
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQL15Dialect
 
 server:
   port: 8081

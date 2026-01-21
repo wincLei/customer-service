@@ -13,7 +13,6 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQL15Dialect
         format_sql: true
         jdbc:
           batch_size: 20
