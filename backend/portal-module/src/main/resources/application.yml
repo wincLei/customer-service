@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: customer-service-portal
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/customer_service
+    username: postgres
+    password: postgres123
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQL15Dialect
+
+server:
+  port: 8081
+  servlet:
+    context-path: /
+
+logging:
+  level:
+    root: INFO
+    com.customer_service: DEBUG

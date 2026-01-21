@@ -1,0 +1,67 @@
+spring:
+  application:
+    name: customer-service-admin
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/customer_service
+    username: postgres
+    password: postgres123
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQL15Dialect
+        format_sql: true
+        jdbc:
+          batch_size: 20
+        order_inserts: true
+        order_updates: true
+
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+    timeout: 2000ms
+
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 100MB
+
+server:
+  port: 8080
+  servlet:
+    context-path: /
+  compression:
+    enabled: true
+    min-response-size: 1024
+
+logging:
+  level:
+    root: INFO
+    com.customer_service: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/application.log
+    max-size: 10MB
+    max-history: 30
+
+# WuKongIM 配置
+wukongim:
+  api-url: http://localhost:5000
+  app-id: customer-service
+  app-secret: demo_app_secret
+
+# RocketMQ 配置
+rocketmq:
+  nameserver: localhost:9876
+  producer:
+    group: customer-service-producer
+    send-message-timeout: 10000
+  consumer:
+    group: customer-service-consumer

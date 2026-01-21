@@ -1,0 +1,149 @@
+version: '3.8'
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: customer-service-postgres
+    environment:
+      POSTGRES_DB: customer_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - customer-service-net
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: customer-service-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - customer-service-net
+
+  # RocketMQ 消息队列
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.1.4
+    container_name: rocketmq-namesrv
+    ports:
+      - "9876:9876"
+    environment:
+      JAVA_OPT: "-Xms512M -Xmx512M"
+    volumes:
+      - rocketmq_namesrv_data:/root/store
+    networks:
+      - customer-service-net
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.1.4
+    container_name: rocketmq-broker
+    ports:
+      - "10911:10911"
+      - "10912:10912"
+      - "10909:10909"
+    environment:
+      JAVA_OPT: "-Xms1G -Xmx1G"
+      NAMESRV_ADDR: rocketmq-namesrv:9876
+      BROKER_IP1: rocketmq-broker
+    volumes:
+      - rocketmq_broker_data:/root/store
+    depends_on:
+      - rocketmq-namesrv
+    networks:
+      - customer-service-net
+
+  # WuKongIM 即时通讯服务
+  wukongim:
+    image: wukongim/wukongim:latest
+    container_name: wukongim
+    ports:
+      - "5000:5000"  # HTTP API
+      - "5100:5100"  # TCP 连接
+      - "5200:5200"  # WebSocket 连接
+    environment:
+      MYSQL_HOST: postgres
+      MYSQL_PORT: 5432
+      MYSQL_USER: postgres
+      MYSQL_PASSWORD: postgres123
+      MYSQL_DB: wukongim
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - customer-service-net
+
+  # 后端 API 服务
+  backend-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: customer-service-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      ROCKETMQ_NAMESRV_ADDR: rocketmq-namesrv:9876
+      WUKONGIM_API_URL: http://wukongim:5000
+      TZ: Asia/Shanghai
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - customer-service-net
+    restart: unless-stopped
+
+  # 前端 Nginx 服务
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: customer-service-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend-api
+      - wukongim
+    networks:
+      - customer-service-net
+    restart: unless-stopped
+
+networks:
+  customer-service-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rocketmq_namesrv_data:
+    driver: local
+  rocketmq_broker_data:
+    driver: local
