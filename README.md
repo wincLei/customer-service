@@ -33,8 +33,8 @@ customer-service/
 
 ### 后端
 
-- **框架**: Spring Boot 3.2.0
-- **语言**: Java 17+
+- **框架**: Spring Boot 3.4.1
+- **语言**: Java 21+
 - **数据库**: PostgreSQL 15
 - **缓存**: Redis 7
 - **认证**: JWT (io.jsonwebtoken)
@@ -67,7 +67,7 @@ customer-service/
 
 - Docker & Docker Compose
 - Node.js 18+ (本地开发)
-- Java 17+ (本地开发)
+- Java 21+ (本地开发)
 - Maven 3.9+ (本地开发)
 
 ### 使用Docker快速部署

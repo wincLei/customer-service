@@ -77,22 +77,22 @@ node --version  # v18.x.x
 npm --version   # 9.x.x+
 ```
 
-### 3. Java 17+
+### 3. Java 21+
 
 **macOS:**
 
 ```bash
-brew install openjdk@17
+brew install openjdk@21
 
 # 配置 JAVA_HOME
-echo 'export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"' >> ~/.zshrc
+echo 'export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"' >> ~/.zshrc
 source ~/.zshrc
 ```
 
 **Linux:**
 
 ```bash
-sudo apt-get install openjdk-17-jdk
+sudo apt-get install openjdk-21-jdk
 
 # 验证
 java -version

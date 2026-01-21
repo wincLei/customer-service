@@ -181,8 +181,8 @@ services: postgres        -- 数据库 (15)
 |        | TypeScript   | 5.3    |
 |        | Element Plus | 2.4.4  |
 |        | TailwindCSS  | 3.3.6  |
-| 后端   | Spring Boot  | 3.2.0  |
-|        | Java         | 17+    |
+| 后端   | Spring Boot  | 3.4.1  |
+|        | Java         | 21+    |
 |        | JPA          | 3.2.0  |
 |        | JWT          | 0.12.3 |
 | 中间件 | PostgreSQL   | 15     |
@@ -198,7 +198,7 @@ services: postgres        -- 数据库 (15)
 
 ### 后端
 
-- ✅ Java 17 模块化架构
+- ✅ Java 21 模块化架构
 - ✅ Spring Boot 最佳实践
 - ✅ Maven 依赖管理
 - ✅ 完整的异常处理
