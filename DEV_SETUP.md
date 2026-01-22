@@ -50,31 +50,31 @@ docker --version
 docker-compose --version
 ```
 
-### 2. Node.js 18+
+### 2. Node.js v22.12.0
 
 **macOS:**
 
 ```bash
-brew install node@18
+brew install node@22
 
 # 或使用 nvm
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-nvm install 18
-nvm use 18
+nvm install v22.12.0
+nvm use v22.12.0
 ```
 
 **Linux:**
 
 ```bash
-curl -sL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+curl -sL https://deb.nodesource.com/setup_22.x | sudo -E bash -
 sudo apt-get install -y nodejs
 ```
 
 **验证:**
 
 ```bash
-node --version  # v18.x.x
-npm --version   # 9.x.x+
+node --version  # v22.12.0
+npm --version   # 10.x.x+
 ```
 
 ### 3. Java 21+

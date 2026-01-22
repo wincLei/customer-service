@@ -66,7 +66,7 @@ customer-service/
 ### 前置条件
 
 - Docker & Docker Compose
-- Node.js 18+ (本地开发)
+- Node.js v22.12.0 (本地开发)
 - Java 21+ (本地开发)
 - Maven 3.9+ (本地开发)
 
