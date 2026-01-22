@@ -97,8 +97,8 @@ import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 
 const form = ref({
-  projectName: '客服系统',
-  welcomeMessage: '欢迎咨询我们的客服系统',
+  projectName: '极简客服系统',
+  welcomeMessage: '欢迎使用极简客服系统',
   themeColor: '#1890ff',
   workingHours: null,
 })

@@ -3,6 +3,8 @@ import api from './index'
 export interface LoginRequest {
   username: string
   password: string
+  captcha?: string
+  captchaKey?: string
 }
 
 export interface LoginResponse {

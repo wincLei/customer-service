@@ -19,7 +19,7 @@
         <!-- 顶部栏 -->
         <el-header class="header">
           <div class="header-left">
-            <h1>客服系统管理后台</h1>
+            <h1>极简客服系统管理后台</h1>
           </div>
           <div class="header-right">
             <span class="user-info">{{ username }}</span>

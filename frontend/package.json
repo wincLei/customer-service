@@ -1,6 +1,6 @@
 {
-  "name": "customer-service-frontend",
-  "description": "全渠道在线客服系统前端",
+  "name": "mini-customer-service-frontend",
+  "description": "极简客服系统前端",
   "version": "1.0.0",
   "type": "module",
   "scripts": {

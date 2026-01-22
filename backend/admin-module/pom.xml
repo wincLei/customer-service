@@ -4,22 +4,22 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.customer-service</groupId>
+    <groupId>com.mini-customer-service</groupId>
     <artifactId>admin-module</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
     <name>Admin Module</name>
 
     <parent>
-        <groupId>com.customer-service</groupId>
-        <artifactId>customer-service</artifactId>
+        <groupId>com.mini-customer-service</groupId>
+        <artifactId>mini-customer-service</artifactId>
         <version>1.0.0</version>
         <relativePath>../</relativePath>
     </parent>
 
     <dependencies>
         <dependency>
-            <groupId>com.customer-service</groupId>
+            <groupId>com.mini-customer-service</groupId>
             <artifactId>shared</artifactId>
             <version>1.0.0</version>
         </dependency>

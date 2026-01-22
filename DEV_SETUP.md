@@ -180,8 +180,8 @@ code --install-extension esbenp.prettier-vscode
 
 ```bash
 cd /Users/leijiang/Documents/vs-workspace
-# 项目已在此位置: customer-service
-cd customer-service
+# 项目已在此位置: mini-customer-service
+cd mini-customer-service
 ```
 
 ### 后端配置

@@ -15,7 +15,7 @@ public class PublicConfigController {
         // TODO: 从数据库获取项目配置
         ProjectConfigResponse config = ProjectConfigResponse.builder()
                 .projectId(projectId)
-                .welcomeMessage("欢迎咨询我们的客服系统")
+                .welcomeMessage("欢迎使用极简客服系统")
                 .themeColor("#1890FF")
                 .workingHours("09:00-18:00")
                 .build();

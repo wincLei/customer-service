@@ -1,11 +1,11 @@
 spring:
   application:
-    name: customer-service-admin
+    name: mini-customer-service-admin
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/customer_service
-    username: postgres
-    password: postgres123
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/customer_service}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres123}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -20,10 +20,16 @@ spring:
         order_updates: true
 
   redis:
-    host: localhost
-    port: 6379
+    host: ${SPRING_REDIS_HOST:localhost}
+    port: ${SPRING_REDIS_PORT:6379}
     database: 0
     timeout: 2000ms
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+        max-wait: -1ms
 
   servlet:
     multipart:
@@ -47,7 +53,7 @@ server:
 
 app:
   jwt:
-    secret: customer-service-secret-key-for-jwt-token-generation-and-validation-2024-2025
+    secret: mini-customer-service-secret-key-for-jwt-token-generation-and-validation-2024-2025
     expiration: 86400000 # 24 hours in milliseconds
 
 logging:
@@ -72,7 +78,7 @@ wukongim:
 rocketmq:
   nameserver: localhost:9876
   producer:
-    group: customer-service-producer
+    group: mini-customer-service-producer
     send-message-timeout: 10000
   consumer:
-    group: customer-service-consumer
+    group: mini-customer-service-consumer

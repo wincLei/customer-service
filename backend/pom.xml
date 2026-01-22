@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.customer-service</groupId>
-    <artifactId>customer-service</artifactId>
+    <groupId>com.mini-customer-service</groupId>
+    <artifactId>mini-customer-service</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
-    <name>Customer Service System</name>
-    <description>全渠道在线客服系统</description>
+    <name>Mini-Customer-Service</name>
+    <description>极简客服系统</description>
 
     <modules>
         <module>shared</module>

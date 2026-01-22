@@ -1,10 +1,8 @@
-version: '3.8'
-
 services:
   # PostgreSQL 数据库
   postgres:
     image: postgres:15-alpine
-    container_name: customer-service-postgres
+    container_name: mini-customer-service-postgres
     environment:
       POSTGRES_DB: customer_service
       POSTGRES_USER: postgres
@@ -21,12 +19,12 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - customer-service-net
+      - mini-customer-service-net
 
   # Redis 缓存
   redis:
     image: redis:7-alpine
-    container_name: customer-service-redis
+    container_name: mini-customer-service-redis
     ports:
       - "6379:6379"
     command: redis-server --appendonly yes
@@ -38,7 +36,7 @@ services:
       timeout: 5s
       retries: 5
     networks:
-      - customer-service-net
+      - mini-customer-service-net
 
   # RocketMQ 消息队列
   rocketmq-namesrv:
@@ -51,7 +49,7 @@ services:
     volumes:
       - rocketmq_namesrv_data:/root/store
     networks:
-      - customer-service-net
+      - mini-customer-service-net
 
   rocketmq-broker:
     image: apache/rocketmq:5.1.4
@@ -69,7 +67,7 @@ services:
     depends_on:
       - rocketmq-namesrv
     networks:
-      - customer-service-net
+      - mini-customer-service-net
 
   # WuKongIM 即时通讯服务
   wukongim:
@@ -89,14 +87,14 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - customer-service-net
+      - mini-customer-service-net
 
   # 后端 API 服务
   backend-api:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: customer-service-backend
+    container_name: mini-customer-service-backend
     ports:
       - "8080:8080"
     environment:
@@ -105,19 +103,16 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres123
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
-      SPRING_CONFIG_ADDITIONAL_LOCATION: /app/
       ROCKETMQ_NAMESRV_ADDR: rocketmq-namesrv:9876
       WUKONGIM_API_URL: http://wukongim:5000
       TZ: Asia/Shanghai
-    volumes:
-      - ./backend/admin-module/src/main/resources/application.yml:/app/application.yml:ro
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
     networks:
-      - customer-service-net
+      - mini-customer-service-net
     restart: unless-stopped
 
   # 门户 API 服务
@@ -125,7 +120,7 @@ services:
     build:
       context: ./backend
       dockerfile: portal.Dockerfile
-    container_name: customer-service-portal-api
+    container_name: mini-customer-service-portal-api
     ports:
       - "8082:8081"
     environment:
@@ -143,7 +138,7 @@ services:
       redis:
         condition: service_healthy
     networks:
-      - customer-service-net
+      - mini-customer-service-net
     restart: unless-stopped
 
   # 前端 Nginx 服务
@@ -151,7 +146,7 @@ services:
     build:
       context: .
       dockerfile: ./frontend/Dockerfile
-    container_name: customer-service-frontend
+    container_name: mini-customer-service-frontend
     ports:
       - "80:80"
     volumes:
@@ -161,11 +156,11 @@ services:
       - portal-api
       - wukongim
     networks:
-      - customer-service-net
+      - mini-customer-service-net
     restart: unless-stopped
 
 networks:
-  customer-service-net:
+  mini-customer-service-net:
     driver: bridge
 
 volumes:

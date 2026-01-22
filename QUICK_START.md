@@ -6,7 +6,7 @@
 
 ```bash
 # 1. 克隆或进入项目目录
-cd /Users/leijiang/Documents/vs-workspace/customer-service
+cd /Users/leijiang/Documents/vs-workspace/mini-customer-service
 
 # 2. 启动所有服务
 docker-compose up -d
@@ -156,7 +156,7 @@ docker-compose ps | grep postgres
 
 # 重新初始化数据库
 docker-compose down postgres
-docker volume rm customer-service_postgres_data
+docker volume rm mini-customer-service_postgres_data
 docker-compose up -d postgres
 ```
 
