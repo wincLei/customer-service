@@ -14,6 +14,12 @@
           <i class="el-icon-chat-line-square"></i>
           <div class="nav-label">工作台</div>
         </div>
+
+        <!-- 管理员：项目管理 -->
+        <div v-if="userRole === 'admin'" class="nav-icon" @click="navigateTo('projects')" :class="{ active: currentView === 'projects' }">
+          <i class="el-icon-folder"></i>
+          <div class="nav-label">项目</div>
+        </div>
         
         <!-- 公共菜单 -->
         <div class="nav-icon" @click="navigateTo('settings')" :class="{ active: currentView === 'settings' }">

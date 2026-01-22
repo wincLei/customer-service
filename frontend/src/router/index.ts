@@ -40,6 +40,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '客服工作台', roles: ['agent'] },
       },
       {
+        path: 'projects',
+        name: 'ProjectManagement',
+        component: () => import('@/views/admin/ProjectManagement.vue'),
+        meta: { title: '项目管理', roles: ['admin'] },
+      },
+      {
         path: 'settings',
         name: 'Settings',
         component: () => import('@/views/admin/Settings.vue'),
@@ -91,6 +97,23 @@ router.beforeEach((to, _from, next) => {
       // 未登录，重定向到登录页
       next('/login')
     } else {
+      // 检查角色权限
+      const roles = to.meta.roles as string[] | undefined
+      if (roles && roles.length > 0) {
+        const userInfo = localStorage.getItem('user_info')
+        if (userInfo) {
+          const user = JSON.parse(userInfo)
+          if (!roles.includes(user.role)) {
+            // 无权限访问，重定向到对应的默认页面
+            if (user.role === 'admin') {
+              next('/admin/dashboard')
+            } else {
+              next('/admin/workbench')
+            }
+            return
+          }
+        }
+      }
       next()
     }
   } else {
