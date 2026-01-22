@@ -8,11 +8,15 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * 客服/坐席实体
+ * 只包含客服业务相关信息，登录认证信息在SysUser中
+ */
 @Entity
 @Table(name = "agents", indexes = {
-        @Index(name = "idx_agents_project_username", columnList = "project_id,username"),
-        @Index(name = "idx_agents_status", columnList = "project_id,status"),
-        @Index(name = "idx_agents_username", columnList = "username")
+        @Index(name = "idx_agents_project", columnList = "project_id"),
+        @Index(name = "idx_agents_user", columnList = "user_id"),
+        @Index(name = "idx_agents_status", columnList = "project_id,work_status")
 })
 @Data
 @Builder
@@ -23,44 +27,42 @@ public class Agent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "project_id", nullable = false)
     private Long projectId;
 
-    @Column(nullable = false, length = 50, unique = true)
-    private String username;
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
 
-    @Column(nullable = false, length = 255)
-    private String passwordHash;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", insertable = false, updatable = false)
+    private SysUser sysUser;
 
     @Column(length = 50)
     private String nickname;
 
-    @Column(length = 500)
-    private String avatar;
+    @Column(name = "work_status", length = 20)
+    private String workStatus; // offline, online, busy
 
-    @Column(length = 100)
-    private String email;
-
-    @Column(length = 20)
-    private String role; // agent, supervisor, admin
-
-    @Column(length = 20)
-    private String status; // offline, online, busy
-
-    @Column(nullable = false)
+    @Column(name = "max_load", nullable = false)
     private Integer maxLoad; // 最大接待量
 
-    @Column(nullable = false)
+    @Column(name = "current_load", nullable = false)
     private Integer currentLoad; // 当前接待量
+
+    @Column(name = "skill_groups", columnDefinition = "JSONB DEFAULT '[]'")
+    private String skillGroups;
+
+    @Column(name = "welcome_message", columnDefinition = "TEXT")
+    private String welcomeMessage;
+
+    @Column(name = "auto_reply_enabled")
+    private Boolean autoReplyEnabled;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
-
-    @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
 
     @PrePersist
     protected void onCreate() {
@@ -72,16 +74,41 @@ public class Agent {
         if (currentLoad == null) {
             currentLoad = 0;
         }
-        if (status == null) {
-            status = "offline";
+        if (workStatus == null) {
+            workStatus = "offline";
         }
-        if (role == null) {
-            role = "agent";
+        if (autoReplyEnabled == null) {
+            autoReplyEnabled = false;
         }
     }
 
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    // 便捷方法：获取用户名（从关联的SysUser）
+    public String getUsername() {
+        return sysUser != null ? sysUser.getUsername() : null;
+    }
+
+    // 便捷方法：获取头像（从关联的SysUser）
+    public String getAvatar() {
+        return sysUser != null ? sysUser.getAvatar() : null;
+    }
+
+    // 便捷方法：获取邮箱（从关联的SysUser）
+    public String getEmail() {
+        return sysUser != null ? sysUser.getEmail() : null;
+    }
+
+    // 兼容旧代码：获取status（映射到workStatus）
+    public String getStatus() {
+        return workStatus;
+    }
+
+    // 兼容旧代码：设置status（映射到workStatus）
+    public void setStatus(String status) {
+        this.workStatus = status;
     }
 }

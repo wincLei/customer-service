@@ -178,7 +178,23 @@ const handleLogin = async () => {
 
     if (response?.token) {
       const token = response.token
-      const userInfo = response.user || {}
+      let userInfo = response.user || {}
+      
+      // 根据用户名判断角色（临时方案，实际应从后端返回）
+      if (!userInfo.role) {
+        if (form.value.username.includes('admin')) {
+          userInfo.role = 'admin'
+        } else if (form.value.username.includes('agent')) {
+          userInfo.role = 'agent'
+        } else {
+          userInfo.role = 'agent' // 默认为客服
+        }
+      }
+      
+      // 保存用户名
+      if (!userInfo.username) {
+        userInfo.username = form.value.username
+      }
 
       localStorage.setItem('auth_token', token)
       localStorage.setItem('user_info', JSON.stringify(userInfo))
@@ -189,16 +205,17 @@ const handleLogin = async () => {
         localStorage.removeItem('remember_username')
       }
 
-      // 跳转到工作台 - 关键修复
-      console.log('登录成功，准备跳转到工作台')
+      // 根据角色跳转
+      console.log('登录成功，用户角色:', userInfo.role)
+      const targetPath = userInfo.role === 'admin' ? '/admin/dashboard' : '/admin/workbench'
       
       // 使用 replace 而不是 push，避免返回到登录页
-      await router.replace('/admin/dashboard')
+      await router.replace(targetPath)
       
       // 如果路由跳转没有生效，强制刷新页面
       setTimeout(() => {
         if (window.location.pathname === '/login') {
-          window.location.href = '/admin/dashboard'
+          window.location.href = targetPath
         }
       }, 100)
     } else {

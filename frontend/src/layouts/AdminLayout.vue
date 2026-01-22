@@ -3,27 +3,35 @@
     <el-container>
       <!-- 左侧导航栏 -->
       <el-aside width="60px" class="sidebar">
-        <div class="nav-icon" @click="currentView = 'dashboard'" :class="{ active: currentView === 'dashboard' }">
+        <!-- 管理员：显示数据概览 -->
+        <div v-if="userRole === 'admin'" class="nav-icon" @click="navigateTo('dashboard')" :class="{ active: currentView === 'dashboard' }">
           <i class="el-icon-data-analysis"></i>
+          <div class="nav-label">数据</div>
         </div>
-        <div class="nav-icon" @click="currentView = 'chat'" :class="{ active: currentView === 'chat' }">
-          <i class="el-icon-chat"></i>
+        
+        <!-- 客服：显示工作台 -->
+        <div v-if="userRole === 'agent'" class="nav-icon" @click="navigateTo('workbench')" :class="{ active: currentView === 'workbench' }">
+          <i class="el-icon-chat-line-square"></i>
+          <div class="nav-label">工作台</div>
         </div>
-        <div class="nav-icon" @click="currentView = 'settings'" :class="{ active: currentView === 'settings' }">
+        
+        <!-- 公共菜单 -->
+        <div class="nav-icon" @click="navigateTo('settings')" :class="{ active: currentView === 'settings' }">
           <i class="el-icon-setting"></i>
+          <div class="nav-label">设置</div>
         </div>
       </el-aside>
 
       <!-- 主内容区 -->
       <el-container>
         <!-- 顶部栏 -->
-        <el-header class="header">
+        <el-header height="50px" class="header">
           <div class="header-left">
-            <h1>极简客服系统管理后台</h1>
+            <span class="system-title">客服工作台</span>
           </div>
           <div class="header-right">
             <span class="user-info">{{ username }}</span>
-            <el-button type="danger" size="small" @click="logout">退出登录</el-button>
+            <el-button type="text" size="small" @click="logout">退出</el-button>
           </div>
         </el-header>
 
@@ -37,17 +45,59 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
-const currentView = ref('dashboard')
+const route = useRoute()
+const currentView = ref('workbench')
 const username = ref('客服员工')
+const userRole = ref<string>('agent')
+
+const navigateTo = (view: string) => {
+  currentView.value = view
+  router.push(`/admin/${view}`)
+}
 
 const logout = () => {
   localStorage.removeItem('auth_token')
+  localStorage.removeItem('user_info')
   router.push('/login')
 }
+
+const loadUserInfo = () => {
+  const userInfo = localStorage.getItem('user_info')
+  if (userInfo) {
+    try {
+      const user = JSON.parse(userInfo)
+      username.value = user.username || user.nickname || '用户'
+      userRole.value = user.role || 'agent'
+      console.log('加载用户信息:', { username: username.value, role: userRole.value })
+    } catch (e) {
+      console.error('解析用户信息失败:', e)
+    }
+  }
+}
+
+onMounted(() => {
+  // 加载用户信息
+  loadUserInfo()
+  
+  // 根据当前路由设置激活状态
+  const pathParts = route.path.split('/')
+  if (pathParts.length > 2) {
+    currentView.value = pathParts[2]
+  }
+})
+
+// 监听路由变化
+watch(() => route.path, (newPath) => {
+  const pathParts = newPath.split('/')
+  if (pathParts.length > 2) {
+    currentView.value = pathParts[2]
+  }
+})
+
 </script>
 
 <style scoped lang="css">
@@ -57,67 +107,74 @@ const logout = () => {
 }
 
 .sidebar {
-  background-color: #001a33;
+  background-color: #1e3a5f;
   display: flex;
   flex-direction: column;
   align-items: center;
   padding: 20px 0;
-  box-shadow: 1px 0 4px rgba(0, 0, 0, 0.15);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
 }
 
 .nav-icon {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.7);
   cursor: pointer;
-  border-radius: 4px;
-  margin-bottom: 16px;
+  border-radius: 6px;
+  margin-bottom: 10px;
   transition: all 0.3s;
-  font-size: 20px;
+  font-size: 22px;
+}
+
+.nav-label {
+  font-size: 10px;
+  margin-top: 2px;
 }
 
 .nav-icon:hover {
   color: #fff;
-  background-color: rgba(255, 255, 255, 0.15);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .nav-icon.active {
-  color: #1890ff;
-  background-color: rgba(24, 144, 255, 0.15);
+  color: #409eff;
+  background-color: rgba(64, 158, 255, 0.1);
 }
 
 .header {
   background-color: #fff;
-  border-bottom: 1px solid #e8e8e8;
+  border-bottom: 1px solid #e4e7ed;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0 20px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 }
 
-.header-left h1 {
-  margin: 0;
-  font-size: 18px;
-  color: #333;
+.system-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
 }
 
 .header-right {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 15px;
 }
 
 .user-info {
-  color: #666;
+  color: #606266;
   font-size: 14px;
 }
 
 .main-content {
-  padding: 16px;
   background-color: #f0f2f5;
+  padding: 0;
+  overflow: hidden;
 }
 </style>

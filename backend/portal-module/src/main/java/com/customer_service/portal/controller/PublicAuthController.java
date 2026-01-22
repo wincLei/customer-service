@@ -3,7 +3,7 @@ package com.customer_service.portal.controller;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.dto.LoginRequest;
 import com.customer_service.shared.dto.LoginResponse;
-import com.customer_service.shared.entity.Agent;
+import com.customer_service.shared.entity.SysUser;
 import com.customer_service.shared.util.JwtTokenProvider;
 import com.customer_service.portal.service.PortalAgentService;
 import lombok.RequiredArgsConstructor;
@@ -26,33 +26,33 @@ public class PublicAuthController {
         if (request.getUsername() == null || request.getUsername().isEmpty()) {
             return ApiResponse.fail(400, "用户名不能为空");
         }
-        
+
         if (request.getPassword() == null || request.getPassword().isEmpty()) {
             return ApiResponse.fail(400, "密码不能为空");
         }
 
-        Optional<Agent> agent = agentService.authenticate(request.getUsername(), request.getPassword());
-        
-        if (agent.isEmpty()) {
+        Optional<SysUser> userOptional = agentService.authenticate(request.getUsername(), request.getPassword());
+
+        if (userOptional.isEmpty()) {
             return ApiResponse.fail(401, "用户名或密码错误");
         }
 
-        Agent a = agent.get();
-        
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("id", a.getId());
-        claims.put("role", a.getRole());
+        SysUser user = userOptional.get();
 
-        String token = jwtTokenProvider.generateToken(a.getUsername(), claims);
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("id", user.getId());
+        claims.put("role", user.getRoleCode());
+
+        String token = jwtTokenProvider.generateToken(user.getUsername(), claims);
 
         LoginResponse.UserInfo userInfo = LoginResponse.UserInfo.builder()
-                .id(a.getId())
-                .username(a.getUsername())
-                .nickname(a.getNickname())
-                .email(a.getEmail())
-                .avatar(a.getAvatar())
-                .role(a.getRole())
-                .status(a.getStatus())
+                .id(user.getId())
+                .username(user.getUsername())
+                .nickname(user.getUsername()) // SysUser 没有 nickname，使用 username
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
+                .role(user.getRoleCode())
+                .status(user.getStatus())
                 .build();
 
         LoginResponse response = LoginResponse.builder()
@@ -76,28 +76,28 @@ public class PublicAuthController {
         }
 
         String username = jwtTokenProvider.getUsernameFromToken(token);
-        Optional<Agent> agent = agentService.findByUsername(username);
+        Optional<SysUser> userOptional = agentService.findByUsername(username);
 
-        if (agent.isEmpty()) {
+        if (userOptional.isEmpty()) {
             return ApiResponse.fail(401, "用户不存在");
         }
 
-        Agent a = agent.get();
+        SysUser user = userOptional.get();
 
         Map<String, Object> claims = new HashMap<>();
-        claims.put("id", a.getId());
-        claims.put("role", a.getRole());
+        claims.put("id", user.getId());
+        claims.put("role", user.getRoleCode());
 
-        String newToken = jwtTokenProvider.generateToken(a.getUsername(), claims);
+        String newToken = jwtTokenProvider.generateToken(user.getUsername(), claims);
 
         LoginResponse.UserInfo userInfo = LoginResponse.UserInfo.builder()
-                .id(a.getId())
-                .username(a.getUsername())
-                .nickname(a.getNickname())
-                .email(a.getEmail())
-                .avatar(a.getAvatar())
-                .role(a.getRole())
-                .status(a.getStatus())
+                .id(user.getId())
+                .username(user.getUsername())
+                .nickname(user.getUsername())
+                .email(user.getEmail())
+                .avatar(user.getAvatar())
+                .role(user.getRoleCode())
+                .status(user.getStatus())
                 .build();
 
         LoginResponse response = LoginResponse.builder()

@@ -17,28 +17,63 @@ CREATE TABLE IF NOT EXISTS projects (
 
 CREATE INDEX IF NOT EXISTS idx_projects_app_key ON projects(app_key);
 
--- 客服/管理员表 (系统用户)
+-- ============================================================
+-- 系统用户与权限管理
+-- ============================================================
+
+-- 系统角色表
+CREATE TABLE IF NOT EXISTS sys_roles (
+    id BIGSERIAL PRIMARY KEY,
+    code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    permissions JSONB DEFAULT '[]',
+    is_system BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_sys_roles_code ON sys_roles(code);
+
+-- 系统用户表（登录账号管理，不包含业务信息）
+CREATE TABLE IF NOT EXISTS sys_users (
+    id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(100),
+    phone VARCHAR(20),
+    avatar VARCHAR(500),
+    role_id BIGINT REFERENCES sys_roles(id),
+    status VARCHAR(20) DEFAULT 'active',
+    last_login_at TIMESTAMP WITH TIME ZONE,
+    last_login_ip VARCHAR(50),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_sys_users_username ON sys_users(username);
+CREATE INDEX IF NOT EXISTS idx_sys_users_role ON sys_users(role_id);
+
+-- 客服/坐席表（客服业务信息）
 CREATE TABLE IF NOT EXISTS agents (
     id BIGSERIAL PRIMARY KEY,
     project_id BIGINT NOT NULL REFERENCES projects(id),
-    username VARCHAR(50) NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
+    user_id BIGINT NOT NULL REFERENCES sys_users(id),
     nickname VARCHAR(50),
-    avatar VARCHAR(500),
-    email VARCHAR(100),
-    role VARCHAR(20) DEFAULT 'agent',
-    status VARCHAR(20) DEFAULT 'offline',
+    work_status VARCHAR(20) DEFAULT 'offline',
     max_load INTEGER DEFAULT 5,
     current_load INTEGER DEFAULT 0,
+    skill_groups JSONB DEFAULT '[]',
+    welcome_message TEXT,
+    auto_reply_enabled BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    last_login_at TIMESTAMP WITH TIME ZONE,
-    UNIQUE(project_id, username)
+    UNIQUE(project_id, user_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_agents_project_username ON agents(project_id, username);
-CREATE INDEX IF NOT EXISTS idx_agents_status ON agents(project_id, status);
-CREATE INDEX IF NOT EXISTS idx_agents_username ON agents(username);
+CREATE INDEX IF NOT EXISTS idx_agents_project ON agents(project_id);
+CREATE INDEX IF NOT EXISTS idx_agents_user ON agents(user_id);
+CREATE INDEX IF NOT EXISTS idx_agents_status ON agents(project_id, work_status);
 
 -- 快捷回复表
 CREATE TABLE IF NOT EXISTS quick_replies (
@@ -245,41 +280,62 @@ VALUES (
     '{"welcomeMessage": "欢迎咨询，我们随时准备为您服务", "themeColor": "#1890FF"}'
 ) ON CONFLICT DO NOTHING;
 
--- 插入示例客服
-INSERT INTO agents (project_id, username, password_hash, nickname, role, status, max_load, current_load)
-VALUES (
-    1,
-    'agent001',
-    '$2a$10$demo_hash_001',
-    '李客服',
-    'agent',
-    'online',
-    10,
-    3
-),
+-- 插入系统角色
+INSERT INTO sys_roles (code, name, description, permissions, is_system) VALUES
+('super_admin', '超级管理员', '拥有系统所有权限', '["*"]', TRUE),
+('admin', '管理员', '项目管理员，可以管理客服和查看统计', '["dashboard:view", "agent:manage", "conversation:view", "kb:manage", "settings:manage"]', TRUE),
+('agent', '客服', '普通客服，可以接待用户', '["workbench:view", "conversation:handle", "kb:view"]', TRUE),
+('viewer', '观察员', '只能查看不能操作', '["dashboard:view", "conversation:view"]', FALSE)
+ON CONFLICT (code) DO NOTHING;
+
+-- 插入系统用户（密码: admin123 的 BCrypt 哈希值）
+-- 哈希值: $2a$10$66xl1rpOC9cUISk5FvnUs.NaX12oacR73tv4P6GtxGTgdBsFJeJNW
+-- 注意：sys_users 表不包含 project_id，用户是全局的
+INSERT INTO sys_users (username, password_hash, email, role_id, status) VALUES
 (
-    1,
-    'agent002',
-    '$2a$10$demo_hash_002',
-    '王客服',
-    'agent',
-    'offline',
-    10,
-    0
-),
-(
-    1,
-    'admin001',
-    '$2a$10$demo_hash_admin',
-    '管理员',
     'admin',
+    '$2a$10$66xl1rpOC9cUISk5FvnUs.NaX12oacR73tv4P6GtxGTgdBsFJeJNW',
+    'admin@example.com',
+    (SELECT id FROM sys_roles WHERE code = 'admin'),
+    'active'
+),
+(
+    'agent1',
+    '$2a$10$66xl1rpOC9cUISk5FvnUs.NaX12oacR73tv4P6GtxGTgdBsFJeJNW',
+    'agent1@example.com',
+    (SELECT id FROM sys_roles WHERE code = 'agent'),
+    'active'
+),
+(
+    'agent2',
+    '$2a$10$66xl1rpOC9cUISk5FvnUs.NaX12oacR73tv4P6GtxGTgdBsFJeJNW',
+    'agent2@example.com',
+    (SELECT id FROM sys_roles WHERE code = 'agent'),
+    'active'
+)
+ON CONFLICT DO NOTHING;
+
+-- 插入客服信息（关联到sys_users）
+INSERT INTO agents (project_id, user_id, nickname, work_status, max_load, current_load) VALUES
+(
+    1,
+    (SELECT id FROM sys_users WHERE username = 'agent1'),
+    '客服1',
     'online',
-    50,
+    5,
+    2
+),
+(
+    1,
+    (SELECT id FROM sys_users WHERE username = 'agent2'),
+    '客服2',
+    'offline',
+    5,
     0
 )
 ON CONFLICT DO NOTHING;
 
--- 插入示例用户
+-- 插入示例用户（访客）
 INSERT INTO users (project_id, uid, nickname, phone, device_type, city)
 VALUES (
     1,
@@ -318,7 +374,30 @@ VALUES (
     0,
     '请问有什么可以帮助您的？',
     CURRENT_TIMESTAMP
+),
+(
+    1,
+    1,
+    1,
+    'active',
+    0,
+    '您好，请问有什么可以帮助您？',
+    CURRENT_TIMESTAMP
 )
+ON CONFLICT DO NOTHING;
+
+-- 插入示例消息
+INSERT INTO messages (project_id, conversation_id, msg_id, sender_type, sender_id, msg_type, content) VALUES
+(1, 1, 'msg_001', 'user', 1, 'text', '{"text": "你好，我想咨询一下订单问题"}'),
+(1, 1, 'msg_002', 'agent', 1, 'text', '{"text": "您好！请问您的订单号是多少？"}'),
+(1, 1, 'msg_003', 'user', 1, 'text', '{"text": "订单号是 ORD20260122001"}'),
+(1, 1, 'msg_004', 'agent', 1, 'text', '{"text": "好的，我帮您查询一下，请稍等"}'),
+(1, 1, 'msg_005', 'agent', 1, 'text', '{"text": "您的订单目前正在配送中，预计明天送达"}'),
+(1, 1, 'msg_006', 'user', 1, 'text', '{"text": "好的，谢谢！"}'),
+(1, 2, 'msg_007', 'user', 2, 'text', '{"text": "请问有什么可以帮助您的？"}'),
+(1, 3, 'msg_008', 'user', 1, 'text', '{"text": "我还有个问题想问"}'),
+(1, 3, 'msg_009', 'agent', 1, 'text', '{"text": "请说"}'),
+(1, 3, 'msg_010', 'user', 1, 'text', '{"text": "如何申请退款？"}')
 ON CONFLICT DO NOTHING;
 
 -- 插入示例知识库分类
@@ -362,57 +441,5 @@ VALUES (
     '如何查询订单？',
     '<p>登录后在"我的订单"页面可以查看所有订单状态...</p>',
     TRUE
-)
-ON CONFLICT DO NOTHING;
--- ============================================================
--- 插入演示数据
--- ============================================================
-
--- 插入项目
-INSERT INTO projects (name, description, app_key, app_secret) VALUES
-(
-    'Demo Project',
-    '演示项目',
-    'demo_project_key_2024',
-    'demo_project_secret_2024'
-)
-ON CONFLICT (app_key) DO NOTHING;
-
--- 获取项目ID（用于插入客服）
--- 注意：PostgreSQL 中需要通过子查询获取
--- 密码: admin123 的 bcrypt hash (包含盐值 $2a$10$0/cUTVf4vvGZ...)
-INSERT INTO agents (project_id, username, password_hash, nickname, email, role, status, max_load, current_load) VALUES
-(
-    (SELECT id FROM projects WHERE app_key = 'demo_project_key_2024'),
-    'admin',
-    '$2a$10$Sq8K3HPPwVFwx2t8d6bQAODe8I6mKdwfE8F1Ks7mKk6vQ1v.gwhHe',
-    '管理员',
-    'admin@example.com',
-    'admin',
-    'online',
-    10,
-    0
-),
-(
-    (SELECT id FROM projects WHERE app_key = 'demo_project_key_2024'),
-    'agent1',
-    '$2a$10$Sq8K3HPPwVFwx2t8d6bQAODe8I6mKdwfE8F1Ks7mKk6vQ1v.gwhHe',
-    '客服1',
-    'agent1@example.com',
-    'agent',
-    'online',
-    5,
-    0
-),
-(
-    (SELECT id FROM projects WHERE app_key = 'demo_project_key_2024'),
-    'agent2',
-    '$2a$10$Sq8K3HPPwVFwx2t8d6bQAODe8I6mKdwfE8F1Ks7mKk6vQ1v.gwhHe',
-    '客服2',
-    'agent2@example.com',
-    'agent',
-    'online',
-    5,
-    0
 )
 ON CONFLICT DO NOTHING;

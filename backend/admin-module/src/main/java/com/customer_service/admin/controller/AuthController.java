@@ -1,26 +1,32 @@
 package com.customer_service.admin.controller;
 
 import com.customer_service.shared.dto.ApiResponse;
+import com.customer_service.shared.entity.SysUser;
+import com.customer_service.shared.repository.SysUserRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @RestController
-@RequestMapping("/admin/auth")
+@RequestMapping("/api/admin/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final StringRedisTemplate redisTemplate;
+    private final SysUserRepository sysUserRepository;
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @PostMapping("/login")
     public ApiResponse<?> login(@RequestBody LoginRequest request) {
-        log.info("Agent login attempt: {}", request.getUsername());
+        log.info("User login attempt: {}", request.getUsername());
 
         // 强制验证验证码
         if (request.getCaptchaKey() == null || request.getCaptchaKey().isEmpty()) {
@@ -46,10 +52,34 @@ public class AuthController {
             return ApiResponse.error("Redis服务异常，请稍后重试");
         }
 
-        // 验证用户名和密码（简单示例）
-        if (!"admin".equals(request.getUsername()) || !"admin123".equals(request.getPassword())) {
+        // 验证用户名和密码 - 从sys_users表查询
+        Optional<SysUser> userOptional = sysUserRepository.findByUsername(request.getUsername());
+
+        if (userOptional.isEmpty()) {
+            log.warn("用户不存在: {}", request.getUsername());
             return ApiResponse.error("用户名或密码错误");
         }
+
+        SysUser sysUser = userOptional.get();
+
+        // 检查账号状态
+        if (!"active".equals(sysUser.getStatus())) {
+            log.warn("账号已禁用: {}", request.getUsername());
+            return ApiResponse.error("账号已被禁用，请联系管理员");
+        }
+
+        // 验证密码（使用BCrypt）
+        if (!passwordEncoder.matches(request.getPassword(), sysUser.getPasswordHash())) {
+            log.warn("密码错误: {}", request.getUsername());
+            return ApiResponse.error("用户名或密码错误");
+        }
+
+        // 更新最后登录时间
+        sysUser.setLastLoginAt(LocalDateTime.now());
+        sysUserRepository.save(sysUser);
+
+        String roleCode = sysUser.getRoleCode();
+        log.info("用户登录成功: {} (ID: {}, Role: {})", sysUser.getUsername(), sysUser.getId(), roleCode);
 
         // 生成token（实际应该使用JWT）
         String token = UUID.randomUUID().toString().replace("-", "");
@@ -59,11 +89,12 @@ public class AuthController {
         data.put("token", token);
 
         Map<String, Object> user = new HashMap<>();
-        user.put("id", "1");
-        user.put("username", request.getUsername());
-        user.put("email", "admin@example.com");
-        user.put("role", "admin");
-        user.put("avatar", "https://api.dicebear.com/7.x/avataaars/svg?seed=admin");
+        user.put("id", sysUser.getId());
+        user.put("username", sysUser.getUsername());
+        user.put("email", sysUser.getEmail());
+        user.put("role", roleCode);
+        user.put("avatar", sysUser.getAvatar() != null ? sysUser.getAvatar()
+                : "https://api.dicebear.com/7.x/avataaars/svg?seed=" + sysUser.getUsername());
         data.put("user", user);
 
         return ApiResponse.success(data);
@@ -72,6 +103,16 @@ public class AuthController {
     @GetMapping("/logout")
     public ApiResponse<?> logout() {
         return ApiResponse.success("Logout successful");
+    }
+
+    @GetMapping("/generate-hash")
+    public ApiResponse<?> generateHash(@RequestParam String password) {
+        String hash = passwordEncoder.encode(password);
+        Map<String, Object> data = new HashMap<>();
+        data.put("password", password);
+        data.put("hash", hash);
+        data.put("verify", passwordEncoder.matches(password, hash));
+        return ApiResponse.success(data);
     }
 
     @GetMapping("/captcha")

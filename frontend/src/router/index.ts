@@ -4,7 +4,7 @@ import { authService } from '@/api/auth'
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    redirect: '/admin/dashboard',
+    redirect: '/login',
   },
   {
     path: '/login',
@@ -15,22 +15,35 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/admin',
     component: () => import('@/layouts/AdminLayout.vue'),
-    meta: { requiresAuth: true, role: 'agent' },
+    meta: { requiresAuth: true },
+    redirect: () => {
+      // 根据用户角色重定向
+      const userInfo = localStorage.getItem('user_info')
+      if (userInfo) {
+        const user = JSON.parse(userInfo)
+        // 管理员进入Dashboard，客服进入Workbench
+        return user.role === 'admin' ? '/admin/dashboard' : '/admin/workbench'
+      }
+      return '/admin/dashboard'
+    },
     children: [
       {
         path: 'dashboard',
+        name: 'Dashboard',
         component: () => import('@/views/admin/Dashboard.vue'),
-        meta: { title: '仪表板' },
+        meta: { title: '数据概览', roles: ['admin'] },
       },
       {
-        path: 'chat',
+        path: 'workbench',
+        name: 'Workbench',
         component: () => import('@/views/admin/Workbench.vue'),
-        meta: { title: '工作台' },
+        meta: { title: '客服工作台', roles: ['agent'] },
       },
       {
         path: 'settings',
+        name: 'Settings',
         component: () => import('@/views/admin/Settings.vue'),
-        meta: { title: '设置' },
+        meta: { title: '系统设置' },
       },
     ],
   },
@@ -81,9 +94,9 @@ router.beforeEach((to, _from, next) => {
       next()
     }
   } else {
-    // 如果已登录且访问登录页，重定向到仪表板
+    // 如果已登录且访问登录页，重定向到工作台
     if (isAuthenticated && to.path === '/login') {
-      next('/admin/dashboard')
+      next('/admin/workbench')
     } else {
       next()
     }
