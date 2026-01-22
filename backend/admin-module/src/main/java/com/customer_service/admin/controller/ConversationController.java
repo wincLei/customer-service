@@ -1,6 +1,7 @@
 package com.customer_service.admin.controller;
 
 import com.customer_service.admin.service.ConversationService;
+import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.Conversation;
 import lombok.RequiredArgsConstructor;
@@ -11,10 +12,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * 会话管理控制器
+ * 客服和管理员可访问
+ */
 @Slf4j
 @RestController
 @RequestMapping("/api/admin/conversations")
 @RequiredArgsConstructor
+@RequirePermission(value = "workbench", roles = { "admin", "agent" })
 public class ConversationController {
 
     private final ConversationService conversationService;

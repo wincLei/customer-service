@@ -1,15 +1,21 @@
 package com.customer_service.admin.controller;
 
 import com.customer_service.admin.service.KbArticleService;
+import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.entity.KbArticle;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * 知识库文章管理控制器
+ * 客服和管理员可访问
+ */
 @RestController
 @RequestMapping("/api/admin/kb/articles")
 @RequiredArgsConstructor
+@RequirePermission(value = "workbench", roles = { "admin", "agent" })
 public class KbArticleController {
 
     private final KbArticleService kbArticleService;

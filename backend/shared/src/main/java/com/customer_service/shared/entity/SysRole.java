@@ -27,7 +27,7 @@ public class SysRole {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(columnDefinition = "JSONB DEFAULT '[]'")
+    @Column(columnDefinition = "JSONB")
     private String permissions;
 
     @Column(name = "is_system")

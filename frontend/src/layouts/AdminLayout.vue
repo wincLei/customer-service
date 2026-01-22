@@ -3,27 +3,73 @@
     <el-container>
       <!-- 左侧导航栏 -->
       <el-aside width="60px" class="sidebar">
-        <!-- 管理员：显示数据概览 -->
-        <div v-if="userRole === 'admin'" class="nav-icon" @click="navigateTo('dashboard')" :class="{ active: currentView === 'dashboard' }">
+        <!-- 数据概览 - 需要dashboard菜单权限 -->
+        <div v-if="hasMenu('dashboard')" class="nav-icon" @click="navigateTo('dashboard')" :class="{ active: currentView === 'dashboard' }">
           <i class="el-icon-data-analysis"></i>
           <div class="nav-label">数据</div>
         </div>
         
-        <!-- 客服：显示工作台 -->
-        <div v-if="userRole === 'agent'" class="nav-icon" @click="navigateTo('workbench')" :class="{ active: currentView === 'workbench' }">
+        <!-- 工作台 - 需要workbench菜单权限 -->
+        <div v-if="hasMenu('workbench')" class="nav-icon" @click="navigateTo('workbench')" :class="{ active: currentView === 'workbench' }">
           <i class="el-icon-chat-line-square"></i>
           <div class="nav-label">工作台</div>
         </div>
 
-        <!-- 管理员：项目管理 -->
-        <div v-if="userRole === 'admin'" class="nav-icon" @click="navigateTo('projects')" :class="{ active: currentView === 'projects' }">
+        <!-- 项目管理 - 需要projects菜单权限 -->
+        <div v-if="hasMenu('projects')" class="nav-icon" @click="navigateTo('projects')" :class="{ active: currentView === 'projects' }">
           <i class="el-icon-folder"></i>
           <div class="nav-label">项目</div>
         </div>
+
+        <!-- 系统管理 - 包含用户、角色、菜单子菜单 -->
+        <el-popover
+          v-if="hasMenu('system') || hasMenu('users') || hasMenu('roles') || hasMenu('menus')"
+          placement="right-start"
+          :width="140"
+          trigger="hover"
+          :show-arrow="false"
+          popper-class="system-submenu-popover"
+        >
+          <template #reference>
+            <div class="nav-icon" :class="{ active: isSystemMenuActive }">
+              <i class="el-icon-setting"></i>
+              <div class="nav-label">系统</div>
+            </div>
+          </template>
+          <div class="submenu-list">
+            <div 
+              v-if="hasMenu('users')" 
+              class="submenu-item" 
+              :class="{ active: currentView === 'users' }"
+              @click="navigateTo('users')"
+            >
+              <i class="el-icon-user"></i>
+              <span>用户管理</span>
+            </div>
+            <div 
+              v-if="hasMenu('roles')" 
+              class="submenu-item"
+              :class="{ active: currentView === 'roles' }"
+              @click="navigateTo('roles')"
+            >
+              <i class="el-icon-key"></i>
+              <span>角色管理</span>
+            </div>
+            <div 
+              v-if="hasMenu('menus')" 
+              class="submenu-item"
+              :class="{ active: currentView === 'menus' }"
+              @click="navigateTo('menus')"
+            >
+              <i class="el-icon-menu"></i>
+              <span>菜单管理</span>
+            </div>
+          </div>
+        </el-popover>
         
-        <!-- 公共菜单 -->
-        <div class="nav-icon" @click="navigateTo('settings')" :class="{ active: currentView === 'settings' }">
-          <i class="el-icon-setting"></i>
+        <!-- 设置 - 需要settings菜单权限 -->
+        <div v-if="hasMenu('settings')" class="nav-icon" @click="navigateTo('settings')" :class="{ active: currentView === 'settings' }">
+          <i class="el-icon-tools"></i>
           <div class="nav-label">设置</div>
         </div>
       </el-aside>
@@ -51,14 +97,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { getPermissionStore } from '@/stores/permission'
 
 const router = useRouter()
 const route = useRoute()
+const permissionStore = getPermissionStore()
+
 const currentView = ref('workbench')
-const username = ref('客服员工')
-const userRole = ref<string>('agent')
+const username = computed(() => permissionStore.getUser.value?.username || '用户')
+
+// 检查菜单权限
+const hasMenu = (menu: string): boolean => {
+  return permissionStore.hasMenu(menu)
+}
+
+// 系统菜单是否激活（用户、角色、菜单任意一个激活时）
+const isSystemMenuActive = computed(() => {
+  return ['users', 'roles', 'menus'].includes(currentView.value)
+})
 
 const navigateTo = (view: string) => {
   currentView.value = view
@@ -66,28 +124,13 @@ const navigateTo = (view: string) => {
 }
 
 const logout = () => {
-  localStorage.removeItem('auth_token')
-  localStorage.removeItem('user_info')
+  permissionStore.clearUser()
   router.push('/login')
 }
 
-const loadUserInfo = () => {
-  const userInfo = localStorage.getItem('user_info')
-  if (userInfo) {
-    try {
-      const user = JSON.parse(userInfo)
-      username.value = user.username || user.nickname || '用户'
-      userRole.value = user.role || 'agent'
-      console.log('加载用户信息:', { username: username.value, role: userRole.value })
-    } catch (e) {
-      console.error('解析用户信息失败:', e)
-    }
-  }
-}
-
 onMounted(() => {
-  // 加载用户信息
-  loadUserInfo()
+  // 确保权限store已初始化
+  permissionStore.init()
   
   // 根据当前路由设置激活状态
   const pathParts = route.path.split('/')
@@ -182,5 +225,38 @@ watch(() => route.path, (newPath) => {
   background-color: #f0f2f5;
   padding: 0;
   overflow: hidden;
+}
+
+/* 系统子菜单样式 */
+.submenu-list {
+  padding: 5px 0;
+}
+
+.submenu-item {
+  display: flex;
+  align-items: center;
+  padding: 10px 15px;
+  cursor: pointer;
+  color: #606266;
+  font-size: 14px;
+  transition: all 0.3s;
+  border-radius: 4px;
+  margin: 2px 5px;
+}
+
+.submenu-item i {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.submenu-item:hover {
+  background-color: #ecf5ff;
+  color: #409eff;
+}
+
+.submenu-item.active {
+  background-color: #ecf5ff;
+  color: #409eff;
+  font-weight: 500;
 }
 </style>

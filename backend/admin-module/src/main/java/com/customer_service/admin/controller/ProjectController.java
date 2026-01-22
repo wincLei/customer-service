@@ -1,6 +1,7 @@
 package com.customer_service.admin.controller;
 
 import com.customer_service.admin.service.ProjectService;
+import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.Project;
 import lombok.Data;
@@ -22,6 +23,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin/projects")
 @RequiredArgsConstructor
+@RequirePermission(value = "project:manage", roles = { "admin" })
 public class ProjectController {
 
     private final ProjectService projectService;

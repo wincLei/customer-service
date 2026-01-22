@@ -1,6 +1,7 @@
 package com.customer_service.admin.controller;
 
 import com.customer_service.admin.service.MessageService;
+import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.entity.Message;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -9,9 +10,14 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * 消息管理控制器
+ * 客服和管理员可访问
+ */
 @RestController
 @RequestMapping("/api/admin/messages")
 @RequiredArgsConstructor
+@RequirePermission(value = "workbench", roles = { "admin", "agent" })
 public class MessageController {
 
     private final MessageService messageService;

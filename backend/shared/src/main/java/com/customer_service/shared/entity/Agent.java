@@ -49,7 +49,7 @@ public class Agent {
     @Column(name = "current_load", nullable = false)
     private Integer currentLoad; // 当前接待量
 
-    @Column(name = "skill_groups", columnDefinition = "JSONB DEFAULT '[]'")
+    @Column(name = "skill_groups", columnDefinition = "JSONB")
     private String skillGroups;
 
     @Column(name = "welcome_message", columnDefinition = "TEXT")

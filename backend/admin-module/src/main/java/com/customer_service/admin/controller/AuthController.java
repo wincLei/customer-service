@@ -1,8 +1,14 @@
 package com.customer_service.admin.controller;
 
+import com.customer_service.shared.annotation.Public;
+import com.customer_service.shared.context.UserContextHolder;
 import com.customer_service.shared.dto.ApiResponse;
+import com.customer_service.shared.entity.SysRole;
 import com.customer_service.shared.entity.SysUser;
+import com.customer_service.shared.repository.SysRoleRepository;
 import com.customer_service.shared.repository.SysUserRepository;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,11 +24,14 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @RequestMapping("/api/admin/auth")
 @RequiredArgsConstructor
+@Public // 标记整个控制器为公开接口
 public class AuthController {
 
     private final StringRedisTemplate redisTemplate;
     private final SysUserRepository sysUserRepository;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final SysRoleRepository sysRoleRepository;
+    private final BCryptPasswordEncoder passwordEncoder;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @PostMapping("/login")
     public ApiResponse<?> login(@RequestBody LoginRequest request) {
@@ -81,8 +90,45 @@ public class AuthController {
         String roleCode = sysUser.getRoleCode();
         log.info("用户登录成功: {} (ID: {}, Role: {})", sysUser.getUsername(), sysUser.getId(), roleCode);
 
-        // 生成token（实际应该使用JWT）
+        // 生成token
         String token = UUID.randomUUID().toString().replace("-", "");
+
+        // 获取角色权限信息
+        List<String> permissions = new ArrayList<>();
+        Map<String, Object> permissionsMap = new HashMap<>();
+        Optional<SysRole> roleOpt = sysRoleRepository.findByCode(roleCode);
+        if (roleOpt.isPresent() && roleOpt.get().getPermissions() != null) {
+            try {
+                permissionsMap = objectMapper.readValue(roleOpt.get().getPermissions(),
+                        new TypeReference<Map<String, Object>>() {
+                        });
+                if (permissionsMap.get("menus") instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<String> menus = (List<String>) permissionsMap.get("menus");
+                    permissions.addAll(menus);
+                }
+                if (permissionsMap.get("actions") instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<String> actions = (List<String>) permissionsMap.get("actions");
+                    permissions.addAll(actions);
+                }
+            } catch (Exception e) {
+                log.error("解析角色权限失败", e);
+            }
+        }
+
+        // 将用户信息存储到Redis，用于后续请求验证（24小时过期）
+        Map<String, Object> tokenData = new HashMap<>();
+        tokenData.put("userId", sysUser.getId());
+        tokenData.put("username", sysUser.getUsername());
+        tokenData.put("roleCode", roleCode);
+        tokenData.put("permissions", permissions);
+        try {
+            String tokenJson = objectMapper.writeValueAsString(tokenData);
+            redisTemplate.opsForValue().set("token:" + token, tokenJson, 24, TimeUnit.HOURS);
+        } catch (Exception e) {
+            log.error("存储token失败", e);
+        }
 
         // 构建响应数据
         Map<String, Object> data = new HashMap<>();
@@ -93,6 +139,7 @@ public class AuthController {
         user.put("username", sysUser.getUsername());
         user.put("email", sysUser.getEmail());
         user.put("role", roleCode);
+        user.put("permissions", permissionsMap);
         user.put("avatar", sysUser.getAvatar() != null ? sysUser.getAvatar()
                 : "https://api.dicebear.com/7.x/avataaars/svg?seed=" + sysUser.getUsername());
         data.put("user", user);
@@ -101,8 +148,57 @@ public class AuthController {
     }
 
     @GetMapping("/logout")
-    public ApiResponse<?> logout() {
+    public ApiResponse<?> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        // 从Redis删除token
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            redisTemplate.delete("token:" + token);
+            log.info("用户登出，token已删除");
+        }
         return ApiResponse.success("Logout successful");
+    }
+
+    /**
+     * 获取当前用户信息（用于前端刷新权限）
+     */
+    @GetMapping("/me")
+    public ApiResponse<?> getCurrentUser() {
+        var context = UserContextHolder.getContext();
+        if (context == null) {
+            return ApiResponse.error(401, "未登录");
+        }
+
+        Optional<SysUser> userOpt = sysUserRepository.findById(context.getUserId());
+        if (userOpt.isEmpty()) {
+            return ApiResponse.error(404, "用户不存在");
+        }
+
+        SysUser sysUser = userOpt.get();
+        String roleCode = sysUser.getRoleCode();
+
+        // 获取最新的角色权限
+        Map<String, Object> permissionsMap = new HashMap<>();
+        Optional<SysRole> roleOpt = sysRoleRepository.findByCode(roleCode);
+        if (roleOpt.isPresent() && roleOpt.get().getPermissions() != null) {
+            try {
+                permissionsMap = objectMapper.readValue(roleOpt.get().getPermissions(),
+                        new TypeReference<Map<String, Object>>() {
+                        });
+            } catch (Exception e) {
+                log.error("解析角色权限失败", e);
+            }
+        }
+
+        Map<String, Object> user = new HashMap<>();
+        user.put("id", sysUser.getId());
+        user.put("username", sysUser.getUsername());
+        user.put("email", sysUser.getEmail());
+        user.put("role", roleCode);
+        user.put("permissions", permissionsMap);
+        user.put("avatar", sysUser.getAvatar() != null ? sysUser.getAvatar()
+                : "https://api.dicebear.com/7.x/avataaars/svg?seed=" + sysUser.getUsername());
+
+        return ApiResponse.success(user);
     }
 
     @GetMapping("/generate-hash")

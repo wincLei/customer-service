@@ -121,8 +121,10 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { authService } from '@/api/auth'
 import api from '@/api/index'
+import { getPermissionStore } from '@/stores/permission'
 
 const router = useRouter()
+const permissionStore = getPermissionStore()
 const loading = ref(false)
 const errorMessage = ref('')
 const showPassword = ref(false)
@@ -178,26 +180,23 @@ const handleLogin = async () => {
 
     if (response?.token) {
       const token = response.token
-      let userInfo = response.user || {}
+      const responseUser = response.user || {}
       
-      // 根据用户名判断角色（临时方案，实际应从后端返回）
-      if (!userInfo.role) {
-        if (form.value.username.includes('admin')) {
-          userInfo.role = 'admin'
-        } else if (form.value.username.includes('agent')) {
-          userInfo.role = 'agent'
-        } else {
-          userInfo.role = 'agent' // 默认为客服
-        }
-      }
-      
-      // 保存用户名
-      if (!userInfo.username) {
-        userInfo.username = form.value.username
+      // 构建完整的用户信息
+      const userInfo = {
+        id: responseUser.id || 0,
+        username: responseUser.username || form.value.username,
+        email: responseUser.email || '',
+        role: responseUser.role || 'agent',
+        avatar: responseUser.avatar || '',
+        permissions: responseUser.permissions || { menus: [], actions: [] }
       }
 
       localStorage.setItem('auth_token', token)
       localStorage.setItem('user_info', JSON.stringify(userInfo))
+      
+      // 更新权限store
+      permissionStore.setUser(userInfo)
 
       if (form.value.rememberMe) {
         localStorage.setItem('remember_username', form.value.username)
@@ -205,9 +204,18 @@ const handleLogin = async () => {
         localStorage.removeItem('remember_username')
       }
 
-      // 根据角色跳转
-      console.log('登录成功，用户角色:', userInfo.role)
-      const targetPath = userInfo.role === 'admin' ? '/admin/dashboard' : '/admin/workbench'
+      // 根据菜单权限决定跳转目标
+      console.log('登录成功，用户角色:', userInfo.role, '权限:', userInfo.permissions)
+      let targetPath = '/admin/settings'  // 默认跳转到设置页
+      
+      const menus = userInfo.permissions?.menus || []
+      if (menus.includes('dashboard')) {
+        targetPath = '/admin/dashboard'
+      } else if (menus.includes('workbench')) {
+        targetPath = '/admin/workbench'
+      } else if (menus.includes('projects')) {
+        targetPath = '/admin/projects'
+      }
       
       // 使用 replace 而不是 push，避免返回到登录页
       await router.replace(targetPath)

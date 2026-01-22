@@ -7,14 +7,20 @@ export interface LoginRequest {
   captchaKey?: string
 }
 
+export interface UserPermissions {
+  menus: string[]
+  actions: string[]
+}
+
 export interface LoginResponse {
   token: string
   user: {
-    id?: string
+    id?: number
     username?: string
     email?: string
     role?: string
     avatar?: string
+    permissions?: UserPermissions
   }
 }
 
