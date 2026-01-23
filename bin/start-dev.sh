@@ -10,8 +10,12 @@ nvm use v22.12.0
 echo "✅ 当前 Node 版本: $(node --version)"
 echo ""
 
+# 获取项目根目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$SCRIPT_DIR/.."
+
 # 进入 frontend 目录
-cd "$(dirname "$0")/frontend"
+cd "$PROJECT_ROOT/frontend"
 
 # 检查 8080 端口是否被占用
 if lsof -Pi :8080 -sTCP:LISTEN -t >/dev/null 2>&1; then

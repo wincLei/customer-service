@@ -1,0 +1,180 @@
+# 开发环境专用 docker-compose 配置
+# 使用本地预编译的 JAR/dist，支持快速重建单个服务
+
+services:
+  # PostgreSQL 数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: mini-customer-service-postgres
+    environment:
+      POSTGRES_DB: customer_service
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mini-customer-service-net
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: mini-customer-service-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mini-customer-service-net
+
+  # RocketMQ 消息队列
+  rocketmq-namesrv:
+    image: apache/rocketmq:5.1.4
+    container_name: rocketmq-namesrv
+    ports:
+      - "9876:9876"
+    environment:
+      JAVA_OPT: "-Xms512M -Xmx512M"
+    volumes:
+      - rocketmq_namesrv_data:/root/store
+    networks:
+      - mini-customer-service-net
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.1.4
+    container_name: rocketmq-broker
+    ports:
+      - "10911:10911"
+      - "10912:10912"
+      - "10909:10909"
+    environment:
+      JAVA_OPT: "-Xms1G -Xmx1G"
+      NAMESRV_ADDR: rocketmq-namesrv:9876
+      BROKER_IP1: rocketmq-broker
+    volumes:
+      - rocketmq_broker_data:/root/store
+    depends_on:
+      - rocketmq-namesrv
+    networks:
+      - mini-customer-service-net
+
+  # WuKongIM 即时通讯服务
+  wukongim:
+    image: wukongim/wukongim:latest
+    container_name: wukongim
+    ports:
+      - "5001:5000"
+      - "5101:5100"
+      - "5201:5200"
+    environment:
+      MYSQL_HOST: postgres
+      MYSQL_PORT: 5432
+      MYSQL_USER: postgres
+      MYSQL_PASSWORD: postgres123
+      MYSQL_DB: wukongim
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - mini-customer-service-net
+
+  # 后端 Admin API 服务 (使用本地预编译JAR)
+  backend-api:
+    build:
+      context: ./backend
+      dockerfile: admin.Dockerfile
+    image: mini-customer-service-backend:dev
+    container_name: mini-customer-service-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      ROCKETMQ_NAMESRV_ADDR: rocketmq-namesrv:9876
+      WUKONGIM_API_URL: http://wukongim:5000
+      TZ: Asia/Shanghai
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - mini-customer-service-net
+    restart: unless-stopped
+
+  # 门户 Portal API 服务 (使用本地预编译JAR)
+  portal-api:
+    build:
+      context: ./backend
+      dockerfile: portal-run.Dockerfile
+    image: mini-customer-service-portal:dev
+    container_name: mini-customer-service-portal-api
+    ports:
+      - "8082:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_service
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres123
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PORT: 6379
+      ROCKETMQ_NAMESRV_ADDR: rocketmq-namesrv:9876
+      WUKONGIM_API_URL: http://wukongim:5000
+      TZ: Asia/Shanghai
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - mini-customer-service-net
+    restart: unless-stopped
+
+  # 前端 Nginx 服务 (使用本地预编译dist)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: frontend-run.Dockerfile
+    image: mini-customer-service-frontend:dev
+    container_name: mini-customer-service-frontend
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - backend-api
+      - portal-api
+      - wukongim
+    networks:
+      - mini-customer-service-net
+    restart: unless-stopped
+
+networks:
+  mini-customer-service-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rocketmq_namesrv_data:
+    driver: local
+  rocketmq_broker_data:
+    driver: local

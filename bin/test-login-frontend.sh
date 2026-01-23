@@ -18,13 +18,18 @@ nvm use v22.12.0
 echo -e "${GREEN}✅ 当前 Node 版本: $(node --version)${NC}"
 echo ""
 
+# 获取项目根目录
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$SCRIPT_DIR/.."
+
 # 1. 检查当前目录
 echo -e "${BLUE}📂 当前工作目录:${NC}"
-pwd
+echo "$PROJECT_ROOT"
 echo ""
 
 # 2. 检查 Docker 服务状态
 echo -e "${BLUE}🐳 检查 Docker 服务状态:${NC}"
+cd "$PROJECT_ROOT"
 docker-compose ps
 echo ""
 
@@ -40,7 +45,7 @@ echo ""
 
 # 4. 检查前端依赖
 echo -e "${BLUE}📦 检查前端依赖:${NC}"
-cd frontend
+cd "$PROJECT_ROOT/frontend"
 if [ ! -d "node_modules" ]; then
     echo -e "${YELLOW}⚠️  未找到 node_modules，正在安装依赖...${NC}"
     npm install
