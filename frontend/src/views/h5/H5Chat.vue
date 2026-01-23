@@ -36,6 +36,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import request from '@/api'
 
 const route = useRoute()
 const showEmojiPicker = ref(false)
@@ -44,18 +45,126 @@ const messages = ref([
   { id: 1, sender: 'agent', text: '您好，请问有什么需要帮助的？', time: '14:30' },
 ])
 
-onMounted(() => {
-  // TODO: 解析 URL 参数并初始化用户信息
-  const params = {
-    token: route.query.token,
-    projectId: route.query.project_id,
-    uid: route.query.uid,
-    avatar: route.query.avatar,
-    nickName: route.query.nick_name,
-    phone: route.query.phone,
-    deviceType: route.query.device_type,
+// 游客用户 UID 的 localStorage Key
+const GUEST_UID_KEY = 'mini_cs_guest_uid'
+
+// 用户信息
+interface UserInfo {
+  uid: string
+  externalUid?: string
+  nickname?: string
+  avatar?: string
+  phone?: string
+  projectId: string
+  isGuest: boolean
+}
+
+const currentUser = ref<UserInfo | null>(null)
+
+/**
+ * 生成游客 UID
+ */
+const generateGuestUid = (): string => {
+  return 'guest_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11)
+}
+
+/**
+ * 获取或创建游客 UID
+ */
+const getOrCreateGuestUid = (projectId: string): string => {
+  const key = `${GUEST_UID_KEY}_${projectId}`
+  let guestUid = localStorage.getItem(key)
+  if (!guestUid) {
+    guestUid = generateGuestUid()
+    localStorage.setItem(key, guestUid)
   }
-  console.log('User params:', params)
+  return guestUid
+}
+
+/**
+ * 初始化或合并用户
+ */
+const initUser = async (params: {
+  projectId: string
+  externalUid?: string
+  nickname?: string
+  avatar?: string
+  phone?: string
+}) => {
+  const { projectId, externalUid, nickname, avatar, phone } = params
+  
+  // 获取本地存储的游客 UID
+  const guestUid = getOrCreateGuestUid(projectId)
+  
+  try {
+    // 调用后端 API 初始化/合并用户
+    const response = await request.post('/api/portal/user/init', {
+      projectId,
+      guestUid,
+      externalUid,
+      nickname,
+      avatar,
+      phone
+    })
+    
+    const userData = response.data
+    
+    // 如果返回了新的 UID（合并后），更新 localStorage
+    if (userData.uid && userData.uid !== guestUid) {
+      const key = `${GUEST_UID_KEY}_${projectId}`
+      localStorage.setItem(key, userData.uid)
+    }
+    
+    currentUser.value = {
+      uid: userData.uid,
+      externalUid: userData.externalUid,
+      nickname: userData.nickname,
+      avatar: userData.avatar,
+      phone: userData.phone,
+      projectId,
+      isGuest: userData.isGuest
+    }
+    
+    console.log('User initialized:', currentUser.value)
+    
+    // 如果发生了合并，可以加载历史消息
+    if (userData.merged) {
+      console.log('User merged from guest to registered user')
+      // TODO: 加载合并后的历史消息
+    }
+    
+  } catch (error) {
+    console.error('Failed to init user:', error)
+    // 失败时使用本地游客身份
+    currentUser.value = {
+      uid: guestUid,
+      projectId,
+      isGuest: true
+    }
+  }
+}
+
+onMounted(async () => {
+  // 解析 URL 参数
+  const projectId = route.query.project_id as string || route.query.projectId as string
+  
+  if (!projectId) {
+    console.error('Missing project_id parameter')
+    return
+  }
+  
+  const params = {
+    projectId,
+    externalUid: route.query.uid as string || route.query.external_uid as string,
+    avatar: route.query.avatar as string,
+    nickname: route.query.nick_name as string || route.query.nickname as string,
+    phone: route.query.phone as string,
+  }
+  
+  console.log('URL params:', params)
+  
+  // 初始化用户
+  await initUser(params)
   
   // TODO: 初始化 WuKongIM 连接
 })

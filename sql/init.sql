@@ -120,6 +120,8 @@ CREATE TABLE IF NOT EXISTS users (
     id BIGSERIAL PRIMARY KEY,
     project_id BIGINT NOT NULL REFERENCES projects(id),
     uid VARCHAR(100) NOT NULL,
+    external_uid VARCHAR(100),  -- 外部系统的唯一ID（可为空，表示游客）
+    is_guest BOOLEAN DEFAULT TRUE,  -- 是否游客
     nickname VARCHAR(100),
     avatar VARCHAR(500),
     email VARCHAR(100),
@@ -129,6 +131,7 @@ CREATE TABLE IF NOT EXISTS users (
     open_id VARCHAR(100),
     city VARCHAR(50),
     extra_info JSONB,
+    merged_from_id BIGINT,  -- 合并来源用户ID（用于标记已被合并的用户）
     last_active_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(project_id, uid)
@@ -136,8 +139,67 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE INDEX IF NOT EXISTS idx_users_project_phone ON users(project_id, phone);
 CREATE INDEX IF NOT EXISTS idx_users_project_uid ON users(project_id, uid);
+CREATE INDEX IF NOT EXISTS idx_users_project_external_uid ON users(project_id, external_uid);
+CREATE INDEX IF NOT EXISTS idx_users_is_guest ON users(project_id, is_guest);
 
--- 用户标签关联表
+-- 用户标签定义表（按项目管理标签）
+CREATE TABLE IF NOT EXISTS customer_tags (
+    id BIGSERIAL PRIMARY KEY,
+    project_id BIGINT NOT NULL REFERENCES projects(id),
+    name VARCHAR(50) NOT NULL,
+    color VARCHAR(20) DEFAULT '#409EFF',  -- 标签颜色
+    description VARCHAR(200),
+    sort_order INTEGER DEFAULT 0,
+    created_by BIGINT REFERENCES sys_users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(project_id, name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_customer_tags_project ON customer_tags(project_id);
+
+-- 用户标签关联表（多对多）
+CREATE TABLE IF NOT EXISTS user_tag_relations (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    tag_id BIGINT NOT NULL REFERENCES customer_tags(id) ON DELETE CASCADE,
+    tagged_by BIGINT REFERENCES sys_users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, tag_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_tag_relations_user ON user_tag_relations(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_tag_relations_tag ON user_tag_relations(tag_id);
+
+-- 用户分组表（可选，用于批量管理用户）
+CREATE TABLE IF NOT EXISTS customer_groups (
+    id BIGSERIAL PRIMARY KEY,
+    project_id BIGINT NOT NULL REFERENCES projects(id),
+    name VARCHAR(50) NOT NULL,
+    description VARCHAR(200),
+    is_system BOOLEAN DEFAULT FALSE,  -- 是否系统内置分组
+    sort_order INTEGER DEFAULT 0,
+    created_by BIGINT REFERENCES sys_users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(project_id, name)
+);
+
+CREATE INDEX IF NOT EXISTS idx_customer_groups_project ON customer_groups(project_id);
+
+-- 用户分组关联表
+CREATE TABLE IF NOT EXISTS user_group_relations (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    group_id BIGINT NOT NULL REFERENCES customer_groups(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, group_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_group_relations_user ON user_group_relations(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_group_relations_group ON user_group_relations(group_id);
+
+-- 旧版用户标签表（保留兼容，后续可删除）
 CREATE TABLE IF NOT EXISTS user_tags (
     id BIGSERIAL PRIMARY KEY,
     project_id BIGINT NOT NULL REFERENCES projects(id),
@@ -310,9 +372,9 @@ VALUES (
 
 -- 插入系统角色
 INSERT INTO sys_roles (code, name, description, permissions, is_system) VALUES
-('super_admin', '超级管理员', '拥有系统所有权限', '{"menus": ["dashboard", "workbench", "projects", "system", "users", "agents", "roles", "menus", "settings"], "actions": ["*"]}', TRUE),
-('admin', '管理员', '项目管理员，可以管理客服和查看统计', '{"menus": ["dashboard", "projects", "knowledge", "system", "users", "agents", "roles", "menus", "settings"], "actions": ["dashboard:view", "project:manage", "kb:manage", "user:manage", "agent:manage", "role:manage", "menu:manage", "settings:manage"]}', TRUE),
-('agent', '客服', '普通客服，可以接待用户', '{"menus": ["workbench", "knowledge", "settings"], "actions": ["workbench", "conversation:handle", "kb:view", "kb:manage"]}', TRUE),
+('super_admin', '超级管理员', '拥有系统所有权限', '{"menus": ["dashboard", "workbench", "projects", "system", "users", "agents", "roles", "menus", "settings", "client", "customers", "customer-tags"], "actions": ["*"]}', TRUE),
+('admin', '管理员', '项目管理员，可以管理客服和查看统计', '{"menus": ["dashboard", "projects", "knowledge", "system", "users", "agents", "roles", "menus", "settings", "client", "customers", "customer-tags"], "actions": ["dashboard:view", "project:manage", "kb:manage", "user:manage", "agent:manage", "role:manage", "menu:manage", "settings:manage", "customer:manage"]}', TRUE),
+('agent', '客服', '普通客服，可以接待用户', '{"menus": ["workbench", "knowledge", "settings", "client", "customers", "customer-tags"], "actions": ["workbench", "conversation:handle", "kb:view", "kb:manage", "customer:view"]}', TRUE),
 ('viewer', '观察员', '只能查看不能操作', '{"menus": ["dashboard"], "actions": ["dashboard:view"]}', FALSE)
 ON CONFLICT (code) DO NOTHING;
 
@@ -322,8 +384,15 @@ INSERT INTO sys_menus (code, name, type, parent_id, path, icon, sort_order, is_e
 ('workbench', '客服工作台', 'menu', NULL, '/admin/workbench', 'ChatLineSquare', 2, TRUE, '客服接待工作界面'),
 ('projects', '项目管理', 'menu', NULL, '/admin/projects', 'Folder', 3, TRUE, '管理客服项目'),
 ('knowledge', '知识库管理', 'menu', NULL, '/admin/knowledge', 'Document', 4, TRUE, '管理知识库分类和文章'),
-('system', '系统管理', 'menu', NULL, NULL, 'Setting', 5, TRUE, '系统管理功能'),
-('settings', '系统设置', 'menu', NULL, '/admin/settings', 'Tools', 6, TRUE, '系统配置')
+('client', '客户端', 'menu', NULL, NULL, 'UserFilled', 5, TRUE, '客户端用户管理'),
+('system', '系统管理', 'menu', NULL, NULL, 'Setting', 6, TRUE, '系统管理功能'),
+('settings', '系统设置', 'menu', NULL, '/admin/settings', 'Tools', 7, TRUE, '系统配置')
+ON CONFLICT (code) DO NOTHING;
+
+-- 插入客户端子菜单（二级菜单）
+INSERT INTO sys_menus (code, name, type, parent_id, path, icon, sort_order, is_enabled, description) VALUES
+('customers', '用户管理', 'menu', (SELECT id FROM sys_menus WHERE code = 'client'), '/admin/customers', 'User', 1, TRUE, '管理客户端用户'),
+('customer-tags', '标签管理', 'menu', (SELECT id FROM sys_menus WHERE code = 'client'), '/admin/customer-tags', 'PriceTag', 2, TRUE, '管理客户标签')
 ON CONFLICT (code) DO NOTHING;
 
 -- 插入系统管理子菜单（二级菜单）
@@ -345,7 +414,9 @@ INSERT INTO sys_menus (code, name, type, parent_id, path, icon, sort_order, is_e
 ('menu:manage', '菜单管理', 'button', (SELECT id FROM sys_menus WHERE code = 'menus'), NULL, NULL, 1, TRUE, '创建、编辑、删除菜单'),
 ('settings:manage', '设置管理', 'button', (SELECT id FROM sys_menus WHERE code = 'settings'), NULL, NULL, 1, TRUE, '修改系统设置'),
 ('conversation:handle', '处理会话', 'button', (SELECT id FROM sys_menus WHERE code = 'workbench'), NULL, NULL, 1, TRUE, '接待和处理用户会话'),
-('kb:view', '查看知识库', 'button', (SELECT id FROM sys_menus WHERE code = 'workbench'), NULL, NULL, 2, TRUE, '查看知识库内容')
+('kb:view', '查看知识库', 'button', (SELECT id FROM sys_menus WHERE code = 'workbench'), NULL, NULL, 2, TRUE, '查看知识库内容'),
+('customer:manage', '客户管理', 'button', (SELECT id FROM sys_menus WHERE code = 'customers'), NULL, NULL, 1, TRUE, '管理客户信息和标签'),
+('customer:view', '查看客户', 'button', (SELECT id FROM sys_menus WHERE code = 'customers'), NULL, NULL, 2, TRUE, '查看客户信息')
 ON CONFLICT (code) DO NOTHING;
 
 -- 插入系统用户（密码: admin123 的 BCrypt 哈希值）
@@ -376,9 +447,8 @@ INSERT INTO sys_users (username, password_hash, email, role_id, status) VALUES
 ON CONFLICT DO NOTHING;
 
 -- 插入客服信息（关联到sys_users）
-INSERT INTO agents (project_id, user_id, nickname, work_status, max_load, current_load) VALUES
+INSERT INTO agents (user_id, nickname, work_status, max_load, current_load) VALUES
 (
-    1,
     (SELECT id FROM sys_users WHERE username = 'agent1'),
     '客服1',
     'online',
@@ -386,12 +456,23 @@ INSERT INTO agents (project_id, user_id, nickname, work_status, max_load, curren
     2
 ),
 (
-    1,
     (SELECT id FROM sys_users WHERE username = 'agent2'),
     '客服2',
     'offline',
     5,
     0
+)
+ON CONFLICT DO NOTHING;
+
+-- 插入客服与项目的关联关系
+INSERT INTO user_projects (user_id, project_id) VALUES
+(
+    (SELECT id FROM sys_users WHERE username = 'agent1'),
+    1
+),
+(
+    (SELECT id FROM sys_users WHERE username = 'agent2'),
+    1
 )
 ON CONFLICT DO NOTHING;
 

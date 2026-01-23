@@ -84,6 +84,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '知识库管理', menu: 'knowledge' },
       },
       {
+        path: 'customers',
+        name: 'CustomerManagement',
+        component: () => import('@/views/admin/CustomerManagement.vue'),
+        meta: { title: '客户管理', menu: 'customers' },
+      },
+      {
+        path: 'customer-tags',
+        name: 'CustomerTagManagement',
+        component: () => import('@/views/admin/CustomerTagManagement.vue'),
+        meta: { title: '标签管理', menu: 'customer-tags' },
+      },
+      {
         path: 'settings',
         name: 'Settings',
         component: () => import('@/views/admin/Settings.vue'),

@@ -27,6 +27,43 @@
           <div class="nav-label">知识库</div>
         </div>
 
+        <!-- 客户端 - 包含客户管理、标签管理子菜单 -->
+        <el-popover
+          v-if="hasMenu('customers') || hasMenu('customer-tags')"
+          placement="right-start"
+          :width="140"
+          trigger="hover"
+          :show-arrow="false"
+          popper-class="system-submenu-popover"
+        >
+          <template #reference>
+            <div class="nav-icon" :class="{ active: isClientMenuActive }">
+              <i class="el-icon-user-filled"></i>
+              <div class="nav-label">客户端</div>
+            </div>
+          </template>
+          <div class="submenu-list">
+            <div 
+              v-if="hasMenu('customers')" 
+              class="submenu-item" 
+              :class="{ active: currentView === 'customers' }"
+              @click="navigateTo('customers')"
+            >
+              <i class="el-icon-user"></i>
+              <span>用户管理</span>
+            </div>
+            <div 
+              v-if="hasMenu('customer-tags')" 
+              class="submenu-item" 
+              :class="{ active: currentView === 'customer-tags' }"
+              @click="navigateTo('customer-tags')"
+            >
+              <i class="el-icon-price-tag"></i>
+              <span>标签管理</span>
+            </div>
+          </div>
+        </el-popover>
+
         <!-- 系统管理 - 包含用户、角色、菜单、客服子菜单 -->
         <el-popover
           v-if="hasMenu('system') || hasMenu('users') || hasMenu('roles') || hasMenu('menus') || hasMenu('agents')"
@@ -136,6 +173,11 @@ const hasMenu = (menu: string): boolean => {
 // 系统菜单是否激活（用户、客服、角色、菜单任意一个激活时）
 const isSystemMenuActive = computed(() => {
   return ['users', 'agents', 'roles', 'menus'].includes(currentView.value)
+})
+
+// 客户端菜单是否激活（客户管理、标签管理任意一个激活时）
+const isClientMenuActive = computed(() => {
+  return ['customers', 'customer-tags'].includes(currentView.value)
 })
 
 const navigateTo = (view: string) => {
