@@ -60,6 +60,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '用户管理', menu: 'users' },
       },
       {
+        path: 'agents',
+        name: 'AgentManagement',
+        component: () => import('@/views/admin/AgentManagement.vue'),
+        meta: { title: '客服管理', menu: 'agents' },
+      },
+      {
         path: 'roles',
         name: 'RoleManagement',
         component: () => import('@/views/admin/RoleManagement.vue'),
@@ -70,6 +76,12 @@ const routes: RouteRecordRaw[] = [
         name: 'MenuManagement',
         component: () => import('@/views/admin/MenuManagement.vue'),
         meta: { title: '菜单管理', menu: 'menus' },
+      },
+      {
+        path: 'knowledge',
+        name: 'KnowledgeBase',
+        component: () => import('@/views/admin/KnowledgeBase.vue'),
+        meta: { title: '知识库管理', menu: 'knowledge' },
       },
       {
         path: 'settings',

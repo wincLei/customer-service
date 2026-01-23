@@ -11,12 +11,12 @@ import java.time.LocalDateTime;
 /**
  * 客服/坐席实体
  * 只包含客服业务相关信息，登录认证信息在SysUser中
+ * 一个用户只能有一个客服记录，通过 user_projects 表关联多个项目
  */
 @Entity
 @Table(name = "agents", indexes = {
-        @Index(name = "idx_agents_project", columnList = "project_id"),
         @Index(name = "idx_agents_user", columnList = "user_id"),
-        @Index(name = "idx_agents_status", columnList = "project_id,work_status")
+        @Index(name = "idx_agents_status", columnList = "work_status")
 })
 @Data
 @Builder
@@ -27,10 +27,7 @@ public class Agent {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "project_id", nullable = false)
-    private Long projectId;
-
-    @Column(name = "user_id", nullable = false)
+    @Column(name = "user_id", nullable = false, unique = true)
     private Long userId;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -49,7 +46,7 @@ public class Agent {
     @Column(name = "current_load", nullable = false)
     private Integer currentLoad; // 当前接待量
 
-    @Column(name = "skill_groups", columnDefinition = "JSONB")
+    @Column(name = "skill_groups", columnDefinition = "TEXT")
     private String skillGroups;
 
     @Column(name = "welcome_message", columnDefinition = "TEXT")

@@ -73,26 +73,35 @@ CREATE TABLE IF NOT EXISTS sys_users (
 CREATE INDEX IF NOT EXISTS idx_sys_users_username ON sys_users(username);
 CREATE INDEX IF NOT EXISTS idx_sys_users_role ON sys_users(role_id);
 
--- 客服/坐席表（客服业务信息）
+-- 用户-项目关联表（用于控制客服能访问哪些项目）
+CREATE TABLE IF NOT EXISTS user_projects (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES sys_users(id) ON DELETE CASCADE,
+    project_id BIGINT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, project_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_projects_user ON user_projects(user_id);
+CREATE INDEX IF NOT EXISTS idx_user_projects_project ON user_projects(project_id);
+
+-- 客服/坐席表（客服业务信息，一个用户只能有一个客服记录）
 CREATE TABLE IF NOT EXISTS agents (
     id BIGSERIAL PRIMARY KEY,
-    project_id BIGINT NOT NULL REFERENCES projects(id),
-    user_id BIGINT NOT NULL REFERENCES sys_users(id),
+    user_id BIGINT NOT NULL UNIQUE REFERENCES sys_users(id) ON DELETE CASCADE,
     nickname VARCHAR(50),
     work_status VARCHAR(20) DEFAULT 'offline',
     max_load INTEGER DEFAULT 5,
     current_load INTEGER DEFAULT 0,
-    skill_groups JSONB DEFAULT '[]',
+    skill_groups TEXT DEFAULT '[]',
     welcome_message TEXT,
     auto_reply_enabled BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(project_id, user_id)
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE INDEX IF NOT EXISTS idx_agents_project ON agents(project_id);
 CREATE INDEX IF NOT EXISTS idx_agents_user ON agents(user_id);
-CREATE INDEX IF NOT EXISTS idx_agents_status ON agents(project_id, work_status);
+CREATE INDEX IF NOT EXISTS idx_agents_status ON agents(work_status);
 
 -- 快捷回复表
 CREATE TABLE IF NOT EXISTS quick_replies (
@@ -301,9 +310,9 @@ VALUES (
 
 -- 插入系统角色
 INSERT INTO sys_roles (code, name, description, permissions, is_system) VALUES
-('super_admin', '超级管理员', '拥有系统所有权限', '{"menus": ["dashboard", "workbench", "projects", "system", "users", "roles", "menus", "settings"], "actions": ["*"]}', TRUE),
-('admin', '管理员', '项目管理员，可以管理客服和查看统计', '{"menus": ["dashboard", "projects", "system", "users", "roles", "menus", "settings"], "actions": ["dashboard:view", "project:manage", "user:manage", "role:manage", "menu:manage", "settings:manage"]}', TRUE),
-('agent', '客服', '普通客服，可以接待用户', '{"menus": ["workbench", "settings"], "actions": ["workbench", "conversation:handle", "kb:view"]}', TRUE),
+('super_admin', '超级管理员', '拥有系统所有权限', '{"menus": ["dashboard", "workbench", "projects", "system", "users", "agents", "roles", "menus", "settings"], "actions": ["*"]}', TRUE),
+('admin', '管理员', '项目管理员，可以管理客服和查看统计', '{"menus": ["dashboard", "projects", "knowledge", "system", "users", "agents", "roles", "menus", "settings"], "actions": ["dashboard:view", "project:manage", "kb:manage", "user:manage", "agent:manage", "role:manage", "menu:manage", "settings:manage"]}', TRUE),
+('agent', '客服', '普通客服，可以接待用户', '{"menus": ["workbench", "knowledge", "settings"], "actions": ["workbench", "conversation:handle", "kb:view", "kb:manage"]}', TRUE),
 ('viewer', '观察员', '只能查看不能操作', '{"menus": ["dashboard"], "actions": ["dashboard:view"]}', FALSE)
 ON CONFLICT (code) DO NOTHING;
 
@@ -312,22 +321,26 @@ INSERT INTO sys_menus (code, name, type, parent_id, path, icon, sort_order, is_e
 ('dashboard', '数据概览', 'menu', NULL, '/admin/dashboard', 'DataAnalysis', 1, TRUE, '系统数据统计和概览'),
 ('workbench', '客服工作台', 'menu', NULL, '/admin/workbench', 'ChatLineSquare', 2, TRUE, '客服接待工作界面'),
 ('projects', '项目管理', 'menu', NULL, '/admin/projects', 'Folder', 3, TRUE, '管理客服项目'),
-('system', '系统管理', 'menu', NULL, NULL, 'Setting', 4, TRUE, '系统管理功能'),
-('settings', '系统设置', 'menu', NULL, '/admin/settings', 'Tools', 5, TRUE, '系统配置')
+('knowledge', '知识库管理', 'menu', NULL, '/admin/knowledge', 'Document', 4, TRUE, '管理知识库分类和文章'),
+('system', '系统管理', 'menu', NULL, NULL, 'Setting', 5, TRUE, '系统管理功能'),
+('settings', '系统设置', 'menu', NULL, '/admin/settings', 'Tools', 6, TRUE, '系统配置')
 ON CONFLICT (code) DO NOTHING;
 
 -- 插入系统管理子菜单（二级菜单）
 INSERT INTO sys_menus (code, name, type, parent_id, path, icon, sort_order, is_enabled, description) VALUES
 ('users', '用户管理', 'menu', (SELECT id FROM sys_menus WHERE code = 'system'), '/admin/users', 'User', 1, TRUE, '管理系统用户'),
-('roles', '角色管理', 'menu', (SELECT id FROM sys_menus WHERE code = 'system'), '/admin/roles', 'Key', 2, TRUE, '管理用户角色和权限'),
-('menus', '菜单管理', 'menu', (SELECT id FROM sys_menus WHERE code = 'system'), '/admin/menus', 'Menu', 3, TRUE, '管理系统菜单和权限')
+('agents', '客服管理', 'menu', (SELECT id FROM sys_menus WHERE code = 'system'), '/admin/agents', 'Headset', 2, TRUE, '管理客服人员和项目分配'),
+('roles', '角色管理', 'menu', (SELECT id FROM sys_menus WHERE code = 'system'), '/admin/roles', 'Key', 3, TRUE, '管理用户角色和权限'),
+('menus', '菜单管理', 'menu', (SELECT id FROM sys_menus WHERE code = 'system'), '/admin/menus', 'Menu', 4, TRUE, '管理系统菜单和权限')
 ON CONFLICT (code) DO NOTHING;
 
 -- 插入操作权限（按钮级别）
 INSERT INTO sys_menus (code, name, type, parent_id, path, icon, sort_order, is_enabled, description) VALUES
 ('dashboard:view', '查看数据', 'button', (SELECT id FROM sys_menus WHERE code = 'dashboard'), NULL, NULL, 1, TRUE, '查看数据概览'),
 ('project:manage', '项目管理', 'button', (SELECT id FROM sys_menus WHERE code = 'projects'), NULL, NULL, 1, TRUE, '创建、编辑、删除项目'),
+('kb:manage', '知识库管理', 'button', (SELECT id FROM sys_menus WHERE code = 'knowledge'), NULL, NULL, 1, TRUE, '创建、编辑、删除知识库分类和文章'),
 ('user:manage', '用户管理', 'button', (SELECT id FROM sys_menus WHERE code = 'users'), NULL, NULL, 1, TRUE, '创建、编辑、删除用户'),
+('agent:manage', '客服管理', 'button', (SELECT id FROM sys_menus WHERE code = 'agents'), NULL, NULL, 1, TRUE, '配置客服人员和项目分配'),
 ('role:manage', '角色管理', 'button', (SELECT id FROM sys_menus WHERE code = 'roles'), NULL, NULL, 1, TRUE, '创建、编辑、删除角色'),
 ('menu:manage', '菜单管理', 'button', (SELECT id FROM sys_menus WHERE code = 'menus'), NULL, NULL, 1, TRUE, '创建、编辑、删除菜单'),
 ('settings:manage', '设置管理', 'button', (SELECT id FROM sys_menus WHERE code = 'settings'), NULL, NULL, 1, TRUE, '修改系统设置'),

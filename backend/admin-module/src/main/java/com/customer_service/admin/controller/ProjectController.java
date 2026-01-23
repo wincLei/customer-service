@@ -2,6 +2,7 @@ package com.customer_service.admin.controller;
 
 import com.customer_service.admin.service.ProjectService;
 import com.customer_service.shared.annotation.RequirePermission;
+import com.customer_service.shared.context.UserContextHolder;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.Project;
 import lombok.Data;
@@ -23,15 +24,40 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin/projects")
 @RequiredArgsConstructor
-@RequirePermission(value = "project:manage", roles = { "admin" })
 public class ProjectController {
 
     private final ProjectService projectService;
 
     /**
+     * 获取所有项目列表（简单列表，用于下拉选择）
+     * 客服只能看到关联的项目，管理员可以看到所有项目
+     */
+    @GetMapping("/all")
+    @RequirePermission(value = "workbench", roles = { "admin", "agent" })
+    public ApiResponse<List<Map<String, Object>>> getAllProjects() {
+        String roleCode = UserContextHolder.getRoleCode();
+        Long userId = UserContextHolder.getUserId();
+
+        List<Project> projects;
+        if ("agent".equals(roleCode) && userId != null) {
+            // 客服只能看到关联的项目
+            projects = projectService.getProjectsByUserId(userId);
+        } else {
+            // 管理员可以看到所有项目
+            projects = projectService.getAllProjects();
+        }
+
+        List<Map<String, Object>> result = projects.stream()
+                .map(this::toSimpleProjectVO)
+                .collect(Collectors.toList());
+        return ApiResponse.success(result);
+    }
+
+    /**
      * 获取项目列表（支持分页和搜索）
      */
     @GetMapping
+    @RequirePermission(value = "project:manage", roles = { "admin" })
     public ApiResponse<?> listProjects(
             @RequestParam(required = false, defaultValue = "") String keyword,
             @RequestParam(required = false, defaultValue = "1") int page,
@@ -54,6 +80,7 @@ public class ProjectController {
      * 获取单个项目详情
      */
     @GetMapping("/{id}")
+    @RequirePermission(value = "project:manage", roles = { "admin" })
     public ApiResponse<?> getProject(@PathVariable Long id) {
         return projectService.getProjectById(id)
                 .map(project -> ApiResponse.success(toProjectVO(project)))
@@ -64,6 +91,7 @@ public class ProjectController {
      * 创建项目
      */
     @PostMapping
+    @RequirePermission(value = "project:manage", roles = { "admin" })
     public ApiResponse<?> createProject(@RequestBody CreateProjectRequest request) {
         if (request.getName() == null || request.getName().trim().isEmpty()) {
             return ApiResponse.error("项目名称不能为空");
@@ -83,6 +111,7 @@ public class ProjectController {
      * 更新项目
      */
     @PutMapping("/{id}")
+    @RequirePermission(value = "project:manage", roles = { "admin" })
     public ApiResponse<?> updateProject(@PathVariable Long id, @RequestBody UpdateProjectRequest request) {
         if (request.getName() == null || request.getName().trim().isEmpty()) {
             return ApiResponse.error("项目名称不能为空");
@@ -101,6 +130,7 @@ public class ProjectController {
      * 删除项目
      */
     @DeleteMapping("/{id}")
+    @RequirePermission(value = "project:manage", roles = { "admin" })
     public ApiResponse<?> deleteProject(@PathVariable Long id) {
         try {
             projectService.deleteProject(id);
@@ -115,6 +145,7 @@ public class ProjectController {
      * 重新生成AppSecret
      */
     @PostMapping("/{id}/regenerate-secret")
+    @RequirePermission(value = "project:manage", roles = { "admin" })
     public ApiResponse<?> regenerateSecret(@PathVariable Long id) {
         try {
             Project project = projectService.regenerateAppSecret(id);
@@ -126,7 +157,7 @@ public class ProjectController {
     }
 
     /**
-     * 转换为VO对象
+     * 转换为VO对象（完整信息）
      */
     private Map<String, Object> toProjectVO(Project project) {
         Map<String, Object> vo = new HashMap<>();
@@ -137,6 +168,16 @@ public class ProjectController {
         vo.put("appSecret", project.getAppSecret());
         vo.put("createdAt", project.getCreatedAt());
         vo.put("updatedAt", project.getUpdatedAt());
+        return vo;
+    }
+
+    /**
+     * 转换为简单VO对象（用于下拉选择）
+     */
+    private Map<String, Object> toSimpleProjectVO(Project project) {
+        Map<String, Object> vo = new HashMap<>();
+        vo.put("id", project.getId());
+        vo.put("name", project.getName());
         return vo;
     }
 

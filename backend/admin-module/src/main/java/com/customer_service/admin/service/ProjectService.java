@@ -1,7 +1,9 @@
 package com.customer_service.admin.service;
 
 import com.customer_service.shared.entity.Project;
+import com.customer_service.shared.entity.UserProject;
 import com.customer_service.shared.repository.ProjectRepository;
+import com.customer_service.shared.repository.UserProjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -14,18 +16,30 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final UserProjectRepository userProjectRepository;
 
     /**
      * 获取所有项目
      */
     public List<Project> getAllProjects() {
         return projectRepository.findAll();
+    }
+
+    /**
+     * 根据用户ID获取关联的项目列表
+     */
+    public List<Project> getProjectsByUserId(Long userId) {
+        List<UserProject> userProjects = userProjectRepository.findByUserId(userId);
+        return userProjects.stream()
+                .map(UserProject::getProject)
+                .collect(Collectors.toList());
     }
 
     /**

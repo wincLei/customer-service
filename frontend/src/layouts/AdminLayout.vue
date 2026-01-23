@@ -21,9 +21,15 @@
           <div class="nav-label">项目</div>
         </div>
 
-        <!-- 系统管理 - 包含用户、角色、菜单子菜单 -->
+        <!-- 知识库 - 需要knowledge菜单权限 -->
+        <div v-if="hasMenu('knowledge')" class="nav-icon" @click="navigateTo('knowledge')" :class="{ active: currentView === 'knowledge' }">
+          <i class="el-icon-document"></i>
+          <div class="nav-label">知识库</div>
+        </div>
+
+        <!-- 系统管理 - 包含用户、角色、菜单、客服子菜单 -->
         <el-popover
-          v-if="hasMenu('system') || hasMenu('users') || hasMenu('roles') || hasMenu('menus')"
+          v-if="hasMenu('system') || hasMenu('users') || hasMenu('roles') || hasMenu('menus') || hasMenu('agents')"
           placement="right-start"
           :width="140"
           trigger="hover"
@@ -45,6 +51,15 @@
             >
               <i class="el-icon-user"></i>
               <span>用户管理</span>
+            </div>
+            <div 
+              v-if="hasMenu('agents')" 
+              class="submenu-item" 
+              :class="{ active: currentView === 'agents' }"
+              @click="navigateTo('agents')"
+            >
+              <i class="el-icon-headset"></i>
+              <span>客服管理</span>
             </div>
             <div 
               v-if="hasMenu('roles')" 
@@ -79,7 +94,7 @@
         <!-- 顶部栏 -->
         <el-header height="50px" class="header">
           <div class="header-left">
-            <span class="system-title">客服工作台</span>
+            <span v-if="isAgent" class="system-title">客服工作台</span>
           </div>
           <div class="header-right">
             <span class="user-info">{{ username }}</span>
@@ -108,14 +123,19 @@ const permissionStore = getPermissionStore()
 const currentView = ref('workbench')
 const username = computed(() => permissionStore.getUser.value?.username || '用户')
 
+// 判断是否是客服角色
+const isAgent = computed(() => {
+  return permissionStore.hasRole('agent')
+})
+
 // 检查菜单权限
 const hasMenu = (menu: string): boolean => {
   return permissionStore.hasMenu(menu)
 }
 
-// 系统菜单是否激活（用户、角色、菜单任意一个激活时）
+// 系统菜单是否激活（用户、客服、角色、菜单任意一个激活时）
 const isSystemMenuActive = computed(() => {
-  return ['users', 'roles', 'menus'].includes(currentView.value)
+  return ['users', 'agents', 'roles', 'menus'].includes(currentView.value)
 })
 
 const navigateTo = (view: string) => {

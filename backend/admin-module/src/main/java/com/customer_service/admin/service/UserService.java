@@ -6,6 +6,7 @@ import com.customer_service.shared.entity.Agent;
 import com.customer_service.shared.entity.User;
 import com.customer_service.shared.entity.UserTag;
 import com.customer_service.shared.repository.AgentRepository;
+import com.customer_service.shared.repository.UserProjectRepository;
 import com.customer_service.shared.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,6 +26,7 @@ public class UserService {
     private final UserTagRepository userTagRepository;
     private final AgentRepository agentRepository;
     private final ConversationRepository conversationRepository;
+    private final UserProjectRepository userProjectRepository;
 
     /**
      * 根据UID获取用户信息
@@ -84,10 +86,18 @@ public class UserService {
     }
 
     /**
-     * 获取客服列表（包含活跃会话数）
+     * 获取项目的客服列表（包含活跃会话数）
+     * 通过 user_projects 表关联查询该项目下的客服
      */
     public List<Map<String, Object>> getAgentList(Long projectId) {
-        List<Agent> agents = agentRepository.findByProjectId(projectId);
+        // 先查询关联到该项目的用户ID列表
+        List<Long> userIds = userProjectRepository.findUserIdsByProjectId(projectId);
+        if (userIds.isEmpty()) {
+            return List.of();
+        }
+
+        // 查询这些用户对应的客服记录
+        List<Agent> agents = agentRepository.findByUserIdIn(userIds);
 
         return agents.stream().map(agent -> {
             Map<String, Object> agentInfo = new HashMap<>();
