@@ -69,20 +69,19 @@ services:
     networks:
       - mini-customer-service-net
 
-  # WuKongIM 即时通讯服务
+  # WuKongIM 即时通讯服务 (v2 支持 JSON-RPC 协议)
   wukongim:
-    image: wukongim/wukongim:latest
+    image: wukongim/wukongim:v2
     container_name: wukongim
     ports:
-      - "5001:5000"  # HTTP API
-      - "5101:5100"  # TCP 连接
-      - "5201:5200"  # WebSocket 连接
+      - "5001:5001"  # HTTP API - 生产环境建议只允许内网访问
+      - "5100:5100"  # TCP 连接 - 生产环境建议只允许内网访问
+      - "5200:5200"  # WebSocket 连接 - 前端需要访问
     environment:
-      MYSQL_HOST: postgres
-      MYSQL_PORT: 5432
-      MYSQL_USER: postgres
-      MYSQL_PASSWORD: postgres123
-      MYSQL_DB: wukongim
+      WK_MODE: release
+      # 安全配置
+      WK_TOKENAUTHON: "1"  # 开启 token 验证
+      WK_MANAGERTOKEN: "wukongim_admin_secret_2026"  # API 管理密钥
     depends_on:
       postgres:
         condition: service_healthy
@@ -104,7 +103,8 @@ services:
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       ROCKETMQ_NAMESRV_ADDR: rocketmq-namesrv:9876
-      WUKONGIM_API_URL: http://wukongim:5000
+      WUKONGIM_API_URL: http://wukongim:5001
+      WUKONGIM_APP_KEY: wukongim_admin_secret_2026
       TZ: Asia/Shanghai
     depends_on:
       postgres:
@@ -130,7 +130,8 @@ services:
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       ROCKETMQ_NAMESRV_ADDR: rocketmq-namesrv:9876
-      WUKONGIM_API_URL: http://wukongim:5000
+      WUKONGIM_API_URL: http://wukongim:5001
+      WUKONGIM_APP_KEY: wukongim_admin_secret_2026
       TZ: Asia/Shanghai
     depends_on:
       postgres:

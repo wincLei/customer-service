@@ -107,10 +107,4 @@ public class PublicAuthController {
 
         return ApiResponse.success(response);
     }
-
-    @GetMapping("/visitor")
-    public ApiResponse<LoginResponse> visitorLogin() {
-        // TODO: Implement visitor login
-        return ApiResponse.fail(500, "Not implemented");
-    }
 }

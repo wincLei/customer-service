@@ -96,6 +96,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '标签管理', menu: 'customer-tags' },
       },
       {
+        path: 'tickets',
+        name: 'TicketManagement',
+        component: () => import('@/views/admin/TicketManagement.vue'),
+        meta: { title: '工单管理', menu: 'tickets' },
+      },
+      {
         path: 'settings',
         name: 'Settings',
         component: () => import('@/views/admin/Settings.vue'),
@@ -121,6 +127,17 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/mobile/chat',
+    component: () => import('@/layouts/MobileLayout.vue'),
+    children: [
+      {
+        path: '',
+        component: () => import('@/views/h5/H5Chat.vue'),
+        meta: { title: '客服对话' },
+      },
+    ],
+  },
+  {
+    path: '/h5/chat',
     component: () => import('@/layouts/MobileLayout.vue'),
     children: [
       {

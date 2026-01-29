@@ -11,6 +11,11 @@
           </el-tab-pane>
           <el-tab-pane label="我的会话" name="my"></el-tab-pane>
         </el-tabs>
+        <!-- IM 连接状态指示器 -->
+        <div class="im-status" :class="{ connected: imConnected, connecting: imConnecting }">
+          <span class="status-dot"></span>
+          <span class="status-text">{{ imConnected ? 'IM已连接' : imConnecting ? '连接中...' : 'IM未连接' }}</span>
+        </div>
       </div>
       
       <div class="list-content">
@@ -18,23 +23,29 @@
           v-for="conv in conversations" 
           :key="conv.id" 
           class="conversation-item"
-          :class="{ active: selectedConversation?.id === conv.id }"
+          :class="{ active: selectedConversation?.userId === conv.userId }"
           @click="selectConversation(conv)"
         >
           <div class="conv-avatar">
-            <el-avatar :size="40">U</el-avatar>
+            <el-avatar :size="40" :src="conv.avatar">{{ conv.userName?.charAt(0) || 'U' }}</el-avatar>
           </div>
           <div class="conv-info">
             <div class="conv-header">
-              <span class="conv-user">用户{{ conv.userId }}</span>
+              <span class="conv-user">
+                {{ conv.userName || conv.userId }}
+                <el-tag size="small" type="info" class="device-tag">{{ conv.deviceType || 'PC端' }}</el-tag>
+              </span>
               <span class="conv-time">{{ formatTime(conv.lastMessageTime) }}</span>
             </div>
             <div class="conv-message">{{ conv.lastMessage || '暂无消息' }}</div>
           </div>
-          <div class="conv-actions" v-if="activeTab === 'pending'">
+          <div class="conv-actions" v-if="activeTab === 'pending' && conv.unreadCount && conv.unreadCount > 0">
             <el-button size="small" type="primary" plain @click.stop="acceptConversation(conv)">
               接入
             </el-button>
+          </div>
+          <div class="conv-unread" v-else-if="conv.unreadCount && conv.unreadCount > 0">
+            <el-badge :value="conv.unreadCount" :max="99" />
           </div>
         </div>
         
@@ -48,15 +59,16 @@
         <!-- 聊天头部 -->
         <div class="chat-header">
           <div class="user-info-bar">
-            <el-avatar :size="32">U</el-avatar>
-            <span class="user-name">用户{{ selectedConversation.userId }}</span>
+            <el-avatar :size="32" :src="selectedConversation.avatar">{{ selectedConversation.userName?.charAt(0) || 'U' }}</el-avatar>
+            <span class="user-name">{{ selectedConversation.userName || selectedConversation.userId }}</span>
+            <el-tag size="small" type="info">{{ selectedConversation.deviceType || 'PC端' }}</el-tag>
           </div>
           <div class="chat-actions">
             <el-button size="small" @click="showUserPanel = !showUserPanel">
               <el-icon><User /></el-icon> 用户信息
             </el-button>
-            <el-button size="small" type="danger" @click="closeConversation">
-              <el-icon><Close /></el-icon> 结束会话
+            <el-button size="small" type="info" @click="closeConversation">
+              <el-icon><Close /></el-icon> 关闭
             </el-button>
           </div>
         </div>
@@ -127,12 +139,12 @@
             </div>
             <div class="detail-item">
               <label>昵称:</label>
-              <span>用户{{ selectedConversation.userId }}</span>
+              <span>{{ selectedConversation.userName || '用户' + selectedConversation.userId }}</span>
             </div>
             <div class="detail-item">
-              <label>会话状态:</label>
-              <el-tag :type="selectedConversation.status === 'active' ? 'success' : 'info'" size="small">
-                {{ selectedConversation.status === 'active' ? '进行中' : selectedConversation.status }}
+              <label>设备类型:</label>
+              <el-tag type="info" size="small">
+                {{ selectedConversation.deviceType || 'PC端' }}
               </el-tag>
             </div>
             <div class="detail-item">
@@ -181,20 +193,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, nextTick, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { User, Close, Notebook, ChatDotSquare, Plus } from '@element-plus/icons-vue'
+import { WKIM, WKIMEvent } from 'easyjssdk'
+import { DeviceType, WKChannelType } from '@/constants'
+
+// IM 相关状态
+let imInstance: ReturnType<typeof WKIM.init> | null = null
+const imConnected = ref(false)
+const imConnecting = ref(false)
 
 // 类型定义
-interface Conversation {
+interface UserConversation {
   id: number
   userId: number
+  userUid?: string  // 用户的 WuKongIM UID
   userName?: string
-  agentId?: number
-  status: string
+  avatar?: string
+  deviceType?: string  // 设备类型 (PC端/H5)
   lastMessage?: string
   lastMessageTime?: string
-  createdAt?: string
+  unreadCount?: number
+  projectId?: number
+  isGuest?: boolean
+  phone?: string
 }
 
 interface Message {
@@ -208,12 +231,12 @@ interface Message {
 }
 
 // 状态
-const activeTab = ref('pending')
-const selectedConversation = ref<Conversation | null>(null)
-const conversations = ref<Conversation[]>([])
+const activeTab = ref('my')  // 默认显示"我的会话"
+const selectedConversation = ref<UserConversation | null>(null)
+const myConversations = ref<UserConversation[]>([])  // 我的会话列表
+const pendingQueue = ref<UserConversation[]>([])  // 排队中列表（IM 实时推送）
 const messages = ref<Message[]>([])
 const inputMessage = ref('')
-const queueCount = ref(0)
 const showUserPanel = ref(false)
 const showKbPanel = ref(false)
 const showQuickReply = ref(false)
@@ -225,11 +248,11 @@ const showAddTagDialog = ref(false)
 const newTagName = ref('')
 
 // 项目和客服ID（从localStorage获取）
-const projectId = ref(1)
+const projectIds = ref<number[]>([1])  // 客服关联的项目ID列表
 const agentId = ref(1)
 
-// 从localStorage获取当前登录的客服ID
-const initAgentId = () => {
+// 从localStorage获取当前登录的客服ID和项目ID列表
+const initAgentInfo = () => {
   const userInfo = localStorage.getItem('user_info')
   if (userInfo) {
     try {
@@ -243,20 +266,31 @@ const initAgentId = () => {
           agentId.value = parseInt(match[0])
         }
       }
+      // 获取关联的项目ID列表
+      if (user.projectIds && Array.isArray(user.projectIds) && user.projectIds.length > 0) {
+        projectIds.value = user.projectIds
+      }
+      console.log('Agent info loaded:', { agentId: agentId.value, projectIds: projectIds.value })
     } catch (e) {
       console.error('解析用户信息失败:', e)
     }
   }
 }
 
-// 获取会话列表
-const fetchConversations = async () => {
+// 计算当前显示的会话列表
+const conversations = computed(() => {
+  return activeTab.value === 'pending' ? pendingQueue.value : myConversations.value
+})
+
+// 计算排队中的数量
+const queueCount = computed(() => pendingQueue.value.length)
+
+// 获取"我的会话"列表 - 从后端 API 加载
+const fetchMyConversations = async () => {
   try {
-    const endpoint = activeTab.value === 'pending' 
-      ? `/api/admin/conversations/pending?projectId=${projectId.value}`
-      : `/api/admin/conversations/my?agentId=${agentId.value}`
-      
-    const response = await fetch(endpoint, {
+    // 将 projectIds 数组转换为查询参数
+    const projectIdsParam = projectIds.value.join(',')
+    const response = await fetch(`/api/admin/workbench/users?projectIds=${projectIdsParam}`, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
       }
@@ -264,38 +298,123 @@ const fetchConversations = async () => {
     
     const data = await response.json()
     
-    if (data.code === 200) {
-      if (activeTab.value === 'pending') {
-        conversations.value = data.data.conversations || []
-        queueCount.value = data.data.queueCount || 0
-      } else {
-        conversations.value = data.data || []
-      }
+    if (data.code === 0) {
+      myConversations.value = data.data || []
+      console.log('My conversations loaded:', myConversations.value.length)
+    } else {
+      console.error('获取会话列表失败:', data.message)
     }
   } catch (error) {
     console.error('获取会话列表失败:', error)
   }
 }
 
-// 选择会话
-const selectConversation = async (conv: Conversation) => {
-  selectedConversation.value = conv
-  await fetchMessages(conv.id)
-  showUserPanel.value = true
+// 检查用户是否已在"我的会话"中
+const isUserInMyConversations = (userUid: string): boolean => {
+  return myConversations.value.some(conv => conv.userUid === userUid)
 }
 
-// 获取消息列表
-const fetchMessages = async (conversationId: number) => {
+// 添加用户到排队中（由 IM 消息触发）
+const addToPendingQueue = (userInfo: UserConversation) => {
+  // 如果已经在排队中，更新消息内容
+  const existingIndex = pendingQueue.value.findIndex(c => c.userUid === userInfo.userUid)
+  if (existingIndex >= 0) {
+    pendingQueue.value[existingIndex] = {
+      ...pendingQueue.value[existingIndex],
+      lastMessage: userInfo.lastMessage,
+      lastMessageTime: userInfo.lastMessageTime,
+      unreadCount: (pendingQueue.value[existingIndex].unreadCount || 0) + 1
+    }
+  } else {
+    // 新用户加入排队
+    pendingQueue.value.unshift(userInfo)
+  }
+}
+
+// 选择会话
+const selectConversation = async (conv: UserConversation) => {
+  selectedConversation.value = conv
+  await fetchMessages(conv.userId)
+  showUserPanel.value = true
+  
+  // 标记为已读
+  if (conv.unreadCount && conv.unreadCount > 0) {
+    await markConversationAsRead(conv.userId)
+  }
+}
+
+// 标记会话为已读
+const markConversationAsRead = async (userId: number) => {
   try {
-    const response = await fetch(`/api/admin/messages/conversation/${conversationId}`, {
+    await fetch(`/api/admin/workbench/users/${userId}/read`, {
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
       }
     })
+    // 更新本地状态 - 两个列表都检查
+    const myConv = myConversations.value.find(c => c.userId === userId)
+    if (myConv) {
+      myConv.unreadCount = 0
+    }
+    const pendingConv = pendingQueue.value.find(c => c.userId === userId)
+    if (pendingConv) {
+      pendingConv.unreadCount = 0
+    }
+  } catch (error) {
+    console.error('标记已读失败:', error)
+  }
+}
+
+// 获取消息列表（从 WuKongIM 加载历史消息）
+const fetchMessages = async (userId: number) => {
+  // 在两个列表中查找用户
+  const conv = myConversations.value.find(c => c.userId === userId) 
+    || pendingQueue.value.find(c => c.userId === userId)
+    || selectedConversation.value
+  if (!conv?.userUid) {
+    console.warn('Cannot load messages: userUid not found')
+    return
+  }
+  
+  try {
+    // 通过后端代理调用 WuKongIM API 获取历史消息
+    // Visitor Channel: channel_id = 用户 UID, channel_type = 10
+    const response = await fetch('/api/admin/im/messages/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify({
+        loginUid: getAgentUid(),
+        channelId: conv.userUid,
+        channelType: WKChannelType.VISITOR,  // Visitor Channel
+        limit: 50
+      })
+    })
+    
     const data = await response.json()
     
-    if (data.code === 200) {
-      messages.value = data.data || []
+    if (data.code === 200 && data.data) {
+      messages.value = data.data.map((msg: any) => {
+        // 解析 WuKongIM 消息格式
+        const payload = msg.payload || {}
+        const timestamp = msg.timestamp * 1000  // WuKongIM 时间戳是秒
+        
+        // 判断发送者类型
+        const isAgent = msg.fromUid?.startsWith('agent_')
+        
+        return {
+          id: msg.messageId || msg.clientMsgNo || Date.now(),
+          conversationId: conv.userId,  // 使用 userId
+          senderId: isAgent ? agentId.value : conv.userId,
+          senderType: isAgent ? 'agent' : 'user',
+          contentType: payload.type === 2 ? 'image' : 'text',
+          content: payload.content || payload.url || '',
+          createdAt: new Date(timestamp).toISOString()
+        }
+      })
       
       await nextTick()
       scrollToBottom()
@@ -305,26 +424,23 @@ const fetchMessages = async (conversationId: number) => {
   }
 }
 
-// 接入会话
-const acceptConversation = async (conv: Conversation) => {
+// 接入会话（从排队中接入用户，移动到我的会话）
+const acceptConversation = async (conv: UserConversation) => {
   try {
-    const response = await fetch(`/api/admin/conversations/${conv.id}/accept?agentId=${agentId.value}`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-      }
-    })
+    // 标记为已读
+    await markConversationAsRead(conv.userId)
     
-    const data = await response.json()
+    // 从排队中移除
+    pendingQueue.value = pendingQueue.value.filter(c => c.userId !== conv.userId)
     
-    if (data.code === 200) {
-      ElMessage.success('已接入会话')
-      fetchConversations()
-      selectConversation(conv)
-      activeTab.value = 'my'
-    } else {
-      ElMessage.error(data.message || '接入失败')
+    // 添加到我的会话（如果不存在）
+    if (!isUserInMyConversations(conv.userUid || '')) {
+      myConversations.value.unshift(conv)
     }
+    
+    ElMessage.success('已接入会话')
+    selectConversation(conv)
+    activeTab.value = 'my'
   } catch (error) {
     console.error('接入会话失败:', error)
     ElMessage.error('接入失败')
@@ -335,63 +451,72 @@ const acceptConversation = async (conv: Conversation) => {
 const sendMessage = async () => {
   if (!inputMessage.value.trim() || !selectedConversation.value) return
   
+  // 检查 IM 连接和用户 UID
+  if (!imInstance || !imConnected.value) {
+    ElMessage.warning('IM 未连接，请稍后重试')
+    return
+  }
+  
+  if (!selectedConversation.value.userUid) {
+    ElMessage.warning('无法获取用户信息，请刷新会话')
+    return
+  }
+  
+  const messageText = inputMessage.value.trim()
+  inputMessage.value = '' // 立即清空输入框
+  
+  // 先在本地添加消息（乐观更新）
+  const tempMsg: Message = {
+    id: Date.now(),
+    conversationId: selectedConversation.value.userId,  // 使用 userId 作为临时 ID
+    senderId: agentId.value,
+    senderType: 'agent',
+    contentType: 'text',
+    content: messageText,
+    createdAt: new Date().toISOString()
+  }
+  messages.value.push(tempMsg)
+  nextTick(() => scrollToBottom())
+  
   try {
-    const response = await fetch('/api/admin/messages/send', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-      },
-      body: JSON.stringify({
-        projectId: projectId.value,
-        conversationId: selectedConversation.value.id,
-        senderId: agentId.value,
-        senderType: 'agent',
-        contentType: 'text',
-        content: inputMessage.value
-      })
-    })
+    // 通过 WuKongIM SDK 发送消息到用户的访客频道
+    // Visitor Channel (channel_type=10), channel_id = 用户 UID
+    const payload = { type: 1, content: messageText }
+    const result = await imInstance.send(
+      selectedConversation.value.userUid,
+      WKChannelType.VISITOR as any,
+      payload
+    )
     
-    const data = await response.json()
+    console.log('Message sent to visitor channel:', result)
     
-    if (data.code === 200) {
-      inputMessage.value = ''
-      await fetchMessages(selectedConversation.value.id)
+    if (result.reasonCode !== 1) {
+      ElMessage.error('消息发送失败')
+      messages.value = messages.value.filter(m => m.id !== tempMsg.id)
     } else {
-      ElMessage.error(data.message || '发送失败')
+      // 发送成功，通知后端更新会话活动时间
+      fetch('/api/admin/conversations/activity', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({
+          userId: selectedConversation.value.userId
+        })
+      }).catch(err => console.warn('Activity update failed:', err))
     }
   } catch (error) {
     console.error('发送消息失败:', error)
     ElMessage.error('发送失败')
+    messages.value = messages.value.filter(m => m.id !== tempMsg.id)
   }
 }
 
-// 结束会话
-const closeConversation = async () => {
-  if (!selectedConversation.value) return
-  
-  try {
-    const response = await fetch(`/api/admin/conversations/${selectedConversation.value.id}/close`, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-      }
-    })
-    
-    const data = await response.json()
-    
-    if (data.code === 200) {
-      ElMessage.success('会话已结束')
-      selectedConversation.value = null
-      messages.value = []
-      fetchConversations()
-    } else {
-      ElMessage.error(data.message || '操作失败')
-    }
-  } catch (error) {
-    console.error('结束会话失败:', error)
-    ElMessage.error('操作失败')
-  }
+// 清空当前会话选择（暂时不需要结束会话功能）
+const closeConversation = () => {
+  selectedConversation.value = null
+  messages.value = []
 }
 
 // 添加标签
@@ -412,7 +537,9 @@ const removeTag = (tag: string) => {
 
 // 切换标签页
 const handleTabClick = () => {
-  fetchConversations()
+  // 切换时清空选中
+  selectedConversation.value = null
+  messages.value = []
 }
 
 // 滚动到底部
@@ -441,26 +568,205 @@ const formatTime = (time?: string) => {
   return `${month}-${day} ${hours}:${minutes}`
 }
 
-// 初始化
-onMounted(() => {
-  initAgentId()
-  fetchConversations()
+// ================= WuKongIM 集成 =================
+
+// 客服 UID（格式: agent_{userId}）
+const getAgentUid = () => `agent_${agentId.value}`
+
+// IM 事件处理函数
+const handleIMConnect = async (result: any) => {
+  console.log('Agent IM Connected:', result)
+  imConnected.value = true
+  imConnecting.value = false
   
-  // 定时刷新会话列表
-  setInterval(fetchConversations, 5000)
+  // 使用访客频道模式，客服在用户初始化会话时已被添加为订阅者
+  // 不需要订阅队列频道
+  
+  ElMessage.success('IM 已连接')
+}
+
+const handleIMDisconnect = (disconnectInfo: any) => {
+  console.log('Agent IM Disconnected:', disconnectInfo.code, disconnectInfo.reason)
+  imConnected.value = false
+  imConnecting.value = false
+}
+
+const handleIMMessage = (message: any) => {
+  console.log('Agent IM Message Received:', message)
+  
+  // 解析消息
+  const payload = message.payload || {}
+  const fromUid = message.fromUID || ''
+  const channelId = message.channelID || ''
+  const channelType = message.channelType || 0
+  const messageContent = payload.content || payload.url || ''
+  
+  // 忽略客服自己发送的消息
+  if (fromUid.startsWith('agent_')) {
+    return
+  }
+  
+  // 访客频道消息 (channel_type = 10)
+  // channelId 就是用户 UID
+  if (channelType === WKChannelType.VISITOR) {
+    const userUid = channelId
+    
+    // 1. 如果用户不在"我的会话"中，添加到"排队中"
+    if (!isUserInMyConversations(userUid)) {
+      const newUserConv: UserConversation = {
+        id: Date.now(),
+        userId: 0,  // 暂时未知，后续会通过刷新获取
+        userUid: userUid,
+        userName: userUid,  // 暂时使用 UID 作为名称
+        deviceType: 'H5',
+        lastMessage: messageContent,
+        lastMessageTime: new Date().toISOString(),
+        unreadCount: 1,
+        projectId: projectIds.value[0] || 1  // 使用第一个项目ID
+      }
+      addToPendingQueue(newUserConv)
+      console.log('New user added to pending queue:', userUid)
+    } else {
+      // 用户在"我的会话"中，更新未读计数
+      const conv = myConversations.value.find(c => c.userUid === userUid)
+      if (conv) {
+        conv.lastMessage = messageContent
+        conv.lastMessageTime = new Date().toISOString()
+        // 如果不是当前选中的会话，增加未读计数
+        if (selectedConversation.value?.userUid !== userUid) {
+          conv.unreadCount = (conv.unreadCount || 0) + 1
+        }
+      }
+    }
+    
+    // 2. 如果是当前选中会话的用户发来的消息，显示在聊天窗口
+    const currentConv = selectedConversation.value
+    if (currentConv && currentConv.userUid === userUid) {
+      const newMsg: Message = {
+        id: Date.now(),
+        conversationId: currentConv.userId,
+        senderId: 0,
+        senderType: 'user',
+        contentType: payload.type === 2 ? 'image' : 'text',
+        content: messageContent,
+        createdAt: new Date().toISOString()
+      }
+      
+      messages.value.push(newMsg)
+      nextTick(() => scrollToBottom())
+    }
+    
+    return
+  }
+}
+
+const handleIMError = (error: any) => {
+  console.error('Agent IM Error:', error.message || error)
+  imConnecting.value = false
+}
+
+// 初始化 IM 连接
+const initIMConnection = async () => {
+  console.log('[IM] initIMConnection called, agentId:', agentId.value, 'imInstance:', !!imInstance)
+  if (imInstance) {
+    console.log('[IM] Already has imInstance, skipping')
+    return
+  }
+  if (!agentId.value) {
+    console.log('[IM] No agentId, skipping')
+    return
+  }
+  
+  imConnecting.value = true
+  
+  try {
+    // 1. 获取 IM Token（使用 DeviceType.WEB 常量）
+    console.log('[IM] Fetching token for uid:', getAgentUid(), 'deviceFlag:', DeviceType.WEB)
+    const response = await fetch('/api/admin/im/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify({
+        uid: getAgentUid(),
+        name: `客服 ${agentId.value}`,
+        deviceFlag: DeviceType.WEB  // 传给后端用于注册 token
+      })
+    })
+    
+    console.log('[IM] Token API response status:', response.status)
+    const data = await response.json()
+    console.log('[IM] Token API response:', data)
+    
+    if (!data.success || !data.token) {
+      console.error('[IM] Failed to get agent IM token:', data.error || data)
+      imConnecting.value = false
+      return
+    }
+    
+    console.log('[IM] Agent IM Token obtained:', data.token.substring(0, 8) + '...')
+    
+    // 2. 初始化 SDK（使用相同的 deviceFlag）
+    const wsUrl = import.meta.env.VITE_WUKONGIM_WS_URL || 'ws://localhost:5200'
+    console.log('[IM] Connecting to WebSocket:', wsUrl, 'with deviceFlag:', DeviceType.WEB)
+    
+    imInstance = WKIM.init(wsUrl, {
+      uid: getAgentUid(),
+      token: data.token,
+      deviceFlag: DeviceType.WEB  // 连接时使用相同的 deviceFlag
+    })
+    
+    // 3. 注册事件监听
+    imInstance.on(WKIMEvent.Connect, handleIMConnect)
+    imInstance.on(WKIMEvent.Disconnect, handleIMDisconnect)
+    imInstance.on(WKIMEvent.Message, handleIMMessage)
+    imInstance.on(WKIMEvent.Error, handleIMError)
+    
+    // 4. 连接服务器
+    await imInstance.connect()
+    console.log('Agent IM connection initiated')
+    
+  } catch (error) {
+    console.error('Failed to init agent IM connection:', error)
+    imConnecting.value = false
+  }
+}
+
+// 断开 IM 连接
+const disconnectIM = () => {
+  if (imInstance) {
+    imInstance.off(WKIMEvent.Connect, handleIMConnect)
+    imInstance.off(WKIMEvent.Disconnect, handleIMDisconnect)
+    imInstance.off(WKIMEvent.Message, handleIMMessage)
+    imInstance.off(WKIMEvent.Error, handleIMError)
+    imInstance = null
+    imConnected.value = false
+  }
+}
+
+// ================= 生命周期 =================
+
+// 初始化
+onMounted(async () => {
+  initAgentInfo()
+  
+  // 加载"我的会话"列表
+  await fetchMyConversations()
+  
+  // 初始化 IM 连接
+  await initIMConnection()
+})
+
+// 清理
+onUnmounted(() => {
+  disconnectIM()
 })
 
 // 监听选中会话变化
 watch(selectedConversation, (newVal) => {
   if (newVal) {
-    // 定时刷新消息
-    const timer = setInterval(() => {
-      if (selectedConversation.value) {
-        fetchMessages(selectedConversation.value.id)
-      } else {
-        clearInterval(timer)
-      }
-    }, 3000)
+    // 消息通过 IM 推送实时接收，不需要定时器
   }
 })
 </script>
@@ -483,10 +789,51 @@ watch(selectedConversation, (newVal) => {
 .list-header {
   padding: 10px 16px;
   border-bottom: 1px solid #e4e7ed;
+  display: flex;
+  flex-direction: column;
 }
 
 .list-header :deep(.el-tabs__nav-wrap::after) {
   display: none;
+}
+
+/* IM 连接状态指示器样式 */
+.im-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  margin-top: 8px;
+  border-radius: 4px;
+  background-color: #fef0f0;
+  font-size: 12px;
+  color: #f56c6c;
+}
+
+.im-status.connected {
+  background-color: #f0f9eb;
+  color: #67c23a;
+}
+
+.im-status.connecting {
+  background-color: #fdf6ec;
+  color: #e6a23c;
+}
+
+.im-status .status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.im-status.connecting .status-dot {
+  animation: blink 1s infinite;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 .queue-badge {
@@ -535,6 +882,20 @@ watch(selectedConversation, (newVal) => {
   font-weight: 500;
   color: #303133;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.device-tag {
+  font-size: 11px;
+  padding: 0 4px;
+  height: 18px;
+  line-height: 16px;
+}
+
+.conv-unread {
+  margin-left: 10px;
 }
 
 .conv-time {

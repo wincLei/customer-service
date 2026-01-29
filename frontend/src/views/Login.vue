@@ -189,7 +189,8 @@ const handleLogin = async () => {
         email: responseUser.email || '',
         role: responseUser.role || 'agent',
         avatar: responseUser.avatar || '',
-        permissions: responseUser.permissions || { menus: [], actions: [] }
+        permissions: responseUser.permissions || { menus: [], actions: [] },
+        projectIds: responseUser.projectIds || []  // 关联的项目ID列表
       }
 
       localStorage.setItem('auth_token', token)

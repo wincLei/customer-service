@@ -7,6 +7,7 @@ import com.customer_service.shared.entity.SysRole;
 import com.customer_service.shared.entity.SysUser;
 import com.customer_service.shared.repository.SysRoleRepository;
 import com.customer_service.shared.repository.SysUserRepository;
+import com.customer_service.shared.repository.UserProjectRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
@@ -30,6 +31,7 @@ public class AuthController {
     private final StringRedisTemplate redisTemplate;
     private final SysUserRepository sysUserRepository;
     private final SysRoleRepository sysRoleRepository;
+    private final UserProjectRepository userProjectRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -134,12 +136,16 @@ public class AuthController {
         Map<String, Object> data = new HashMap<>();
         data.put("token", token);
 
+        // 获取用户关联的项目ID列表
+        List<Long> projectIds = userProjectRepository.findProjectIdsByUserId(sysUser.getId());
+
         Map<String, Object> user = new HashMap<>();
         user.put("id", sysUser.getId());
         user.put("username", sysUser.getUsername());
         user.put("email", sysUser.getEmail());
         user.put("role", roleCode);
         user.put("permissions", permissionsMap);
+        user.put("projectIds", projectIds); // 添加关联的项目ID列表
         user.put("avatar", sysUser.getAvatar() != null ? sysUser.getAvatar()
                 : "https://api.dicebear.com/7.x/avataaars/svg?seed=" + sysUser.getUsername());
         data.put("user", user);

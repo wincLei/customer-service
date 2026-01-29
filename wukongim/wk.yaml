@@ -1,0 +1,29 @@
+# WuKongIM 配置文件
+mode: "release"
+rootDir: "./wukongimdata"
+tokenAuthOn: true
+managerToken: "wukongim_admin_secret_2026"
+
+external:
+  ip: ""
+
+demo:
+  on: true
+  addr: "0.0.0.0:5172"
+
+conversation:
+  on: true
+
+# Webhook 配置 - 消息通知回调
+webhook:
+  httpAddr: "http://portal-api:8081/internal/webhook"
+  msgNotifyEventPushInterval: 500ms
+  msgNotifyEventRetryMaxCount: 5
+  msgNotifyEventCountPerPush: 100
+  focusEvents:
+    - "msg.notify"
+    - "user.onlinestatus"
+
+# 频道配置
+channel:
+  createIfNoExist: true

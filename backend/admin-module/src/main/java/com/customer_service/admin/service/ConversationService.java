@@ -1,10 +1,15 @@
 package com.customer_service.admin.service;
 
-import com.customer_service.admin.repository.ConversationRepository;
-import com.customer_service.admin.repository.MessageRepository;
+import com.customer_service.admin.dto.ConversationDTO;
+import com.customer_service.shared.repository.MessageRepository;
 import com.customer_service.shared.entity.Conversation;
+import com.customer_service.shared.entity.User;
 import com.customer_service.shared.repository.AgentRepository;
+import com.customer_service.shared.repository.ConversationRepository;
+import com.customer_service.shared.repository.UserRepository;
+import com.customer_service.shared.service.WuKongIMService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,31 +19,65 @@ import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ConversationService {
 
     private final ConversationRepository conversationRepository;
     private final AgentRepository agentRepository;
     private final MessageRepository messageRepository;
+    private final UserRepository userRepository;
+    private final WuKongIMService wuKongIMService;
 
     /**
-     * 获取排队中的会话列表
+     * 获取排队中的会话列表（包含用户 UID）
      */
-    public List<Conversation> getQueuedConversations(Long projectId) {
-        return conversationRepository.findByProjectIdAndStatusOrderByLastMessageTimeDesc(projectId, "queued");
+    public List<ConversationDTO> getQueuedConversations(Long projectId) {
+        List<Conversation> conversations = conversationRepository
+                .findByProjectIdAndStatusOrderByLastMessageTimeDesc(projectId, "queued");
+        return enrichConversationsWithUserInfo(conversations);
     }
 
     /**
-     * 获取指定客服的会话列表
+     * 获取指定客服的会话列表（包含用户 UID）
      */
-    public List<Conversation> getAgentConversations(Long agentId) {
-        return conversationRepository.findByAgentIdAndStatusOrderByLastMessageTimeDesc(agentId, "active");
+    public List<ConversationDTO> getAgentConversations(Long agentId) {
+        List<Conversation> conversations = conversationRepository
+                .findByAgentIdAndStatusOrderByLastMessageTimeDesc(agentId, "active");
+        return enrichConversationsWithUserInfo(conversations);
+    }
+
+    /**
+     * 为会话列表添加用户信息
+     */
+    private List<ConversationDTO> enrichConversationsWithUserInfo(List<Conversation> conversations) {
+        // 获取所有相关用户的 ID
+        List<Long> userIds = conversations.stream()
+                .map(Conversation::getUserId)
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 批量查询用户信息
+        Map<Long, User> userMap = userRepository.findAllById(userIds).stream()
+                .collect(Collectors.toMap(User::getId, u -> u));
+
+        // 转换为 DTO
+        return conversations.stream()
+                .map(conv -> {
+                    User user = userMap.get(conv.getUserId());
+                    String userUid = user != null ? user.getUid() : null;
+                    String userName = user != null ? user.getNickname() : null;
+                    return ConversationDTO.from(conv, userUid, userName);
+                })
+                .collect(Collectors.toList());
     }
 
     /**
      * 客服接入会话（从排队状态）
+     * 使用 Personal Channel 模式，不需要订阅群组频道
      */
     @Transactional
     public Conversation acceptConversation(Long conversationId, Long agentId) {
@@ -52,7 +91,11 @@ public class ConversationService {
         conversation.setAgentId(agentId);
         conversation.setStatus("active");
 
-        return conversationRepository.save(conversation);
+        Conversation savedConversation = conversationRepository.save(conversation);
+
+        log.info("Conversation {} accepted by agent {}", conversationId, agentId);
+
+        return savedConversation;
     }
 
     /**
@@ -64,8 +107,11 @@ public class ConversationService {
                 .orElseThrow(() -> new RuntimeException("会话不存在"));
 
         conversation.setStatus("closed");
+        Conversation savedConversation = conversationRepository.save(conversation);
 
-        return conversationRepository.save(conversation);
+        log.info("Conversation {} closed", conversationId);
+
+        return savedConversation;
     }
 
     /**

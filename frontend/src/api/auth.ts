@@ -21,6 +21,7 @@ export interface LoginResponse {
     role?: string
     avatar?: string
     permissions?: UserPermissions
+    projectIds?: number[]  // 关联的项目ID列表
   }
 }
 

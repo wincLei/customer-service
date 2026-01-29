@@ -1,6 +1,6 @@
 package com.customer_service.admin.service;
 
-import com.customer_service.admin.repository.ConversationRepository;
+import com.customer_service.shared.repository.ConversationRepository;
 import com.customer_service.admin.repository.UserTagRepository;
 import com.customer_service.shared.entity.Agent;
 import com.customer_service.shared.entity.User;

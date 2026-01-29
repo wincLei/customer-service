@@ -1,5 +1,6 @@
 package com.customer_service.admin.controller;
 
+import com.customer_service.admin.dto.ConversationDTO;
 import com.customer_service.admin.service.ConversationService;
 import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.dto.ApiResponse;
@@ -31,7 +32,7 @@ public class ConversationController {
     @GetMapping("/pending")
     public ApiResponse<Map<String, Object>> getPendingConversations(@RequestParam Long projectId) {
         log.info("Get pending conversations for project: {}", projectId);
-        List<Conversation> conversations = conversationService.getQueuedConversations(projectId);
+        List<ConversationDTO> conversations = conversationService.getQueuedConversations(projectId);
         Long queueCount = conversationService.getQueueCount(projectId);
 
         Map<String, Object> result = new HashMap<>();
@@ -45,7 +46,7 @@ public class ConversationController {
      * 获取当前客服的会话列表
      */
     @GetMapping("/my")
-    public ApiResponse<List<Conversation>> getMyConversations(@RequestParam Long agentId) {
+    public ApiResponse<List<ConversationDTO>> getMyConversations(@RequestParam Long agentId) {
         log.info("Get conversations for agent: {}", agentId);
         return ApiResponse.success(conversationService.getAgentConversations(agentId));
     }

@@ -2,6 +2,9 @@ spring:
   application:
     name: mini-customer-service-admin
 
+  main:
+    allow-bean-definition-overriding: true
+
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/customer_service}
     username: ${SPRING_DATASOURCE_USERNAME:postgres}
@@ -70,7 +73,8 @@ logging:
 
 # WuKongIM 配置
 wukongim:
-  api-url: http://localhost:5000
+  api-url: ${WUKONGIM_API_URL:http://localhost:5001}
+  app-key: ${WUKONGIM_APP_KEY:wukongim_admin_secret_2026} # 管理 API 认证密钥
   app-id: customer-service
   app-secret: demo_app_secret
 

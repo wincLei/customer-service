@@ -17,6 +17,7 @@ COPY frontend/tsconfig.node.json ./
 COPY frontend/index.html ./
 COPY frontend/postcss.config.js ./
 COPY frontend/tailwind.config.ts ./
+COPY frontend/.env* ./
 
 # 构建
 RUN npm run build

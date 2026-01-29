@@ -64,6 +64,12 @@
           </div>
         </el-popover>
 
+        <!-- 工单管理 - 需要tickets菜单权限 -->
+        <div v-if="hasMenu('tickets')" class="nav-icon" @click="navigateTo('tickets')" :class="{ active: currentView === 'tickets' }">
+          <i class="el-icon-tickets"></i>
+          <div class="nav-label">工单</div>
+        </div>
+
         <!-- 系统管理 - 包含用户、角色、菜单、客服子菜单 -->
         <el-popover
           v-if="hasMenu('system') || hasMenu('users') || hasMenu('roles') || hasMenu('menus') || hasMenu('agents')"

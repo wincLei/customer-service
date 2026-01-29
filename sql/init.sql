@@ -258,6 +258,23 @@ CREATE INDEX IF NOT EXISTS idx_conv_agent_active ON conversations(agent_id, stat
 CREATE INDEX IF NOT EXISTS idx_conv_user_history ON conversations(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_conv_updated ON conversations(project_id, last_message_time DESC);
 
+-- 用户会话表 (核心)-用户展示客服端的用户列表
+CREATE TABLE IF NOT EXISTS user_conversations (
+    id BIGSERIAL PRIMARY KEY,
+    project_id BIGINT NOT NULL REFERENCES projects(id),
+    user_id BIGINT NOT NULL REFERENCES users(id),
+    unread_count INTEGER NOT NULL DEFAULT 0,
+    last_message_seq BIGINT NOT NULL DEFAULT 0,
+    last_message_content TEXT NOT NULL,
+    last_message_time TIMESTAMP WITH TIME ZONE NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_last_time_id_updated ON user_conversations(project_id, last_message_time, id DESC);
+CREATE INDEX IF NOT EXISTS idx_unread_id_updated ON user_conversations(project_id, unread_count, id DESC);
+
 -- 消息记录表
 CREATE TABLE IF NOT EXISTS messages (
     id BIGSERIAL PRIMARY KEY,
@@ -372,9 +389,9 @@ VALUES (
 
 -- 插入系统角色
 INSERT INTO sys_roles (code, name, description, permissions, is_system) VALUES
-('super_admin', '超级管理员', '拥有系统所有权限', '{"menus": ["dashboard", "workbench", "projects", "system", "users", "agents", "roles", "menus", "settings", "client", "customers", "customer-tags"], "actions": ["*"]}', TRUE),
-('admin', '管理员', '项目管理员，可以管理客服和查看统计', '{"menus": ["dashboard", "projects", "knowledge", "system", "users", "agents", "roles", "menus", "settings", "client", "customers", "customer-tags"], "actions": ["dashboard:view", "project:manage", "kb:manage", "user:manage", "agent:manage", "role:manage", "menu:manage", "settings:manage", "customer:manage"]}', TRUE),
-('agent', '客服', '普通客服，可以接待用户', '{"menus": ["workbench", "knowledge", "settings", "client", "customers", "customer-tags"], "actions": ["workbench", "conversation:handle", "kb:view", "kb:manage", "customer:view"]}', TRUE),
+('super_admin', '超级管理员', '拥有系统所有权限', '{"menus": ["dashboard", "workbench", "projects", "system", "users", "agents", "roles", "menus", "settings", "client", "customers", "customer-tags", "tickets"], "actions": ["*"]}', TRUE),
+('admin', '管理员', '项目管理员，可以管理客服和查看统计', '{"menus": ["dashboard", "projects", "knowledge", "system", "users", "agents", "roles", "menus", "settings", "client", "customers", "customer-tags", "tickets"], "actions": ["dashboard:view", "project:manage", "kb:manage", "user:manage", "agent:manage", "role:manage", "menu:manage", "settings:manage", "customer:manage", "ticket:manage"]}', TRUE),
+('agent', '客服', '普通客服，可以接待用户', '{"menus": ["workbench", "knowledge", "settings", "client", "customers", "customer-tags", "tickets"], "actions": ["workbench", "conversation:handle", "kb:view", "kb:manage", "customer:view", "ticket:handle"]}', TRUE),
 ('viewer', '观察员', '只能查看不能操作', '{"menus": ["dashboard"], "actions": ["dashboard:view"]}', FALSE)
 ON CONFLICT (code) DO NOTHING;
 
@@ -385,8 +402,9 @@ INSERT INTO sys_menus (code, name, type, parent_id, path, icon, sort_order, is_e
 ('projects', '项目管理', 'menu', NULL, '/admin/projects', 'Folder', 3, TRUE, '管理客服项目'),
 ('knowledge', '知识库管理', 'menu', NULL, '/admin/knowledge', 'Document', 4, TRUE, '管理知识库分类和文章'),
 ('client', '客户端', 'menu', NULL, NULL, 'UserFilled', 5, TRUE, '客户端用户管理'),
-('system', '系统管理', 'menu', NULL, NULL, 'Setting', 6, TRUE, '系统管理功能'),
-('settings', '系统设置', 'menu', NULL, '/admin/settings', 'Tools', 7, TRUE, '系统配置')
+('tickets', '工单管理', 'menu', NULL, '/admin/tickets', 'Tickets', 6, TRUE, '管理用户提交的工单'),
+('system', '系统管理', 'menu', NULL, NULL, 'Setting', 7, TRUE, '系统管理功能'),
+('settings', '系统设置', 'menu', NULL, '/admin/settings', 'Tools', 8, TRUE, '系统配置')
 ON CONFLICT (code) DO NOTHING;
 
 -- 插入客户端子菜单（二级菜单）

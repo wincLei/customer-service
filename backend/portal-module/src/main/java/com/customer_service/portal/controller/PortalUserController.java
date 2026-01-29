@@ -1,6 +1,7 @@
 package com.customer_service.portal.controller;
 
 import com.customer_service.portal.service.PortalUserService;
+import com.customer_service.shared.constant.DeviceType;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.User;
 import lombok.Data;
@@ -29,10 +30,12 @@ public class PortalUserController {
         private String nickname;
         private String avatar;
         private String phone;
+        /** 设备类型: 1=WEB, 2=H5 (默认为 H5) */
+        private Integer deviceFlag;
     }
 
     /**
-     * 用户初始化响应
+     * 用户初始化响应（包含 IM Token）
      */
     @Data
     public static class UserInitResponse {
@@ -45,6 +48,8 @@ public class PortalUserController {
         private Boolean isGuest;
         private Boolean merged;
         private Long mergedFromUserId;
+        /** WuKongIM 连接 Token */
+        private String imToken;
 
         public static UserInitResponse from(PortalUserService.UserInitResult result) {
             UserInitResponse response = new UserInitResponse();
@@ -58,6 +63,7 @@ public class PortalUserController {
             response.setIsGuest(user.getIsGuest());
             response.setMerged(result.merged());
             response.setMergedFromUserId(result.mergedFromUserId());
+            response.setImToken(result.imToken());
             return response;
         }
     }
@@ -65,6 +71,7 @@ public class PortalUserController {
     /**
      * 初始化用户
      * 支持游客创建、认证用户创建、以及游客到认证用户的自动合并
+     * 同时返回 WuKongIM 连接 Token，前端可直接使用该 Token 连接 IM
      *
      * 场景说明：
      * 1. 仅传入 guestUid: 创建或返回游客用户
@@ -79,13 +86,17 @@ public class PortalUserController {
             return ApiResponse.fail(400, "项目ID不能为空");
         }
 
+        // 默认设备类型为 H5
+        int deviceFlag = request.getDeviceFlag() != null ? request.getDeviceFlag() : DeviceType.H5;
+
         PortalUserService.UserInitResult result = portalUserService.initOrMergeUser(
                 request.getProjectId(),
                 request.getGuestUid(),
                 request.getExternalUid(),
                 request.getNickname(),
                 request.getAvatar(),
-                request.getPhone());
+                request.getPhone(),
+                deviceFlag);
 
         return ApiResponse.success(UserInitResponse.from(result));
     }

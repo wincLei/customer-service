@@ -2,10 +2,29 @@
   <div class="mobile-layout">
     <!-- 顶部导航 -->
     <div class="mobile-header">
-      <h1>客服支持</h1>
-      <div class="header-action">
-        <span class="status">客服在线</span>
-        <button @click="endConversation" class="end-btn">结束会话</button>
+      <div class="header-left">
+        <button class="back-btn" @click="goBack">
+          <span>‹</span>
+        </button>
+        <button class="close-btn" @click="closeChat">
+          <span>✕</span>
+        </button>
+      </div>
+      <div class="header-center">
+        <h1>在线客服</h1>
+      </div>
+      <div class="header-right">
+        <!-- 预留空间保持居中 -->
+      </div>
+    </div>
+
+    <!-- 客服信息栏 -->
+    <div class="agent-bar">
+      <div class="agent-avatar">
+        <img :src="agentAvatar" alt="客服" />
+      </div>
+      <div class="agent-info">
+        <span class="agent-name">{{ agentName }}</span>
       </div>
     </div>
 
@@ -17,13 +36,28 @@
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
+import { ref } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 
-const endConversation = () => {
-  // TODO: 实现结束会话逻辑
-  router.push('/portal')
+// 客服信息
+const agentName = ref('益玩客服')
+const agentAvatar = ref('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%231890ff"/><text x="50" y="35" text-anchor="middle" fill="white" font-size="24">益玩</text><text x="50" y="70" text-anchor="middle" fill="white" font-size="20">客服</text></svg>')
+
+const goBack = () => {
+  if (window.history.length > 1) {
+    router.back()
+  } else {
+    router.push('/portal')
+  }
+}
+
+const closeChat = () => {
+  // 关闭聊天窗口，返回来源页面或首页
+  const projectId = route.query.project_id || route.query.projectId || '1'
+  router.push(`/portal?project_id=${projectId}`)
 }
 </script>
 
@@ -42,43 +76,85 @@ const endConversation = () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  min-height: 44px;
 }
 
-.mobile-header h1 {
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 60px;
+}
+
+.back-btn,
+.close-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.back-btn:active,
+.close-btn:active {
+  opacity: 0.7;
+}
+
+.header-center {
+  flex: 1;
+  text-align: center;
+}
+
+.header-center h1 {
   margin: 0;
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
 }
 
-.header-action {
+.header-right {
+  min-width: 60px;
+}
+
+/* 客服信息栏 */
+.agent-bar {
+  background-color: #1890ff;
+  color: white;
+  padding: 8px 16px 12px;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
-.status {
-  font-size: 12px;
-  opacity: 0.9;
+.agent-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 4px;
+  overflow: hidden;
+  flex-shrink: 0;
 }
 
-.end-btn {
-  background-color: rgba(255, 255, 255, 0.3);
-  border: none;
-  color: white;
-  padding: 4px 12px;
-  border-radius: 3px;
-  font-size: 12px;
-  cursor: pointer;
+.agent-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.end-btn:active {
-  background-color: rgba(255, 255, 255, 0.4);
+.agent-info {
+  flex: 1;
+}
+
+.agent-name {
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .mobile-content {
   flex: 1;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }

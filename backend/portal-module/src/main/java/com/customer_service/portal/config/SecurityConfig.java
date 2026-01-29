@@ -43,7 +43,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/api/pub/**").permitAll()
-                        .anyRequest().authenticated());
+                        .requestMatchers("/api/portal/**").permitAll()
+                        .requestMatchers("/internal/**").permitAll() // WuKongIM webhook 回调
+                        .anyRequest().permitAll()); // Portal 模块暂时开放所有接口
         return http.build();
     }
 }
