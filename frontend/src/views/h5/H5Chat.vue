@@ -485,10 +485,17 @@ const handleIMMessage = (message: any) => {
     return
   }
   
+  // 根据 messageId 去重，避免重复显示
+  const messageId = message.messageId || message.messageID || message.message_id
+  if (messageId && messages.value.some(m => m.id === messageId || m.id === String(messageId))) {
+    console.log('Duplicate message ignored:', messageId)
+    return
+  }
+  
   // 添加接收到的消息
   const now = new Date()
   const newMsg: Message = {
-    id: message.messageId || Date.now(),
+    id: messageId || Date.now(),
     senderType: senderType,
     msgType: payload.type === 2 ? 'image' : payload.type === 3 ? 'file' : 'text',
     content: payload.content || payload.url || '',

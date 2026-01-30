@@ -110,8 +110,8 @@
               v-model="inputMessage"
               type="textarea"
               :rows="3"
-              placeholder="输入消息，Ctrl+Enter发送..."
-              @keydown.ctrl.enter="sendMessage"
+              placeholder="输入消息，Enter发送，Shift+Enter换行"
+              @keydown.enter.exact.prevent="sendMessage"
             />
             <el-button type="primary" @click="sendMessage" :disabled="!inputMessage.trim()">
               发送
@@ -301,6 +301,7 @@ const fetchMyConversations = async () => {
     if (data.code === 0) {
       myConversations.value = data.data || []
       console.log('My conversations loaded:', myConversations.value.length)
+      console.log('Raw API response data:', JSON.stringify(data.data))
     } else {
       console.error('获取会话列表失败:', data.message)
     }
@@ -312,23 +313,6 @@ const fetchMyConversations = async () => {
 // 检查用户是否已在"我的会话"中
 const isUserInMyConversations = (userUid: string): boolean => {
   return myConversations.value.some(conv => conv.userUid === userUid)
-}
-
-// 添加用户到排队中（由 IM 消息触发）
-const addToPendingQueue = (userInfo: UserConversation) => {
-  // 如果已经在排队中，更新消息内容
-  const existingIndex = pendingQueue.value.findIndex(c => c.userUid === userInfo.userUid)
-  if (existingIndex >= 0) {
-    pendingQueue.value[existingIndex] = {
-      ...pendingQueue.value[existingIndex],
-      lastMessage: userInfo.lastMessage,
-      lastMessageTime: userInfo.lastMessageTime,
-      unreadCount: (pendingQueue.value[existingIndex].unreadCount || 0) + 1
-    }
-  } else {
-    // 新用户加入排队
-    pendingQueue.value.unshift(userInfo)
-  }
 }
 
 // 选择会话
@@ -400,14 +384,18 @@ const fetchMessages = async (userId: number) => {
       messages.value = data.data.map((msg: any) => {
         // 解析 WuKongIM 消息格式
         const payload = msg.payload || {}
-        const timestamp = msg.timestamp * 1000  // WuKongIM 时间戳是秒
+        // WuKongIM 返回的时间戳可能是秒或毫秒
+        const timestamp = (msg.timestamp || msg.message_time || 0) * 1000
         
-        // 判断发送者类型
-        const isAgent = msg.fromUid?.startsWith('agent_')
+        // 判断发送者类型 - 兼容 snake_case 和 camelCase
+        const msgFromUid = msg.from_uid || msg.fromUid || ''
+        const isAgent = msgFromUid.startsWith('agent_')
+        
+        console.log('History message from:', msgFromUid, 'isAgent:', isAgent)
         
         return {
-          id: msg.messageId || msg.clientMsgNo || Date.now(),
-          conversationId: conv.userId,  // 使用 userId
+          id: msg.message_id || msg.messageId || msg.client_msg_no || msg.clientMsgNo || Date.now(),
+          conversationId: conv.userId,
           senderId: isAgent ? agentId.value : conv.userId,
           senderType: isAgent ? 'agent' : 'user',
           contentType: payload.type === 2 ? 'image' : 'text',
@@ -494,7 +482,17 @@ const sendMessage = async () => {
       ElMessage.error('消息发送失败')
       messages.value = messages.value.filter(m => m.id !== tempMsg.id)
     } else {
-      // 发送成功，通知后端更新会话活动时间
+      // 发送成功，更新会话列表中的最新消息
+      const convIndex = myConversations.value.findIndex(c => c.userUid === selectedConversation.value?.userUid)
+      if (convIndex !== -1) {
+        myConversations.value[convIndex] = {
+          ...myConversations.value[convIndex],
+          lastMessage: messageText,
+          lastMessageTime: new Date().toISOString()
+        }
+      }
+      
+      // 通知后端更新会话活动时间
       fetch('/api/admin/conversations/activity', {
         method: 'POST',
         headers: {
@@ -594,69 +592,121 @@ const handleIMDisconnect = (disconnectInfo: any) => {
 const handleIMMessage = (message: any) => {
   console.log('Agent IM Message Received:', message)
   
-  // 解析消息
+  // 解析消息 - 注意：WuKongIM SDK 使用小写字段名
   const payload = message.payload || {}
-  const fromUid = message.fromUID || ''
-  const channelId = message.channelID || ''
+  const fromUid = message.fromUID || message.fromUid || ''
+  const channelId = message.channelID || message.channelId || ''
   const channelType = message.channelType || 0
   const messageContent = payload.content || payload.url || ''
   
-  // 忽略客服自己发送的消息
+  // 忽略客服自己发的消息
   if (fromUid.startsWith('agent_')) {
+    console.log('Ignoring agent message from:', fromUid)
     return
   }
   
-  // 访客频道消息 (channel_type = 10)
-  // channelId 就是用户 UID
-  if (channelType === WKChannelType.VISITOR) {
-    const userUid = channelId
+  // 只处理访客频道消息
+  if (channelType !== WKChannelType.VISITOR) {
+    console.log('Ignoring non-visitor channel message, channelType:', channelType)
+    return
+  }
+  
+  const userUid = channelId
+  console.log('=== Message Routing Debug ===')
+  console.log('userUid from channelId:', userUid, 'type:', typeof userUid)
+  console.log('myConversations count:', myConversations.value.length)
+  console.log('myConversations userUids:', myConversations.value.map(c => ({ userUid: c.userUid, type: typeof c.userUid })))
+  console.log('First conversation full object:', JSON.stringify(myConversations.value[0]))
+  
+  // 检查用户是否在"我的会话"中
+  const isInMyConversations = isUserInMyConversations(userUid)
+  const currentConv = selectedConversation.value
+  const isCurrentlySelected = currentConv && currentConv.userUid === userUid
+  
+  console.log('isInMyConversations:', isInMyConversations, 'isCurrentlySelected:', isCurrentlySelected)
+  
+  if (isInMyConversations) {
+    // 用户在"我的会话"中
+    const convIndex = myConversations.value.findIndex(c => c.userUid === userUid)
+    if (convIndex !== -1) {
+      // 更新会话的最近消息和时间（使用响应式方式）
+      myConversations.value[convIndex] = {
+        ...myConversations.value[convIndex],
+        lastMessage: messageContent,
+        lastMessageTime: new Date().toISOString()
+      }
+      const conv = myConversations.value[convIndex]
+      
+      if (isCurrentlySelected) {
+        // 场景1：客服已打开该用户的聊天框 - 直接添加消息到聊天框
+        const newMsg: Message = {
+          id: Date.now(),
+          conversationId: conv.userId,
+          senderId: 0,
+          senderType: 'user',
+          contentType: payload.type === 2 ? 'image' : 'text',
+          content: messageContent,
+          createdAt: new Date().toISOString()
+        }
+        messages.value.push(newMsg)
+        nextTick(() => scrollToBottom())
+        console.log('Message added to chat window for selected conversation')
+      } else {
+        // 场景2：客服没有打开该用户的聊天框 - 未读数+1
+        myConversations.value[convIndex] = {
+          ...myConversations.value[convIndex],
+          unreadCount: (conv.unreadCount || 0) + 1
+        }
+        console.log('Unread count updated for conversation:', conv.userUid, 'new count:', myConversations.value[convIndex].unreadCount)
+      }
+    }
+  } else {
+    // 用户不在"我的会话"中 - 检查是否在排队中
+    const pendingIndex = pendingQueue.value.findIndex(c => c.userUid === userUid)
+    const currentConvInPending = selectedConversation.value && selectedConversation.value.userUid === userUid
     
-    // 1. 如果用户不在"我的会话"中，添加到"排队中"
-    if (!isUserInMyConversations(userUid)) {
+    if (pendingIndex >= 0) {
+      // 用户已在排队中，更新排队列表
+      pendingQueue.value[pendingIndex] = {
+        ...pendingQueue.value[pendingIndex],
+        lastMessage: messageContent,
+        lastMessageTime: new Date().toISOString(),
+        unreadCount: currentConvInPending ? 0 : (pendingQueue.value[pendingIndex].unreadCount || 0) + 1
+      }
+      
+      // 如果客服已打开这个排队用户的聊天框，添加消息到聊天窗口
+      if (currentConvInPending) {
+        const newMsg: Message = {
+          id: Date.now(),
+          conversationId: pendingQueue.value[pendingIndex].userId || 0,
+          senderId: 0,
+          senderType: 'user',
+          contentType: payload.type === 2 ? 'image' : 'text',
+          content: messageContent,
+          createdAt: new Date().toISOString()
+        }
+        messages.value.push(newMsg)
+        nextTick(() => scrollToBottom())
+        console.log('Message added to chat window for pending user')
+      } else {
+        console.log('Pending queue updated for user:', userUid)
+      }
+    } else {
+      // 新用户加入排队
       const newUserConv: UserConversation = {
         id: Date.now(),
-        userId: 0,  // 暂时未知，后续会通过刷新获取
+        userId: 0,
         userUid: userUid,
-        userName: userUid,  // 暂时使用 UID 作为名称
+        userName: userUid,
         deviceType: 'H5',
         lastMessage: messageContent,
         lastMessageTime: new Date().toISOString(),
         unreadCount: 1,
-        projectId: projectIds.value[0] || 1  // 使用第一个项目ID
+        projectId: projectIds.value[0] || 1
       }
-      addToPendingQueue(newUserConv)
+      pendingQueue.value.unshift(newUserConv)
       console.log('New user added to pending queue:', userUid)
-    } else {
-      // 用户在"我的会话"中，更新未读计数
-      const conv = myConversations.value.find(c => c.userUid === userUid)
-      if (conv) {
-        conv.lastMessage = messageContent
-        conv.lastMessageTime = new Date().toISOString()
-        // 如果不是当前选中的会话，增加未读计数
-        if (selectedConversation.value?.userUid !== userUid) {
-          conv.unreadCount = (conv.unreadCount || 0) + 1
-        }
-      }
     }
-    
-    // 2. 如果是当前选中会话的用户发来的消息，显示在聊天窗口
-    const currentConv = selectedConversation.value
-    if (currentConv && currentConv.userUid === userUid) {
-      const newMsg: Message = {
-        id: Date.now(),
-        conversationId: currentConv.userId,
-        senderId: 0,
-        senderType: 'user',
-        contentType: payload.type === 2 ? 'image' : 'text',
-        content: messageContent,
-        createdAt: new Date().toISOString()
-      }
-      
-      messages.value.push(newMsg)
-      nextTick(() => scrollToBottom())
-    }
-    
-    return
   }
 }
 

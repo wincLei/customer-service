@@ -77,6 +77,7 @@ public class UserConversationService {
 
     /**
      * 转换为 DTO
+     * 注意：userUid 使用 {projectId}_{userId} 格式，与 WuKongIM channelId 一致
      */
     private UserConversationDTO toDTO(UserConversation conv) {
         User user = conv.getUser();
@@ -90,10 +91,13 @@ public class UserConversationService {
                 ? formatDeviceType(user.getDeviceType())
                 : "PC端";
 
+        // userUid 使用 {projectId}_{userId} 格式，与 WuKongIM 的 channelId 保持一致
+        String userUid = conv.getProjectId() + "_" + conv.getUserId();
+
         return UserConversationDTO.builder()
                 .id(conv.getId())
                 .userId(conv.getUserId())
-                .userUid(user != null ? user.getUid() : null)
+                .userUid(userUid) // 使用 {projectId}_{userId} 格式
                 .userName(userName)
                 .avatar(user != null ? user.getAvatar() : null)
                 .deviceType(deviceType)
