@@ -65,13 +65,19 @@ public class UserConversationService {
 
     /**
      * 标记用户会话为已读
+     * 
+     * @param userId     用户ID
+     * @param messageSeq 消息序号（可选），如果提供则记录已读位置
      */
     @Transactional
-    public void markAsRead(Long userId) {
+    public void markAsRead(Long userId, Long messageSeq) {
         userConversationRepository.findByUserId(userId).ifPresent(conv -> {
             conv.setUnreadCount(0);
+            if (messageSeq != null && messageSeq > 0) {
+                conv.setLastMessageSeq(messageSeq);
+            }
             userConversationRepository.save(conv);
-            log.info("Marked user conversation as read: userId={}", userId);
+            log.info("Marked user conversation as read: userId={}, messageSeq={}", userId, messageSeq);
         });
     }
 

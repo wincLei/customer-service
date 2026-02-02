@@ -65,13 +65,23 @@ public class WorkbenchController {
      * 标记用户会话为已读
      * 客服查看用户消息后调用此接口清除未读计数
      * 
-     * @param userId 用户ID
+     * @param userId     用户ID
+     * @param messageSeq 消息序号（可选），用于记录已读到哪条消息
      */
     @PostMapping("/users/{userId}/read")
-    public ApiResponse<Void> markAsRead(@PathVariable Long userId) {
-        log.info("Mark user conversation as read: userId={}", userId);
-        userConversationService.markAsRead(userId);
+    public ApiResponse<Void> markAsRead(
+            @PathVariable Long userId,
+            @RequestBody(required = false) MarkAsReadRequest request) {
+        Long messageSeq = request != null ? request.messageSeq() : null;
+        log.info("Mark user conversation as read: userId={}, messageSeq={}", userId, messageSeq);
+        userConversationService.markAsRead(userId, messageSeq);
         return ApiResponse.success(null);
+    }
+
+    /**
+     * 标记已读请求体
+     */
+    public record MarkAsReadRequest(Long messageSeq) {
     }
 
     /**

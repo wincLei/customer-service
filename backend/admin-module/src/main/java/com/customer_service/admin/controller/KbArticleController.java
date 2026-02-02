@@ -23,15 +23,15 @@ public class KbArticleController {
     private final KbArticleService kbArticleService;
 
     /**
-     * 获取已发布的文章列表
+     * 获取已发布的文章列表（支持多个项目，用于工作台）
      */
     @GetMapping
-    public ApiResponse<List<KbArticle>> getArticles(@RequestParam Long projectId) {
-        return ApiResponse.success(kbArticleService.getPublishedArticles(projectId));
+    public ApiResponse<List<KbArticle>> getArticles(@RequestParam("projectIds") List<Long> projectIds) {
+        return ApiResponse.success(kbArticleService.getPublishedArticles(projectIds));
     }
 
     /**
-     * 获取所有文章列表（包含未发布）
+     * 获取单个项目的所有文章列表（包含未发布）
      */
     @GetMapping("/all")
     public ApiResponse<List<KbArticle>> getAllArticles(@RequestParam Long projectId) {

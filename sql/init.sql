@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS quick_replies (
     id BIGSERIAL PRIMARY KEY,
     project_id BIGINT NOT NULL REFERENCES projects(id),
     creator_id BIGINT REFERENCES agents(id),
+    title VARCHAR(100),
     content TEXT NOT NULL,
     category VARCHAR(50),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -601,4 +602,17 @@ VALUES (
     '<p>登录后在"我的订单"页面可以查看所有订单状态...</p>',
     TRUE
 )
+ON CONFLICT DO NOTHING;
+
+-- 插入示例快捷回复
+INSERT INTO quick_replies (project_id, title, content, category)
+VALUES 
+(1, '问候语', '您好，很高兴为您服务，请问有什么可以帮助您的？', '常用'),
+(1, '稍等', '好的，请您稍等，我马上为您查询。', '常用'),
+(1, '感谢', '感谢您的耐心等待，您的问题已经处理完毕。', '常用'),
+(1, '结束语', '感谢您的咨询，如有其他问题随时联系我们，祝您生活愉快！', '常用'),
+(1, '退款政策', '您好，关于退款问题，我们支持7天无理由退款，请您提供订单号以便我们为您处理。', '售后'),
+(1, '配送时间', '您好，我们的标准配送时间为3-5个工作日，偏远地区可能需要额外1-2天。', '物流'),
+(2, '问候语', '您好，欢迎咨询，请问有什么可以帮您？', '常用'),
+(2, '稍等', '请稍等，正在为您查询中...', '常用')
 ON CONFLICT DO NOTHING;

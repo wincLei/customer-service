@@ -11,6 +11,8 @@ public interface QuickReplyRepository extends JpaRepository<QuickReply, Long> {
 
     List<QuickReply> findByProjectId(Long projectId);
 
+    List<QuickReply> findByProjectIdIn(List<Long> projectIds);
+
     List<QuickReply> findByProjectIdAndCreatorIdIsNull(Long projectId);
 
     List<QuickReply> findByProjectIdAndCreatorId(Long projectId, Long creatorId);

@@ -22,6 +22,9 @@ public class QuickReply {
     @Column(name = "creator_id")
     private Long creatorId;
 
+    @Column(length = 100)
+    private String title;
+
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;
 

@@ -7,7 +7,16 @@
     </div>
 
     <!-- 消息列表区域 -->
-    <div class="messages" ref="messagesContainer">
+    <div class="messages" ref="messagesContainer" @scroll="handleMessagesScroll">
+      <!-- 加载更多提示 -->
+      <div v-if="loadingMoreMessages" class="loading-more">
+        <span class="loading-spinner"></span>
+        加载中...
+      </div>
+      <div v-else-if="!hasMoreMessages && messages.length > 0" class="no-more-messages">
+        没有更多消息了
+      </div>
+      
       <!-- 日期分隔线 -->
       <template v-for="(group, index) in groupedMessages" :key="index">
         <div class="date-divider">{{ group.date }}</div>
@@ -196,6 +205,11 @@ const showTicketDialog = ref(false)
 const previewImageUrl = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
 const imageInput = ref<HTMLInputElement | null>(null)
+
+// 分页加载相关状态
+const loadingMoreMessages = ref(false)
+const hasMoreMessages = ref(true)
+const oldestMessageSeq = ref<number>(0)  // 当前最早消息的序号
 
 // 用户信息
 interface UserInfo {
@@ -406,6 +420,27 @@ const initConversation = async () => {
   }
 }
 
+// 解析单条消息
+const parseHistoryMessage = (msg: any): Message & { messageSeq?: number } => {
+  const payload = msg.payload || {}
+  const timestamp = (msg.timestamp || msg.message_time || 0) * 1000
+  const msgDate = new Date(timestamp)
+  const msgFromUid = msg.from_uid || msg.fromUid
+  const senderType = msgFromUid === imUid.value ? 'user' : 'agent'
+  
+  return {
+    id: msg.message_id || msg.messageId || msg.client_msg_no || msg.clientMsgNo,
+    senderType,
+    msgType: payload.type === 2 ? 'image' : payload.type === 3 ? 'file' : 'text',
+    content: payload.content || payload.url || '',
+    fileName: payload.fileName || payload.file_name,
+    time: formatTime(msgDate),
+    date: formatDate(msgDate),
+    timestamp,
+    messageSeq: msg.message_seq || msg.messageSeq || 0
+  }
+}
+
 const loadHistory = async () => {
   // 访客频道: channel_id = {projectId}_{userId}, channel_type = 10
   if (!imUid.value) {
@@ -413,10 +448,15 @@ const loadHistory = async () => {
     return
   }
   
+  // 重置分页状态
+  hasMoreMessages.value = true
+  oldestMessageSeq.value = 0
+  
   loading.value = true
   try {
     // 通过后端代理调用 WuKongIM API 获取历史消息
     // Visitor Channel: channel_id = {projectId}_{userId}, channel_type = 10
+    // 首次加载不传 pullMode，默认获取最新消息
     const response = await request.post('/portal/im/messages/sync', {
       loginUid: imUid.value,
       channelId: imUid.value,  // 访客频道 ID = {projectId}_{userId}
@@ -425,36 +465,110 @@ const loadHistory = async () => {
     }) as any
     
     if (response.code === 0 && response.data) {
-      messages.value = response.data.map((msg: any) => {
-        // 解析 WuKongIM 消息格式
-        const payload = msg.payload || {}
-        const timestamp = (msg.timestamp || msg.message_time || 0) * 1000  // WuKongIM 时间戳是秒
-        const msgDate = new Date(timestamp)
-        
-        // WuKongIM 返回的字段是 snake_case 格式（from_uid）
-        // 判断发送者类型（使用 imUid 格式比较）
-        const msgFromUid = msg.from_uid || msg.fromUid
-        const senderType = msgFromUid === imUid.value ? 'user' : 'agent'
-        
-        console.log('Message from:', msgFromUid, 'imUid:', imUid.value, 'senderType:', senderType)
-        
-        return {
-          id: msg.message_id || msg.messageId || msg.client_msg_no || msg.clientMsgNo,
-          senderType,
-          msgType: payload.type === 2 ? 'image' : payload.type === 3 ? 'file' : 'text',
-          content: payload.content || payload.url || '',
-          fileName: payload.fileName || payload.file_name,
-          time: formatTime(msgDate),
-          date: formatDate(msgDate),
-          timestamp
+      const parsedMessages = response.data.map(parseHistoryMessage)
+      messages.value = parsedMessages
+      
+      // 记录最早消息的序号，用于分页
+      if (parsedMessages.length > 0) {
+        const seqs = parsedMessages.map((m: any) => m.messageSeq || 0).filter((s: number) => s > 0)
+        if (seqs.length > 0) {
+          oldestMessageSeq.value = Math.min(...seqs)
         }
-      })
+        hasMoreMessages.value = parsedMessages.length >= 50
+      } else {
+        hasMoreMessages.value = false
+      }
+      
       scrollToBottom()
     }
   } catch (error) {
     console.error('Failed to load history from WuKongIM:', error)
   } finally {
     loading.value = false
+  }
+}
+
+// 加载更多历史消息（向上滚动时触发）
+const loadMoreMessages = async () => {
+  if (!imUid.value || loadingMoreMessages.value || !hasMoreMessages.value) {
+    return
+  }
+  
+  if (oldestMessageSeq.value <= 1) {
+    hasMoreMessages.value = false
+    return
+  }
+  
+  loadingMoreMessages.value = true
+  
+  try {
+    // pullMode=0 配合 startMessageSeq 向上拉取更旧的消息
+    const response = await request.post('/portal/im/messages/sync', {
+      loginUid: imUid.value,
+      channelId: imUid.value,
+      channelType: WKChannelType.VISITOR,
+      startMessageSeq: oldestMessageSeq.value,
+      limit: 30,
+      pullMode: 0  // 向上拉取更旧消息
+    }) as any
+    
+    if (response.code === 0 && response.data && response.data.length > 0) {
+      const olderMessages = response.data.map(parseHistoryMessage)
+      
+      // 去重：过滤掉已存在的消息
+      const existingIds = new Set(messages.value.map(m => m.id))
+      const uniqueOlderMessages = olderMessages.filter((m: any) => !existingIds.has(m.id))
+      
+      if (uniqueOlderMessages.length === 0) {
+        hasMoreMessages.value = false
+        return
+      }
+      
+      // 保存当前滚动位置
+      const container = messagesContainer.value
+      const previousScrollHeight = container?.scrollHeight || 0
+      
+      // 将旧消息添加到列表前面
+      messages.value = [...uniqueOlderMessages, ...messages.value]
+      
+      // 更新最早消息序号 - 使用新加载的消息中的最小序号
+      const seqs = uniqueOlderMessages.map((m: any) => m.messageSeq || 0).filter((s: number) => s > 0)
+      if (seqs.length > 0) {
+        const newOldestSeq = Math.min(...seqs)
+        // 确保序号在减小，防止重复请求
+        if (newOldestSeq < oldestMessageSeq.value) {
+          oldestMessageSeq.value = newOldestSeq
+        } else {
+          hasMoreMessages.value = false
+        }
+      }
+      
+      hasMoreMessages.value = olderMessages.length >= 30
+      
+      // 恢复滚动位置，保持用户当前查看的消息不动
+      await nextTick()
+      if (container) {
+        const newScrollHeight = container.scrollHeight
+        container.scrollTop = newScrollHeight - previousScrollHeight
+      }
+    } else {
+      hasMoreMessages.value = false
+    }
+  } catch (error) {
+    console.error('Failed to load more messages:', error)
+  } finally {
+    loadingMoreMessages.value = false
+  }
+}
+
+// 处理消息列表滚动事件
+const handleMessagesScroll = () => {
+  const container = messagesContainer.value
+  if (!container) return
+  
+  // 当滚动到顶部附近时（距离顶部 50px 内），加载更多消息
+  if (container.scrollTop < 50) {
+    loadMoreMessages()
   }
 }
 
@@ -921,6 +1035,24 @@ onUnmounted(() => {
   padding: 16px;
 }
 
+/* 加载更多提示样式 */
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  color: #999;
+  font-size: 12px;
+}
+
+.no-more-messages {
+  text-align: center;
+  padding: 12px;
+  color: #ccc;
+  font-size: 12px;
+}
+
 .loading-spinner {
   display: inline-block;
   width: 16px;
@@ -952,6 +1084,8 @@ onUnmounted(() => {
   border-top: 1px solid #e8e8e8;
   padding: 8px 12px;
   padding-bottom: env(safe-area-inset-bottom, 8px);
+  position: relative;
+  z-index: 10;
 }
 
 .input-row {

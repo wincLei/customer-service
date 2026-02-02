@@ -27,6 +27,13 @@ public class KbArticleService {
     }
 
     /**
+     * 获取多个项目的已发布知识库文章列表
+     */
+    public List<KbArticle> getPublishedArticles(List<Long> projectIds) {
+        return kbArticleRepository.findByProjectIdInAndIsPublishedOrderByCreatedAtDesc(projectIds, true);
+    }
+
+    /**
      * 获取所有文章（包含未发布）- 管理员用
      */
     public List<KbArticle> getAllArticles(Long projectId) {

@@ -9,7 +9,11 @@
               排队中 <el-badge :value="queueCount" v-if="queueCount > 0" class="queue-badge" />
             </template>
           </el-tab-pane>
-          <el-tab-pane label="我的会话" name="my"></el-tab-pane>
+          <el-tab-pane label="我的会话" name="my">
+            <template #label>
+              我的会话 <el-badge :value="myUnreadCount" v-if="myUnreadCount > 0" class="queue-badge" />
+            </template>
+          </el-tab-pane>
         </el-tabs>
         <!-- IM 连接状态指示器 -->
         <div class="im-status" :class="{ connected: imConnected, connecting: imConnecting }">
@@ -21,9 +25,9 @@
       <div class="list-content">
         <div 
           v-for="conv in conversations" 
-          :key="conv.id" 
+          :key="conv.userUid || conv.id" 
           class="conversation-item"
-          :class="{ active: selectedConversation?.userId === conv.userId }"
+          :class="{ active: selectedConversation?.userUid === conv.userUid }"
           @click="selectConversation(conv)"
         >
           <div class="conv-avatar">
@@ -39,12 +43,7 @@
             </div>
             <div class="conv-message">{{ conv.lastMessage || '暂无消息' }}</div>
           </div>
-          <div class="conv-actions" v-if="activeTab === 'pending' && conv.unreadCount && conv.unreadCount > 0">
-            <el-button size="small" type="primary" plain @click.stop="acceptConversation(conv)">
-              接入
-            </el-button>
-          </div>
-          <div class="conv-unread" v-else-if="conv.unreadCount && conv.unreadCount > 0">
+          <div class="conv-unread" v-if="conv.unreadCount && conv.unreadCount > 0">
             <el-badge :value="conv.unreadCount" :max="99" />
           </div>
         </div>
@@ -74,7 +73,16 @@
         </div>
 
         <!-- 消息列表 -->
-        <div class="message-list" ref="messageListRef">
+        <div class="message-list" ref="messageListRef" @scroll="handleMessageScroll">
+          <!-- 加载更多提示 -->
+          <div v-if="loadingMoreMessages" class="loading-more">
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <span>加载中...</span>
+          </div>
+          <div v-else-if="!hasMoreMessages && messages.length > 0" class="no-more-messages">
+            没有更多消息了
+          </div>
+          
           <div 
             v-for="msg in messages" 
             :key="msg.id"
@@ -97,6 +105,55 @@
 
         <!-- 输入区域 -->
         <div class="input-area">
+          <!-- 知识库弹窗遮罩 -->
+          <div class="panel-overlay" v-if="showKbPanel" @click="showKbPanel = false"></div>
+          <!-- 知识库弹窗 -->
+          <div class="kb-panel" v-if="showKbPanel" @click.stop>
+            <div class="kb-header">
+              <span>知识库</span>
+              <el-icon @click="showKbPanel = false" style="cursor: pointer"><Close /></el-icon>
+            </div>
+            <div class="kb-search">
+              <el-input v-model="kbSearchQuery" placeholder="搜索知识库..." size="small" clearable>
+                <template #prefix><el-icon><Search /></el-icon></template>
+              </el-input>
+            </div>
+            <div class="kb-list">
+              <div 
+                v-for="item in filteredKbItems" 
+                :key="item.id" 
+                class="kb-item"
+                @click="insertKbContent(item.content)"
+              >
+                <div class="kb-title">{{ item.title }}</div>
+                <div class="kb-content">{{ item.content }}</div>
+              </div>
+              <el-empty v-if="filteredKbItems.length === 0" description="暂无匹配内容" :image-size="40" />
+            </div>
+          </div>
+          
+          <!-- 快捷回复弹窗遮罩 -->
+          <div class="panel-overlay" v-if="showQuickReply" @click="showQuickReply = false"></div>
+          <!-- 快捷回复弹窗 -->
+          <div class="quick-reply-panel" v-if="showQuickReply" @click.stop>
+            <div class="kb-header">
+              <span>快捷回复</span>
+              <el-icon @click="showQuickReply = false" style="cursor: pointer"><Close /></el-icon>
+            </div>
+            <div class="kb-list">
+              <div 
+                v-for="reply in quickReplies" 
+                :key="reply.id" 
+                class="kb-item"
+                @click="insertQuickReply(reply.content)"
+              >
+                <div class="kb-title">{{ reply.title }}</div>
+                <div class="kb-content">{{ reply.content }}</div>
+              </div>
+              <el-empty v-if="quickReplies.length === 0" description="暂无快捷回复" :image-size="40" />
+            </div>
+          </div>
+          
           <div class="input-toolbar">
             <el-button size="small" @click="showKbPanel = !showKbPanel">
               <el-icon><Notebook /></el-icon> 知识库
@@ -107,6 +164,7 @@
           </div>
           <div class="input-box">
             <el-input
+              ref="inputRef"
               v-model="inputMessage"
               type="textarea"
               :rows="3"
@@ -195,7 +253,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { User, Close, Notebook, ChatDotSquare, Plus } from '@element-plus/icons-vue'
+import { User, Close, Notebook, ChatDotSquare, Plus, Search, Loading } from '@element-plus/icons-vue'
 import { WKIM, WKIMEvent } from 'easyjssdk'
 import { DeviceType, WKChannelType } from '@/constants'
 
@@ -214,6 +272,7 @@ interface UserConversation {
   deviceType?: string  // 设备类型 (PC端/H5)
   lastMessage?: string
   lastMessageTime?: string
+  lastMessageSeq?: number  // 最后一条消息的序号，用于标记已读
   unreadCount?: number
   projectId?: number
   isGuest?: boolean
@@ -244,8 +303,71 @@ const activeSideTab = ref('user')
 const userTags = ref<string[]>([])
 const conversationHistory = ref<any[]>([])
 const messageListRef = ref<HTMLElement | null>(null)
+const inputRef = ref<InstanceType<typeof import('element-plus')['ElInput']> | null>(null)
 const showAddTagDialog = ref(false)
 const newTagName = ref('')
+
+// 分页加载相关状态
+const loadingMoreMessages = ref(false)
+const hasMoreMessages = ref(true)
+const oldestMessageSeq = ref<number>(0)  // 当前最旧消息的序号
+
+// 知识库相关
+const kbSearchQuery = ref('')
+const kbItems = ref<{id: number; title: string; content: string}[]>([])
+const filteredKbItems = computed(() => {
+  if (!kbSearchQuery.value) return kbItems.value
+  return kbItems.value.filter(item => 
+    item.title.includes(kbSearchQuery.value) || item.content.includes(kbSearchQuery.value)
+  )
+})
+
+// 快捷回复
+const quickReplies = ref<{id: number; title: string; content: string}[]>([])
+
+// 加载知识库文章（支持多个项目）
+const fetchKbArticles = async (projectIds: number[]) => {
+  try {
+    const projectIdsParam = projectIds.join(',')
+    const response = await fetch(`/api/admin/kb/articles?projectIds=${projectIdsParam}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      }
+    })
+    const data = await response.json()
+    if (data.code === 0 && data.data) {
+      kbItems.value = data.data.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        content: item.content || item.summary || ''
+      }))
+    }
+  } catch (error) {
+    console.error('加载知识库失败:', error)
+  }
+}
+
+// 加载快捷回复（支持多个项目）
+const fetchQuickReplies = async (projectIds: number[]) => {
+  try {
+    const projectIdsParam = projectIds.join(',')
+    const response = await fetch(`/api/admin/quick-replies?projectIds=${projectIdsParam}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      }
+    })
+    const data = await response.json()
+    if (data.code === 0 && data.data) {
+      quickReplies.value = data.data.map((item: any) => ({
+        id: item.id,
+        title: item.title,
+        content: item.content
+      }))
+    }
+  } catch (error) {
+    console.error('加载快捷回复失败:', error)
+  }
+}
 
 // 项目和客服ID（从localStorage获取）
 const projectIds = ref<number[]>([1])  // 客服关联的项目ID列表
@@ -282,8 +404,11 @@ const conversations = computed(() => {
   return activeTab.value === 'pending' ? pendingQueue.value : myConversations.value
 })
 
-// 计算排队中的数量
-const queueCount = computed(() => pendingQueue.value.length)
+// 计算排队中有未读消息的用户数
+const queueCount = computed(() => pendingQueue.value.filter(c => c.unreadCount && c.unreadCount > 0).length)
+
+// 计算"我的会话"中有未读消息的用户数
+const myUnreadCount = computed(() => myConversations.value.filter(c => c.unreadCount && c.unreadCount > 0).length)
 
 // 获取"我的会话"列表 - 从后端 API 加载
 const fetchMyConversations = async () => {
@@ -317,53 +442,101 @@ const isUserInMyConversations = (userUid: string): boolean => {
 
 // 选择会话
 const selectConversation = async (conv: UserConversation) => {
+  // 如果 userId 为 0 但有 userUid，尝试解析获取真实的 userId
+  if ((!conv.userId || conv.userId === 0) && conv.userUid) {
+    const parsed = parseUserUid(conv.userUid)
+    if (parsed) {
+      conv.userId = parsed.userId
+      conv.projectId = parsed.projectId
+      console.log('Parsed userId from userUid:', conv.userUid, '-> userId:', parsed.userId, 'projectId:', parsed.projectId)
+    }
+  }
+  
   selectedConversation.value = conv
-  await fetchMessages(conv.userId)
+  
+  // 使用 userUid 获取历史消息
+  if (conv.userUid) {
+    await fetchMessagesByUserUid(conv.userUid)
+  }
+  
   showUserPanel.value = true
   
-  // 标记为已读
+  // 标记为已读（只有在 userId 有效时才调用后端）
   if (conv.unreadCount && conv.unreadCount > 0) {
-    await markConversationAsRead(conv.userId)
+    if (conv.userId && conv.userId > 0) {
+      await markConversationAsRead(conv.userId, conv.lastMessageSeq)
+    }
+    // 本地清除未读
+    conv.unreadCount = 0
+    
+    // 更新列表中的未读数
+    const myConvIndex = myConversations.value.findIndex(c => c.userUid === conv.userUid)
+    if (myConvIndex !== -1) {
+      myConversations.value[myConvIndex] = { ...myConversations.value[myConvIndex], unreadCount: 0 }
+    }
   }
 }
 
 // 标记会话为已读
-const markConversationAsRead = async (userId: number) => {
+const markConversationAsRead = async (userId: number, messageSeq?: number) => {
   try {
     await fetch(`/api/admin/workbench/users/${userId}/read`, {
       method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-      }
+      },
+      body: JSON.stringify({ messageSeq: messageSeq || null })
     })
     // 更新本地状态 - 两个列表都检查
-    const myConv = myConversations.value.find(c => c.userId === userId)
-    if (myConv) {
-      myConv.unreadCount = 0
+    const myConvIndex = myConversations.value.findIndex(c => c.userId === userId)
+    if (myConvIndex !== -1) {
+      myConversations.value[myConvIndex] = {
+        ...myConversations.value[myConvIndex],
+        unreadCount: 0
+      }
     }
-    const pendingConv = pendingQueue.value.find(c => c.userId === userId)
-    if (pendingConv) {
-      pendingConv.unreadCount = 0
+    const pendingConvIndex = pendingQueue.value.findIndex(c => c.userId === userId)
+    if (pendingConvIndex !== -1) {
+      pendingQueue.value[pendingConvIndex] = {
+        ...pendingQueue.value[pendingConvIndex],
+        unreadCount: 0
+      }
     }
   } catch (error) {
     console.error('标记已读失败:', error)
   }
 }
 
-// 获取消息列表（从 WuKongIM 加载历史消息）
-const fetchMessages = async (userId: number) => {
-  // 在两个列表中查找用户
-  const conv = myConversations.value.find(c => c.userId === userId) 
-    || pendingQueue.value.find(c => c.userId === userId)
-    || selectedConversation.value
-  if (!conv?.userUid) {
-    console.warn('Cannot load messages: userUid not found')
-    return
+// 解析单条消息
+const parseMessage = (msg: any): Message & { messageSeq?: number } => {
+  const payload = msg.payload || {}
+  const timestamp = (msg.timestamp || msg.message_time || 0) * 1000
+  const msgFromUid = msg.from_uid || msg.fromUid || ''
+  const isAgent = msgFromUid.startsWith('agent_')
+  
+  return {
+    id: msg.message_id || msg.messageId || msg.client_msg_no || msg.clientMsgNo || Date.now(),
+    conversationId: 0,
+    senderId: isAgent ? agentId.value : 0,
+    senderType: isAgent ? 'agent' : 'user',
+    contentType: payload.type === 2 ? 'image' : 'text',
+    content: payload.content || payload.url || '',
+    createdAt: new Date(timestamp).toISOString(),
+    messageSeq: msg.message_seq || msg.messageSeq || 0
   }
+}
+
+// 获取消息列表（通过 userUid，用于排队用户）
+const fetchMessagesByUserUid = async (userUid: string) => {
+  // 重置分页状态
+  hasMoreMessages.value = true
+  oldestMessageSeq.value = 0
   
   try {
     // 通过后端代理调用 WuKongIM API 获取历史消息
     // Visitor Channel: channel_id = 用户 UID, channel_type = 10
+    // 首次加载不传 pullMode，默认获取最新消息
     const response = await fetch('/api/admin/im/messages/sync', {
       method: 'POST',
       headers: {
@@ -372,7 +545,7 @@ const fetchMessages = async (userId: number) => {
       },
       body: JSON.stringify({
         loginUid: getAgentUid(),
-        channelId: conv.userUid,
+        channelId: userUid,
         channelType: WKChannelType.VISITOR,  // Visitor Channel
         limit: 50
       })
@@ -381,28 +554,19 @@ const fetchMessages = async (userId: number) => {
     const data = await response.json()
     
     if (data.code === 200 && data.data) {
-      messages.value = data.data.map((msg: any) => {
-        // 解析 WuKongIM 消息格式
-        const payload = msg.payload || {}
-        // WuKongIM 返回的时间戳可能是秒或毫秒
-        const timestamp = (msg.timestamp || msg.message_time || 0) * 1000
-        
-        // 判断发送者类型 - 兼容 snake_case 和 camelCase
-        const msgFromUid = msg.from_uid || msg.fromUid || ''
-        const isAgent = msgFromUid.startsWith('agent_')
-        
-        console.log('History message from:', msgFromUid, 'isAgent:', isAgent)
-        
-        return {
-          id: msg.message_id || msg.messageId || msg.client_msg_no || msg.clientMsgNo || Date.now(),
-          conversationId: conv.userId,
-          senderId: isAgent ? agentId.value : conv.userId,
-          senderType: isAgent ? 'agent' : 'user',
-          contentType: payload.type === 2 ? 'image' : 'text',
-          content: payload.content || payload.url || '',
-          createdAt: new Date(timestamp).toISOString()
+      const parsedMessages = data.data.map(parseMessage)
+      messages.value = parsedMessages
+      
+      // 记录最旧消息的序号，用于分页
+      if (parsedMessages.length > 0) {
+        const seqs = parsedMessages.map((m: any) => m.messageSeq || 0).filter((s: number) => s > 0)
+        if (seqs.length > 0) {
+          oldestMessageSeq.value = Math.min(...seqs)
         }
-      })
+        hasMoreMessages.value = parsedMessages.length >= 50
+      } else {
+        hasMoreMessages.value = false
+      }
       
       await nextTick()
       scrollToBottom()
@@ -412,26 +576,96 @@ const fetchMessages = async (userId: number) => {
   }
 }
 
-// 接入会话（从排队中接入用户，移动到我的会话）
-const acceptConversation = async (conv: UserConversation) => {
+// 加载更多历史消息（向上滚动时触发）
+const loadMoreMessages = async () => {
+  if (!selectedConversation.value?.userUid || loadingMoreMessages.value || !hasMoreMessages.value) {
+    return
+  }
+  
+  if (oldestMessageSeq.value <= 1) {
+    hasMoreMessages.value = false
+    return
+  }
+  
+  loadingMoreMessages.value = true
+  
   try {
-    // 标记为已读
-    await markConversationAsRead(conv.userId)
+    // pullMode=0 配合 startMessageSeq 向上拉取更旧的消息
+    const response = await fetch('/api/admin/im/messages/sync', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify({
+        loginUid: getAgentUid(),
+        channelId: selectedConversation.value.userUid,
+        channelType: WKChannelType.VISITOR,
+        startMessageSeq: oldestMessageSeq.value,
+        limit: 30,
+        pullMode: 0  // 向上拉取更旧消息
+      })
+    })
     
-    // 从排队中移除
-    pendingQueue.value = pendingQueue.value.filter(c => c.userId !== conv.userId)
+    const data = await response.json()
     
-    // 添加到我的会话（如果不存在）
-    if (!isUserInMyConversations(conv.userUid || '')) {
-      myConversations.value.unshift(conv)
+    if (data.code === 200 && data.data && data.data.length > 0) {
+      const olderMessages = data.data.map(parseMessage)
+      
+      // 去重：过滤掉已存在的消息
+      const existingIds = new Set(messages.value.map(m => m.id))
+      const uniqueOlderMessages = olderMessages.filter((m: any) => !existingIds.has(m.id))
+      
+      if (uniqueOlderMessages.length === 0) {
+        hasMoreMessages.value = false
+        return
+      }
+      
+      // 保存当前滚动位置
+      const container = messageListRef.value
+      const previousScrollHeight = container?.scrollHeight || 0
+      
+      // 将旧消息添加到列表前面
+      messages.value = [...uniqueOlderMessages, ...messages.value]
+      
+      // 更新最旧消息序号 - 使用新加载的消息中的最小序号
+      const seqs = uniqueOlderMessages.map((m: any) => m.messageSeq || 0).filter((s: number) => s > 0)
+      if (seqs.length > 0) {
+        const newOldestSeq = Math.min(...seqs)
+        // 确保序号在减小，防止重复请求
+        if (newOldestSeq < oldestMessageSeq.value) {
+          oldestMessageSeq.value = newOldestSeq
+        } else {
+          hasMoreMessages.value = false
+        }
+      }
+      
+      hasMoreMessages.value = olderMessages.length >= 30
+      
+      // 恢复滚动位置，保持用户当前查看的消息不动
+      await nextTick()
+      if (container) {
+        const newScrollHeight = container.scrollHeight
+        container.scrollTop = newScrollHeight - previousScrollHeight
+      }
+    } else {
+      hasMoreMessages.value = false
     }
-    
-    ElMessage.success('已接入会话')
-    selectConversation(conv)
-    activeTab.value = 'my'
   } catch (error) {
-    console.error('接入会话失败:', error)
-    ElMessage.error('接入失败')
+    console.error('加载更多消息失败:', error)
+  } finally {
+    loadingMoreMessages.value = false
+  }
+}
+
+// 处理消息列表滚动事件
+const handleMessageScroll = () => {
+  const container = messageListRef.value
+  if (!container) return
+  
+  // 当滚动到顶部附近时（距离顶部 50px 内），加载更多消息
+  if (container.scrollTop < 50) {
+    loadMoreMessages()
   }
 }
 
@@ -491,18 +725,6 @@ const sendMessage = async () => {
           lastMessageTime: new Date().toISOString()
         }
       }
-      
-      // 通知后端更新会话活动时间
-      fetch('/api/admin/conversations/activity', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
-        },
-        body: JSON.stringify({
-          userId: selectedConversation.value.userId
-        })
-      }).catch(err => console.warn('Activity update failed:', err))
     }
   } catch (error) {
     console.error('发送消息失败:', error)
@@ -515,6 +737,26 @@ const sendMessage = async () => {
 const closeConversation = () => {
   selectedConversation.value = null
   messages.value = []
+  showKbPanel.value = false
+  showQuickReply.value = false
+}
+
+// 插入知识库内容
+const insertKbContent = (content: string) => {
+  inputMessage.value = content
+  showKbPanel.value = false
+  nextTick(() => {
+    inputRef.value?.focus()
+  })
+}
+
+// 插入快捷回复
+const insertQuickReply = (content: string) => {
+  inputMessage.value = content
+  showQuickReply.value = false
+  nextTick(() => {
+    inputRef.value?.focus()
+  })
 }
 
 // 添加标签
@@ -571,6 +813,20 @@ const formatTime = (time?: string) => {
 // 客服 UID（格式: agent_{userId}）
 const getAgentUid = () => `agent_${agentId.value}`
 
+// 解析 userUid（格式: {projectId}_{userId}）
+const parseUserUid = (userUid: string): { projectId: number; userId: number } | null => {
+  if (!userUid) return null
+  const parts = userUid.split('_')
+  if (parts.length >= 2) {
+    const projectId = parseInt(parts[0], 10)
+    const userId = parseInt(parts[1], 10)
+    if (!isNaN(projectId) && !isNaN(userId)) {
+      return { projectId, userId }
+    }
+  }
+  return null
+}
+
 // IM 事件处理函数
 const handleIMConnect = async (result: any) => {
   console.log('Agent IM Connected:', result)
@@ -598,6 +854,7 @@ const handleIMMessage = (message: any) => {
   const channelId = message.channelID || message.channelId || ''
   const channelType = message.channelType || 0
   const messageContent = payload.content || payload.url || ''
+  const messageSeq = message.messageSeq || message.messageSeQ || 0
   
   // 忽略客服自己发的消息
   if (fromUid.startsWith('agent_')) {
@@ -633,7 +890,8 @@ const handleIMMessage = (message: any) => {
       myConversations.value[convIndex] = {
         ...myConversations.value[convIndex],
         lastMessage: messageContent,
-        lastMessageTime: new Date().toISOString()
+        lastMessageTime: new Date().toISOString(),
+        lastMessageSeq: messageSeq  // 保存最新消息序号
       }
       const conv = myConversations.value[convIndex]
       
@@ -651,6 +909,11 @@ const handleIMMessage = (message: any) => {
         messages.value.push(newMsg)
         nextTick(() => scrollToBottom())
         console.log('Message added to chat window for selected conversation')
+        
+        // 调用后端接口清除未读（传递 messageSeq）
+        if (conv.userId) {
+          markConversationAsRead(conv.userId, messageSeq)
+        }
       } else {
         // 场景2：客服没有打开该用户的聊天框 - 未读数+1
         myConversations.value[convIndex] = {
@@ -671,6 +934,7 @@ const handleIMMessage = (message: any) => {
         ...pendingQueue.value[pendingIndex],
         lastMessage: messageContent,
         lastMessageTime: new Date().toISOString(),
+        lastMessageSeq: messageSeq,  // 保存最新消息序号
         unreadCount: currentConvInPending ? 0 : (pendingQueue.value[pendingIndex].unreadCount || 0) + 1
       }
       
@@ -692,20 +956,22 @@ const handleIMMessage = (message: any) => {
         console.log('Pending queue updated for user:', userUid)
       }
     } else {
-      // 新用户加入排队
+      // 新用户加入排队 - 从 userUid 解析 projectId 和 userId
+      const parsed = parseUserUid(userUid)
       const newUserConv: UserConversation = {
         id: Date.now(),
-        userId: 0,
+        userId: parsed?.userId || 0,
         userUid: userUid,
         userName: userUid,
         deviceType: 'H5',
         lastMessage: messageContent,
         lastMessageTime: new Date().toISOString(),
+        lastMessageSeq: messageSeq,  // 保存消息序号
         unreadCount: 1,
-        projectId: projectIds.value[0] || 1
+        projectId: parsed?.projectId || projectIds.value[0] || 1
       }
       pendingQueue.value.unshift(newUserConv)
-      console.log('New user added to pending queue:', userUid)
+      console.log('New user added to pending queue:', userUid, 'parsed userId:', parsed?.userId, 'projectId:', parsed?.projectId)
     }
   }
 }
@@ -803,6 +1069,12 @@ onMounted(async () => {
   
   // 加载"我的会话"列表
   await fetchMyConversations()
+  
+  // 加载知识库和快捷回复（使用所有关联的项目ID）
+  if (projectIds.value.length > 0) {
+    await fetchKbArticles(projectIds.value)
+    await fetchQuickReplies(projectIds.value)
+  }
   
   // 初始化 IM 连接
   await initIMConnection()
@@ -1006,6 +1278,24 @@ watch(selectedConversation, (newVal) => {
   background-color: #f5f7fa;
 }
 
+/* 加载更多提示样式 */
+.loading-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  color: #909399;
+  font-size: 13px;
+}
+
+.no-more-messages {
+  text-align: center;
+  padding: 12px;
+  color: #c0c4cc;
+  font-size: 12px;
+}
+
 .message-item {
   display: flex;
   margin-bottom: 20px;
@@ -1062,6 +1352,89 @@ watch(selectedConversation, (newVal) => {
   background-color: #fff;
 }
 
+/* 知识库和快捷回复面板样式 */
+.kb-panel,
+.quick-reply-panel {
+  position: absolute;
+  bottom: 100%;
+  left: 16px;
+  right: 16px;
+  max-height: 300px;
+  background-color: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.kb-header {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e4e7ed;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 500;
+  color: #303133;
+}
+
+.kb-search {
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.kb-list {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+.kb-item {
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.kb-item:hover {
+  background-color: #ecf5ff;
+}
+
+.kb-item:last-child {
+  border-bottom: none;
+}
+
+.kb-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 4px;
+}
+
+.kb-content {
+  font-size: 12px;
+  color: #909399;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.input-area {
+  position: relative;
+}
+
+/* 弹窗遮罩层 */
+.panel-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9;
+  background-color: transparent;
+}
+
 .input-toolbar {
   padding: 10px 16px;
   border-bottom: 1px solid #f0f2f5;
@@ -1090,6 +1463,11 @@ watch(selectedConversation, (newVal) => {
   border-left: 1px solid #e4e7ed;
   display: flex;
   flex-direction: column;
+}
+
+/* 右侧面板tabs样式调整 */
+.side-panel :deep(.el-tabs__nav-wrap) {
+  padding-left: 20px;
 }
 
 .panel-header {

@@ -13,6 +13,8 @@ public interface KbArticleRepository extends JpaRepository<KbArticle, Long> {
 
     List<KbArticle> findByProjectIdAndIsPublishedOrderByCreatedAtDesc(Long projectId, Boolean isPublished);
 
+    List<KbArticle> findByProjectIdInAndIsPublishedOrderByCreatedAtDesc(List<Long> projectIds, Boolean isPublished);
+
     List<KbArticle> findByProjectIdOrderByCreatedAtDesc(Long projectId);
 
     List<KbArticle> findByProjectIdAndCategoryIdAndIsPublished(Long projectId, Long categoryId, Boolean isPublished);
