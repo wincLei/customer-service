@@ -88,12 +88,21 @@ public class AuthInterceptor implements HandlerInterceptor {
             // 获取角色权限
             List<String> permissions = getPermissions(roleCode);
 
+            // 获取项目ID列表
+            List<Long> projectIds = null;
+            if (userInfo.get("projectIds") != null) {
+                @SuppressWarnings("unchecked")
+                List<Number> rawProjectIds = (List<Number>) userInfo.get("projectIds");
+                projectIds = rawProjectIds.stream().map(Number::longValue).toList();
+            }
+
             // 构建用户上下文
             UserContext context = UserContext.builder()
                     .userId(userId)
                     .username(username)
                     .roleCode(roleCode)
                     .permissions(permissions)
+                    .projectIds(projectIds)
                     .token(token)
                     .build();
 

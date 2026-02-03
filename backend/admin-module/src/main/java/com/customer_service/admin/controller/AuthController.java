@@ -120,11 +120,15 @@ public class AuthController {
         }
 
         // 将用户信息存储到Redis，用于后续请求验证（24小时过期）
+        // 获取用户关联的项目ID列表
+        List<Long> projectIds = userProjectRepository.findProjectIdsByUserId(sysUser.getId());
+
         Map<String, Object> tokenData = new HashMap<>();
         tokenData.put("userId", sysUser.getId());
         tokenData.put("username", sysUser.getUsername());
         tokenData.put("roleCode", roleCode);
         tokenData.put("permissions", permissions);
+        tokenData.put("projectIds", projectIds);
         try {
             String tokenJson = objectMapper.writeValueAsString(tokenData);
             redisTemplate.opsForValue().set("token:" + token, tokenJson, 24, TimeUnit.HOURS);
@@ -135,9 +139,6 @@ public class AuthController {
         // 构建响应数据
         Map<String, Object> data = new HashMap<>();
         data.put("token", token);
-
-        // 获取用户关联的项目ID列表
-        List<Long> projectIds = userProjectRepository.findProjectIdsByUserId(sysUser.getId());
 
         Map<String, Object> user = new HashMap<>();
         user.put("id", sysUser.getId());

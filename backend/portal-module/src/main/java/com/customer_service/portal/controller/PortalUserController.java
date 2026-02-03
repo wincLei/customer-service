@@ -1,5 +1,6 @@
 package com.customer_service.portal.controller;
 
+import com.customer_service.portal.security.PortalTokenProvider;
 import com.customer_service.portal.service.PortalUserService;
 import com.customer_service.shared.constant.DeviceType;
 import com.customer_service.shared.dto.ApiResponse;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class PortalUserController {
 
     private final PortalUserService portalUserService;
+    private final PortalTokenProvider portalTokenProvider;
 
     /**
      * 用户初始化请求
@@ -35,7 +37,7 @@ public class PortalUserController {
     }
 
     /**
-     * 用户初始化响应（包含 IM Token）
+     * 用户初始化响应（包含 IM Token 和 Portal Token）
      */
     @Data
     public static class UserInitResponse {
@@ -50,8 +52,10 @@ public class PortalUserController {
         private Long mergedFromUserId;
         /** WuKongIM 连接 Token */
         private String imToken;
+        /** Portal 访问 Token（用于后续接口认证） */
+        private String portalToken;
 
-        public static UserInitResponse from(PortalUserService.UserInitResult result) {
+        public static UserInitResponse from(PortalUserService.UserInitResult result, String portalToken) {
             UserInitResponse response = new UserInitResponse();
             User user = result.user();
             response.setId(user.getId());
@@ -64,6 +68,7 @@ public class PortalUserController {
             response.setMerged(result.merged());
             response.setMergedFromUserId(result.mergedFromUserId());
             response.setImToken(result.imToken());
+            response.setPortalToken(portalToken);
             return response;
         }
     }
@@ -98,7 +103,13 @@ public class PortalUserController {
                 request.getPhone(),
                 deviceFlag);
 
-        return ApiResponse.success(UserInitResponse.from(result));
+        // 生成 Portal 访问 Token
+        String portalToken = portalTokenProvider.generateToken(
+                result.user().getId(),
+                request.getProjectId(),
+                result.user().getUid());
+
+        return ApiResponse.success(UserInitResponse.from(result, portalToken));
     }
 
     /**

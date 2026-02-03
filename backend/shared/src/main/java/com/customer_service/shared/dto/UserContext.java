@@ -22,6 +22,7 @@ public class UserContext {
     private String roleCode;
     private String roleName;
     private List<String> permissions;
+    private List<Long> projectIds;
     private String token;
 
     /**
@@ -66,5 +67,22 @@ public class UserContext {
             }
         }
         return false;
+    }
+
+    /**
+     * 检查是否是管理员
+     */
+    public boolean isAdmin() {
+        return "admin".equals(roleCode);
+    }
+
+    /**
+     * 检查是否有项目访问权限
+     */
+    public boolean hasProjectAccess(Long projectId) {
+        if (isAdmin()) {
+            return true;
+        }
+        return projectIds != null && projectIds.contains(projectId);
     }
 }

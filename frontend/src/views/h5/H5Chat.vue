@@ -183,7 +183,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import request from '@/api'
+import portalApi, { setPortalToken } from '@/api/portal'
 import { WKIM, WKIMEvent } from 'easyjssdk'
 import { DeviceType, WKChannelType } from '@/constants'
 
@@ -338,7 +338,7 @@ const initUser = async () => {
   }
   
   try {
-    const response = await request.post('/portal/user/init', {
+    const response = await portalApi.post('/portal/user/init', {
       projectId: parseInt(pid),
       guestUid,
       externalUid: route.query.uid as string || route.query.external_uid as string || route.query.externalUid as string,
@@ -367,6 +367,12 @@ const initUser = async () => {
         isGuest: userData.isGuest
       }
       
+      // 保存 Portal Token（用于后续接口认证）
+      if (userData.portalToken) {
+        setPortalToken(userData.portalToken)
+        console.log('Portal Token saved')
+      }
+      
       // 保存 IM Token（从 user/init 接口直接获取，无需单独调用）
       if (userData.imToken) {
         imToken.value = userData.imToken
@@ -391,7 +397,7 @@ const initConversation = async () => {
   if (!currentUser.value?.id) return
   
   try {
-    const response = await request.post('/portal/conversation/init', {
+    const response = await portalApi.post('/portal/conversation/init', {
       projectId: parseInt(projectId.value),
       userId: currentUser.value.id
     }) as any
@@ -457,7 +463,7 @@ const loadHistory = async () => {
     // 通过后端代理调用 WuKongIM API 获取历史消息
     // Visitor Channel: channel_id = {projectId}_{userId}, channel_type = 10
     // 首次加载不传 pullMode，默认获取最新消息
-    const response = await request.post('/portal/im/messages/sync', {
+    const response = await portalApi.post('/portal/im/messages/sync', {
       loginUid: imUid.value,
       channelId: imUid.value,  // 访客频道 ID = {projectId}_{userId}
       channelType: WKChannelType.VISITOR,
@@ -503,7 +509,7 @@ const loadMoreMessages = async () => {
   
   try {
     // pullMode=0 配合 startMessageSeq 向上拉取更旧的消息
-    const response = await request.post('/portal/im/messages/sync', {
+    const response = await portalApi.post('/portal/im/messages/sync', {
       loginUid: imUid.value,
       channelId: imUid.value,
       channelType: WKChannelType.VISITOR,
@@ -756,7 +762,7 @@ const handleImageUpload = async (event: Event) => {
   if (!file) return
   
   try {
-    const tokenRes = await request.get('/portal/oss/token') as any
+    const tokenRes = await portalApi.get('/portal/oss/token') as any
     
     if (tokenRes.code === 0 && tokenRes.data) {
       const { accessKeyId, policy, signature, host, dir } = tokenRes.data
@@ -814,7 +820,7 @@ const handleSubmitTicket = async () => {
   }
   
   try {
-    const response = await request.post('/portal/ticket/create', {
+    const response = await portalApi.post('/portal/ticket/create', {
       projectId: parseInt(projectId.value),
       userId: currentUser.value?.id,
       title: ticketForm.value.title,
