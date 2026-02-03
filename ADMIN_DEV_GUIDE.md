@@ -269,7 +269,6 @@ curl -X POST -H "Content-Type: application/json" \
 ### 后端
 
 - [ ] WuKongIM集成（实时消息推送）
-- [ ] RocketMQ消息队列（异步任务）
 - [ ] 会话分配算法（负载均衡）
 - [ ] 质检评分功能
 - [ ] 数据统计API

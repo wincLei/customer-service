@@ -38,37 +38,6 @@ services:
     networks:
       - mini-customer-service-net
 
-  # RocketMQ 消息队列
-  rocketmq-namesrv:
-    image: apache/rocketmq:5.1.4
-    container_name: rocketmq-namesrv
-    ports:
-      - "9876:9876"
-    environment:
-      JAVA_OPT: "-Xms512M -Xmx512M"
-    volumes:
-      - rocketmq_namesrv_data:/root/store
-    networks:
-      - mini-customer-service-net
-
-  rocketmq-broker:
-    image: apache/rocketmq:5.1.4
-    container_name: rocketmq-broker
-    ports:
-      - "10911:10911"
-      - "10912:10912"
-      - "10909:10909"
-    environment:
-      JAVA_OPT: "-Xms1G -Xmx1G"
-      NAMESRV_ADDR: rocketmq-namesrv:9876
-      BROKER_IP1: rocketmq-broker
-    volumes:
-      - rocketmq_broker_data:/root/store
-    depends_on:
-      - rocketmq-namesrv
-    networks:
-      - mini-customer-service-net
-
   # WuKongIM 即时通讯服务 (v2 支持 JSON-RPC 协议)
   wukongim:
     image: wukongim/wukongim:v2
@@ -102,7 +71,6 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres123
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
-      ROCKETMQ_NAMESRV_ADDR: rocketmq-namesrv:9876
       WUKONGIM_API_URL: http://wukongim:5001
       WUKONGIM_APP_KEY: wukongim_admin_secret_2026
       TZ: Asia/Shanghai
@@ -129,7 +97,6 @@ services:
       SPRING_DATASOURCE_PASSWORD: postgres123
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
-      ROCKETMQ_NAMESRV_ADDR: rocketmq-namesrv:9876
       WUKONGIM_API_URL: http://wukongim:5001
       WUKONGIM_APP_KEY: wukongim_admin_secret_2026
       TZ: Asia/Shanghai
@@ -168,8 +135,4 @@ volumes:
   postgres_data:
     driver: local
   redis_data:
-    driver: local
-  rocketmq_namesrv_data:
-    driver: local
-  rocketmq_broker_data:
     driver: local

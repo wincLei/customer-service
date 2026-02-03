@@ -24,7 +24,7 @@ docker-compose ps
 
 ```bash
 # 启动必要的服务
-docker-compose up -d postgres redis wukongim rocketmq-namesrv rocketmq-broker
+docker-compose up -d postgres redis wukongim
 
 # 后端开发
 cd backend

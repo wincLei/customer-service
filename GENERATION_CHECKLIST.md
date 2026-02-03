@@ -124,7 +124,6 @@
 - ✅ `docker-compose.yml` - 完整的容器编排配置
   - ✅ PostgreSQL 数据库
   - ✅ Redis 缓存
-  - ✅ RocketMQ 消息队列
   - ✅ WuKongIM 即时通讯
   - ✅ 后端API服务
   - ✅ 前端Nginx服务

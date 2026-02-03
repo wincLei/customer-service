@@ -77,7 +77,7 @@ echo -e "${GREEN}  ✓ 前端构建完成${NC}"
 
 # Step 3: 启动基础设施
 echo -e "\n${YELLOW}[3/4] 启动基础设施服务...${NC}"
-docker-compose -f docker-compose.dev.yml up -d postgres redis rocketmq-namesrv rocketmq-broker wukongim
+docker-compose -f docker-compose.dev.yml up -d postgres redis wukongim
 
 echo -e "${BLUE}  -> 等待数据库就绪...${NC}"
 sleep 10

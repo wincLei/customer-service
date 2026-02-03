@@ -322,7 +322,7 @@ brew install --cask postman
 
 ```bash
 # 1. 启动所有依赖服务
-docker-compose up -d postgres redis wukongim rocketmq-namesrv rocketmq-broker
+docker-compose up -d postgres redis wukongim
 
 # 2. 等待服务就绪（检查健康状态）
 docker-compose exec postgres pg_isready

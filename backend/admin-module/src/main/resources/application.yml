@@ -77,12 +77,3 @@ wukongim:
   app-key: ${WUKONGIM_APP_KEY:wukongim_admin_secret_2026} # 管理 API 认证密钥
   app-id: customer-service
   app-secret: demo_app_secret
-
-# RocketMQ 配置
-rocketmq:
-  nameserver: localhost:9876
-  producer:
-    group: mini-customer-service-producer
-    send-message-timeout: 10000
-  consumer:
-    group: mini-customer-service-consumer

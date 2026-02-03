@@ -12,7 +12,6 @@
   - **UI 框架**：Element Plus (Admin/PC端) / Vant UI (H5端) / TailwindCSS
   - **IM 中间件**：[WuKongIM](https://github.com/WuKongIM/WuKongIM)
   - **数据存储**：PostgreSQL, Redis，阿里云对象存储oss(存储上传的文件)
-  - **消息队列**：RocketMQ
 - **目标用户**：网站/应用运营方的客服团队与终端用户（访客/注册用户）。
 - **项目结构**：
   ```
@@ -179,8 +178,6 @@ services:
     image: postgres:15
   redis:
     image: redis:7
-  rocketmq:
-    image: apache/rocketmq:5.1.4
 ```
 
 ### 5.3 Nginx 配置示例

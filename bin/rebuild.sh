@@ -45,7 +45,7 @@ show_help() {
     echo "  frontend   - 构建并重启前端模块"
     echo "  backend    - 构建并重启所有后端模块 (admin + portal)"
     echo "  all        - 构建并重启所有模块"
-    echo "  infra      - 仅启动基础设施 (postgres, redis, rocketmq, wukongim)"
+    echo "  infra      - 仅启动基础设施 (postgres, redis, wukongim)"
     echo "  status     - 查看所有容器状态"
     echo "  logs       - 查看所有应用容器日志"
     echo ""
@@ -170,7 +170,7 @@ build_frontend() {
 # 启动基础设施
 start_infra() {
     echo -e "\n${YELLOW}>>> 启动基础设施服务${NC}"
-    docker-compose -f docker-compose.dev.yml up -d postgres redis rocketmq-namesrv rocketmq-broker wukongim
+    docker-compose -f docker-compose.dev.yml up -d postgres redis wukongim
     echo -e "${GREEN}  ✓ 基础设施已启动${NC}"
 }
 

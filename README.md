@@ -39,7 +39,6 @@ customer-service/
 - **缓存**: Redis 7
 - **认证**: JWT (io.jsonwebtoken)
 - **构建**: Maven
-- **消息队列**: RocketMQ 5.1.4
 
 ### 前端
 
@@ -286,7 +285,6 @@ SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_service
 SPRING_DATASOURCE_USERNAME: postgres
 SPRING_DATASOURCE_PASSWORD: postgres123
 SPRING_REDIS_HOST: redis
-ROCKETMQ_NAMESRV_ADDR: rocketmq-namesrv:9876
 WUKONGIM_API_URL: http://wukongim:5000
 ```
 

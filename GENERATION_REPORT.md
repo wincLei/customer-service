@@ -156,7 +156,6 @@ ticket_events     -- 工单流转记录
 ```yaml
 services: postgres        -- 数据库 (15)
   redis           -- 缓存 (7)
-  rocketmq-*      -- 消息队列 (5.1.4)
   wukongim        -- IM服务
   backend-api     -- 后端服务
   frontend        -- 前端Nginx
@@ -187,7 +186,6 @@ services: postgres        -- 数据库 (15)
 |        | JWT          | 0.12.3 |
 | 中间件 | PostgreSQL   | 15     |
 |        | Redis        | 7      |
-|        | RocketMQ     | 5.1.4  |
 |        | WuKongIM     | latest |
 |        | Nginx        | alpine |
 |        | Docker       | latest |

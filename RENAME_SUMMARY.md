@@ -32,7 +32,7 @@
 - [x] backend/portal-module/pom.xml - groupId、parent、依赖
 - [x] backend/shared/pom.xml - groupId、parent
 - [x] backend/scheduler/pom.xml - groupId、parent、依赖
-- [x] backend/admin-module/src/main/resources/application.yml - 应用名称、JWT secret、WuKongIM app-id、RocketMQ groups
+- [x] backend/admin-module/src/main/resources/application.yml - 应用名称、JWT secret、WuKongIM app-id
 - [x] backend/portal-module/src/main/resources/application.yml - 应用名称、JWT secret
 - [x] backend/portal-module/.../PublicConfigController.java - 欢迎消息
 
@@ -90,7 +90,6 @@ networks: mini-customer-service-net
 2. **数据库名称未更改**: 数据库名仍为 `customer_service`，保持向后兼容
 3. **WuKongIM App ID**: 已更新为 `mini-customer-service`
 4. **JWT Secret**: 已更新为带 `mini-` 前缀的新值
-5. **RocketMQ Groups**: 已更新为 `mini-customer-service-producer/consumer`
 
 ## 🚀 后续步骤
 
