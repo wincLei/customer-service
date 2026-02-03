@@ -1,5 +1,6 @@
 package com.customer_service.admin.controller;
 
+import com.customer_service.admin.dto.CustomerTagDTO;
 import com.customer_service.admin.service.CustomerUserService;
 import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.context.UserContextHolder;
@@ -188,7 +189,11 @@ public class CustomerUserController {
         }
 
         List<CustomerTag> tags = customerUserService.getUserTags(id);
-        return ApiResponse.success(tags);
+        // 转换为 DTO，避免 Hibernate 懒加载代理序列化问题
+        List<CustomerTagDTO> tagDTOs = tags.stream()
+                .map(CustomerTagDTO::fromEntity)
+                .collect(Collectors.toList());
+        return ApiResponse.success(tagDTOs);
     }
 
     /**

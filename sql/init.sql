@@ -390,9 +390,9 @@ VALUES (
 
 -- 插入系统角色
 INSERT INTO sys_roles (code, name, description, permissions, is_system) VALUES
-('super_admin', '超级管理员', '拥有系统所有权限', '{"menus": ["dashboard", "workbench", "projects", "system", "users", "agents", "roles", "menus", "settings", "client", "customers", "customer-tags", "tickets"], "actions": ["*"]}', TRUE),
-('admin', '管理员', '项目管理员，可以管理客服和查看统计', '{"menus": ["dashboard", "projects", "knowledge", "system", "users", "agents", "roles", "menus", "settings", "client", "customers", "customer-tags", "tickets"], "actions": ["dashboard:view", "project:manage", "kb:manage", "user:manage", "agent:manage", "role:manage", "menu:manage", "settings:manage", "customer:manage", "ticket:manage"]}', TRUE),
-('agent', '客服', '普通客服，可以接待用户', '{"menus": ["workbench", "knowledge", "settings", "client", "customers", "customer-tags", "tickets"], "actions": ["workbench", "conversation:handle", "kb:view", "kb:manage", "customer:view", "ticket:handle"]}', TRUE),
+('super_admin', '超级管理员', '拥有系统所有权限', '{"menus": ["dashboard", "workbench", "projects", "system", "users", "agents", "roles", "menus", "settings", "client", "customers", "customer-tags", "quick-replies", "tickets"], "actions": ["*"]}', TRUE),
+('admin', '管理员', '项目管理员，可以管理客服和查看统计', '{"menus": ["dashboard", "projects", "knowledge", "system", "users", "agents", "roles", "menus", "settings", "client", "customers", "customer-tags", "quick-replies", "tickets"], "actions": ["dashboard:view", "project:manage", "kb:manage", "user:manage", "agent:manage", "role:manage", "menu:manage", "settings:manage", "customer:manage", "ticket:manage"]}', TRUE),
+('agent', '客服', '普通客服，可以接待用户', '{"menus": ["workbench", "knowledge", "settings", "client", "customers", "customer-tags", "quick-replies", "tickets"], "actions": ["workbench", "conversation:handle", "kb:view", "kb:manage", "customer:view", "ticket:handle"]}', TRUE),
 ('viewer', '观察员', '只能查看不能操作', '{"menus": ["dashboard"], "actions": ["dashboard:view"]}', FALSE)
 ON CONFLICT (code) DO NOTHING;
 
@@ -411,7 +411,8 @@ ON CONFLICT (code) DO NOTHING;
 -- 插入客户端子菜单（二级菜单）
 INSERT INTO sys_menus (code, name, type, parent_id, path, icon, sort_order, is_enabled, description) VALUES
 ('customers', '用户管理', 'menu', (SELECT id FROM sys_menus WHERE code = 'client'), '/admin/customers', 'User', 1, TRUE, '管理客户端用户'),
-('customer-tags', '标签管理', 'menu', (SELECT id FROM sys_menus WHERE code = 'client'), '/admin/customer-tags', 'PriceTag', 2, TRUE, '管理客户标签')
+('customer-tags', '标签管理', 'menu', (SELECT id FROM sys_menus WHERE code = 'client'), '/admin/customer-tags', 'PriceTag', 2, TRUE, '管理客户标签'),
+('quick-replies', '快捷回复', 'menu', (SELECT id FROM sys_menus WHERE code = 'client'), '/admin/quick-replies', 'ChatLineRound', 3, TRUE, '管理快捷回复模板')
 ON CONFLICT (code) DO NOTHING;
 
 -- 插入系统管理子菜单（二级菜单）

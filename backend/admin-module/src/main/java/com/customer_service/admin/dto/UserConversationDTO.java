@@ -73,6 +73,16 @@ public class UserConversationDTO {
     private Boolean isGuest;
 
     /**
+     * 外部用户ID
+     */
+    private String externalUid;
+
+    /**
+     * 邮箱
+     */
+    private String email;
+
+    /**
      * 手机号
      */
     private String phone;

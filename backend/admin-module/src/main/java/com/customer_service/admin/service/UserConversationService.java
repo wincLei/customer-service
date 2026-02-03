@@ -6,10 +6,15 @@ import com.customer_service.shared.entity.UserConversation;
 import com.customer_service.shared.repository.UserConversationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -36,6 +41,69 @@ public class UserConversationService {
         return conversations.stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
+    }
+
+    /**
+     * 分页获取多个项目下的用户会话列表（我的会话）
+     * 按最后消息时间倒序排列
+     * 
+     * @param projectIds 项目ID列表
+     * @param page       页码（从0开始）
+     * @param pageSize   每页大小
+     * @return 包含列表和分页信息的Map
+     */
+    public Map<String, Object> getUserConversationsPaged(List<Long> projectIds, int page, int pageSize) {
+        return getUserConversationsPaged(projectIds, page, pageSize, null);
+    }
+
+    /**
+     * 分页获取多个项目下的用户会话列表（我的会话），支持搜索
+     * 按最后消息时间倒序排列
+     * 
+     * @param projectIds 项目ID列表
+     * @param page       页码（从0开始）
+     * @param pageSize   每页大小
+     * @param keyword    搜索关键词（全匹配 uid 或 external_uid）
+     * @return 包含列表和分页信息的Map
+     */
+    public Map<String, Object> getUserConversationsPaged(List<Long> projectIds, int page, int pageSize,
+            String keyword) {
+        log.info("Getting user conversations paged for projects: {}, page: {}, pageSize: {}, keyword: {}",
+                projectIds, page, pageSize, keyword);
+        Map<String, Object> result = new HashMap<>();
+
+        if (projectIds == null || projectIds.isEmpty()) {
+            result.put("list", List.of());
+            result.put("total", 0L);
+            result.put("page", page);
+            result.put("pageSize", pageSize);
+            result.put("hasMore", false);
+            return result;
+        }
+
+        Pageable pageable = PageRequest.of(page, pageSize);
+        Page<UserConversation> pageResult;
+
+        // 如果有搜索关键词，使用带搜索条件的查询
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String trimmedKeyword = keyword.trim();
+            pageResult = userConversationRepository.findByProjectIdsAndKeywordPaged(projectIds, trimmedKeyword,
+                    pageable);
+        } else {
+            pageResult = userConversationRepository.findByProjectIdsWithUserPaged(projectIds, pageable);
+        }
+
+        List<UserConversationDTO> list = pageResult.getContent().stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+
+        result.put("list", list);
+        result.put("total", pageResult.getTotalElements());
+        result.put("page", page);
+        result.put("pageSize", pageSize);
+        result.put("hasMore", pageResult.hasNext());
+
+        return result;
     }
 
     /**
@@ -112,6 +180,8 @@ public class UserConversationService {
                 .unreadCount(conv.getUnreadCount())
                 .projectId(conv.getProjectId())
                 .isGuest(user != null ? user.getIsGuest() : true)
+                .externalUid(user != null ? user.getExternalUid() : null)
+                .email(user != null ? user.getEmail() : null)
                 .phone(user != null ? user.getPhone() : null)
                 .build();
     }

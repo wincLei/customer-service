@@ -69,11 +69,12 @@ public interface UserConversationRepository extends JpaRepository<UserConversati
 
         /**
          * 查询多个项目下的用户会话列表，关联用户信息
+         * 排序规则：未读消息优先（有未读的在前），然后按最后消息时间倒序
          */
         @Query("SELECT uc FROM UserConversation uc " +
                         "LEFT JOIN FETCH uc.user u " +
                         "WHERE uc.projectId IN :projectIds " +
-                        "ORDER BY uc.lastMessageTime DESC")
+                        "ORDER BY CASE WHEN uc.unreadCount > 0 THEN 0 ELSE 1 END, uc.lastMessageTime DESC")
         List<UserConversation> findByProjectIdsWithUser(@Param("projectIds") List<Long> projectIds);
 
         /**
@@ -90,4 +91,51 @@ public interface UserConversationRepository extends JpaRepository<UserConversati
          */
         @Query("SELECT COUNT(uc) FROM UserConversation uc WHERE uc.projectId IN :projectIds AND uc.unreadCount > 0")
         long countByProjectIdsAndUnreadCountGreaterThanZero(@Param("projectIds") List<Long> projectIds);
+
+        /**
+         * 分页查询多个项目下的用户会话列表，关联用户信息
+         * 排序规则：未读消息优先（有未读的在前），然后按最后消息时间倒序
+         */
+        @Query(value = "SELECT uc FROM UserConversation uc " +
+                        "LEFT JOIN FETCH uc.user u " +
+                        "WHERE uc.projectId IN :projectIds " +
+                        "ORDER BY CASE WHEN uc.unreadCount > 0 THEN 0 ELSE 1 END, uc.lastMessageTime DESC, uc.id DESC", countQuery = "SELECT COUNT(uc) FROM UserConversation uc WHERE uc.projectId IN :projectIds")
+        Page<UserConversation> findByProjectIdsWithUserPaged(@Param("projectIds") List<Long> projectIds,
+                        Pageable pageable);
+
+        /**
+         * 统计多个项目下的用户会话总数
+         */
+        @Query("SELECT COUNT(uc) FROM UserConversation uc WHERE uc.projectId IN :projectIds")
+        long countByProjectIds(@Param("projectIds") List<Long> projectIds);
+
+        /**
+         * 分页查询多个项目下的用户会话列表（带搜索条件）
+         * 搜索条件：全匹配用户的 uid 或 external_uid
+         * 排序规则：未读消息优先（有未读的在前），然后按最后消息时间倒序
+         */
+        @Query(value = "SELECT uc FROM UserConversation uc " +
+                        "LEFT JOIN FETCH uc.user u " +
+                        "WHERE uc.projectId IN :projectIds " +
+                        "AND (u.uid = :keyword OR u.externalUid = :keyword) " +
+                        "ORDER BY CASE WHEN uc.unreadCount > 0 THEN 0 ELSE 1 END, uc.lastMessageTime DESC, uc.id DESC", countQuery = "SELECT COUNT(uc) FROM UserConversation uc "
+                                        +
+                                        "LEFT JOIN uc.user u " +
+                                        "WHERE uc.projectId IN :projectIds " +
+                                        "AND (u.uid = :keyword OR u.externalUid = :keyword)")
+        Page<UserConversation> findByProjectIdsAndKeywordPaged(
+                        @Param("projectIds") List<Long> projectIds,
+                        @Param("keyword") String keyword,
+                        Pageable pageable);
+
+        /**
+         * 统计多个项目下匹配搜索条件的用户会话总数
+         */
+        @Query("SELECT COUNT(uc) FROM UserConversation uc " +
+                        "LEFT JOIN uc.user u " +
+                        "WHERE uc.projectId IN :projectIds " +
+                        "AND (u.uid = :keyword OR u.externalUid = :keyword)")
+        long countByProjectIdsAndKeyword(
+                        @Param("projectIds") List<Long> projectIds,
+                        @Param("keyword") String keyword);
 }

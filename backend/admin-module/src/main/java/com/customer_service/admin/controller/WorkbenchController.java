@@ -32,11 +32,26 @@ public class WorkbenchController {
      * 返回多个项目下所有用户的会话列表，按最后消息时间倒序
      * 
      * @param projectIds 项目ID列表（逗号分隔或多个参数）
+     * @param page       页码（从0开始，可选，默认0）
+     * @param pageSize   每页大小（可选，默认20）
+     * @param keyword    搜索关键词（可选，全匹配 uid 或 external_uid）
      */
     @GetMapping("/users")
-    public ApiResponse<List<UserConversationDTO>> getUserConversations(
-            @RequestParam("projectIds") List<Long> projectIds) {
-        log.info("Get user conversations for projects: {}", projectIds);
+    public ApiResponse<?> getUserConversations(
+            @RequestParam("projectIds") List<Long> projectIds,
+            @RequestParam(value = "page", required = false) Integer page,
+            @RequestParam(value = "pageSize", required = false) Integer pageSize,
+            @RequestParam(value = "keyword", required = false) String keyword) {
+        log.info("Get user conversations for projects: {}, page: {}, pageSize: {}, keyword: {}",
+                projectIds, page, pageSize, keyword);
+
+        // 如果提供了分页参数，返回分页结果
+        if (page != null && pageSize != null) {
+            return ApiResponse
+                    .success(userConversationService.getUserConversationsPaged(projectIds, page, pageSize, keyword));
+        }
+
+        // 否则返回全部列表（兼容旧接口）
         return ApiResponse.success(userConversationService.getUserConversations(projectIds));
     }
 

@@ -96,6 +96,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '标签管理', menu: 'customer-tags' },
       },
       {
+        path: 'quick-replies',
+        name: 'QuickReplyManagement',
+        component: () => import('@/views/admin/QuickReplyManagement.vue'),
+        meta: { title: '快捷回复', menu: 'quick-replies' },
+      },
+      {
         path: 'tickets',
         name: 'TicketManagement',
         component: () => import('@/views/admin/TicketManagement.vue'),

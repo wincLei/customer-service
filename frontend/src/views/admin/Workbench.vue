@@ -19,10 +19,38 @@
         <div class="im-status" :class="{ connected: imConnected, connecting: imConnecting }">
           <span class="status-dot"></span>
           <span class="status-text">{{ imConnected ? 'IM已连接' : imConnecting ? '连接中...' : 'IM未连接' }}</span>
+          <!-- 声音设置按钮 -->
+          <el-tooltip :content="soundEnabled ? '声音提醒已开启' : '声音提醒已关闭'" placement="top">
+            <el-icon 
+              class="sound-toggle" 
+              :class="{ enabled: soundEnabled }"
+              @click.stop="showSoundSettings = true"
+            >
+              <Bell v-if="soundEnabled" />
+              <MuteNotification v-else />
+            </el-icon>
+          </el-tooltip>
+        </div>
+        
+        <!-- 会话搜索框 -->
+        <div class="conversation-search" v-if="activeTab === 'my'">
+          <el-input
+            v-model="searchKeyword"
+            placeholder="输入 UID 搜索用户"
+            size="small"
+            clearable
+            @keyup.enter="handleSearch"
+            @clear="handleClearSearch"
+          >
+            <template #prefix><el-icon><Search /></el-icon></template>
+            <template #append>
+              <el-button @click="handleSearch" :loading="searchLoading">搜索</el-button>
+            </template>
+          </el-input>
         </div>
       </div>
       
-      <div class="list-content">
+      <div class="list-content" ref="conversationListRef" @scroll="handleConversationScroll">
         <div 
           v-for="conv in conversations" 
           :key="conv.userUid || conv.id" 
@@ -46,6 +74,15 @@
           <div class="conv-unread" v-if="conv.unreadCount && conv.unreadCount > 0">
             <el-badge :value="conv.unreadCount" :max="99" />
           </div>
+        </div>
+        
+        <!-- 会话列表加载更多提示 -->
+        <div v-if="loadingMoreConversations" class="loading-more-conv">
+          <el-icon class="is-loading"><Loading /></el-icon>
+          <span>加载中...</span>
+        </div>
+        <div v-else-if="!hasMoreConversations && myConversations.length > 0 && activeTab === 'my'" class="no-more-conv">
+          没有更多会话了
         </div>
         
         <el-empty v-if="conversations.length === 0" description="暂无会话" :image-size="80" />
@@ -200,6 +237,18 @@
               <span>{{ selectedConversation.userName || '用户' + selectedConversation.userId }}</span>
             </div>
             <div class="detail-item">
+              <label>外部UID:</label>
+              <span>{{ selectedConversation.externalUid || '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>邮箱:</label>
+              <span>{{ selectedConversation.email || '-' }}</span>
+            </div>
+            <div class="detail-item">
+              <label>手机号:</label>
+              <span>{{ selectedConversation.phone || '-' }}</span>
+            </div>
+            <div class="detail-item">
               <label>设备类型:</label>
               <el-tag type="info" size="small">
                 {{ selectedConversation.deviceType || 'PC端' }}
@@ -207,19 +256,24 @@
             </div>
             <div class="detail-item">
               <label>用户标签:</label>
-              <div class="tags">
-                <el-tag 
-                  v-for="tag in userTags" 
-                  :key="tag"
-                  closable
-                  @close="removeTag(tag)"
-                  size="small"
-                  style="margin: 4px;"
-                >
-                  {{ tag }}
-                </el-tag>
-                <el-button size="small" @click="showAddTagDialog = true">
-                  <el-icon><Plus /></el-icon>
+              <div class="tags" v-loading="loadingTags">
+                <template v-if="userTags.length > 0">
+                  <el-tag 
+                    v-for="tag in userTags" 
+                    :key="tag.id"
+                    size="small"
+                    :style="{ 
+                      backgroundColor: tag.color || '#409eff',
+                      borderColor: tag.color || '#409eff',
+                      color: '#fff'
+                    }"
+                  >
+                    {{ tag.name }}
+                  </el-tag>
+                </template>
+                <span v-else class="no-tags-text">暂无标签</span>
+                <el-button size="small" @click="openAddTagDialog" class="manage-tag-btn">
+                  管理
                 </el-button>
               </div>
             </div>
@@ -240,11 +294,97 @@
     </div>
     
     <!-- 添加标签对话框 -->
-    <el-dialog v-model="showAddTagDialog" title="添加标签" width="400px">
-      <el-input v-model="newTagName" placeholder="输入标签名称" />
+    <el-dialog v-model="showAddTagDialog" title="管理用户标签" width="450px">
+      <div class="tag-dialog-content">
+        <!-- 可选标签列表 -->
+        <div class="available-tags-section">
+          <div class="section-title">项目标签（点击添加）</div>
+          <div class="available-tags" v-loading="loadingTags">
+            <template v-if="unselectedTags.length > 0">
+              <el-tag
+                v-for="tag in unselectedTags"
+                :key="tag.id"
+                class="available-tag"
+                effect="plain"
+                size="default"
+                @click="addTagToUser(tag)"
+                :style="{ 
+                  borderColor: tag.color || '#409eff',
+                  color: tag.color || '#409eff'
+                }"
+              >
+                {{ tag.name }}
+              </el-tag>
+            </template>
+            <div v-else class="no-tags-hint">暂无可添加的标签</div>
+          </div>
+        </div>
+        
+        <!-- 已选标签 -->
+        <div class="selected-tags-section">
+          <div class="section-title">已添加的标签</div>
+          <div class="selected-tags">
+            <template v-if="userTags.length > 0">
+              <el-tag
+                v-for="tag in userTags"
+                :key="tag.id"
+                closable
+                @close="removeTag(tag)"
+                :style="{ 
+                  backgroundColor: tag.color || '#409eff',
+                  borderColor: tag.color || '#409eff',
+                  color: '#fff'
+                }"
+              >
+                {{ tag.name }}
+              </el-tag>
+            </template>
+            <div v-else class="no-tags-hint">暂未添加标签</div>
+          </div>
+        </div>
+        
+        <!-- 自定义添加新标签 -->
+        <div class="new-tag-section">
+          <div class="section-title">创建新标签</div>
+          <div class="new-tag-input">
+            <el-input v-model="newTagName" placeholder="输入新标签名称" size="small" style="flex: 1" />
+            <el-button type="primary" size="small" @click="createAndAddTag" :disabled="!newTagName.trim()">
+              创建并添加
+            </el-button>
+          </div>
+        </div>
+      </div>
       <template #footer>
-        <el-button @click="showAddTagDialog = false">取消</el-button>
-        <el-button type="primary" @click="addTag">确定</el-button>
+        <el-button @click="showAddTagDialog = false">关闭</el-button>
+      </template>
+    </el-dialog>
+    
+    <!-- 声音设置对话框 -->
+    <el-dialog v-model="showSoundSettings" title="声音提醒设置" width="400px">
+      <div class="sound-settings">
+        <div class="sound-switch">
+          <span>开启声音提醒</span>
+          <el-switch v-model="soundEnabled" @change="toggleSound" />
+        </div>
+        <div class="sound-options" v-if="soundEnabled">
+          <div class="sound-label">选择提示音：</div>
+          <div class="sound-list">
+            <div 
+              v-for="sound in soundOptions" 
+              :key="sound.id"
+              class="sound-option"
+              :class="{ active: selectedSound === sound.id }"
+              @click="selectSound(sound.id)"
+            >
+              <el-icon><Bell /></el-icon>
+              <span>{{ sound.name }}</span>
+              <el-icon v-if="selectedSound === sound.id" class="check-icon"><Check /></el-icon>
+            </div>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="showSoundSettings = false">确定</el-button>
       </template>
     </el-dialog>
   </div>
@@ -253,7 +393,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { User, Close, Notebook, ChatDotSquare, Plus, Search, Loading } from '@element-plus/icons-vue'
+import { User, Close, Notebook, ChatDotSquare, Search, Loading, Bell, MuteNotification, Check } from '@element-plus/icons-vue'
 import { WKIM, WKIMEvent } from 'easyjssdk'
 import { DeviceType, WKChannelType } from '@/constants'
 
@@ -276,7 +416,18 @@ interface UserConversation {
   unreadCount?: number
   projectId?: number
   isGuest?: boolean
+  externalUid?: string  // 外部用户ID
+  email?: string
   phone?: string
+}
+
+// 标签类型
+interface CustomerTag {
+  id: number
+  name: string
+  color?: string
+  description?: string
+  projectId?: number
 }
 
 interface Message {
@@ -300,17 +451,45 @@ const showUserPanel = ref(false)
 const showKbPanel = ref(false)
 const showQuickReply = ref(false)
 const activeSideTab = ref('user')
-const userTags = ref<string[]>([])
+const userTags = ref<CustomerTag[]>([])  // 用户已有的标签
+const availableTags = ref<CustomerTag[]>([])  // 项目下可选的标签
 const conversationHistory = ref<any[]>([])
 const messageListRef = ref<HTMLElement | null>(null)
 const inputRef = ref<InstanceType<typeof import('element-plus')['ElInput']> | null>(null)
+const conversationListRef = ref<HTMLElement | null>(null)  // 会话列表容器
 const showAddTagDialog = ref(false)
 const newTagName = ref('')
+const loadingTags = ref(false)  // 标签加载状态
 
-// 分页加载相关状态
+// 消息分页加载相关状态
 const loadingMoreMessages = ref(false)
 const hasMoreMessages = ref(true)
 const oldestMessageSeq = ref<number>(0)  // 当前最旧消息的序号
+
+// 会话列表分页状态
+const conversationPage = ref(0)  // 当前页码（从0开始）
+const conversationPageSize = 20  // 每页大小
+const loadingMoreConversations = ref(false)
+const hasMoreConversations = ref(true)
+const totalConversations = ref(0)
+
+// 会话搜索相关状态
+const searchKeyword = ref('')  // 搜索关键词
+const searchLoading = ref(false)  // 搜索加载状态
+const isSearchMode = ref(false)  // 是否处于搜索模式
+
+// 声音提醒相关状态
+const soundEnabled = ref(true)  // 是否开启声音提醒
+const selectedSound = ref('ding')  // 当前选择的声音
+const showSoundSettings = ref(false)  // 是否显示声音设置弹窗
+const soundOptions = [
+  { id: 'ding', name: '叮咚', frequency: [880, 660], duration: 0.15 },
+  { id: 'notification', name: '通知', frequency: [523, 659, 784], duration: 0.12 },
+  { id: 'message', name: '消息', frequency: [800], duration: 0.1 },
+  { id: 'alert', name: '提示', frequency: [440, 550, 660], duration: 0.1 },
+  { id: 'pop', name: '气泡', frequency: [600, 400], duration: 0.08 }
+]
+let audioContext: AudioContext | null = null
 
 // 知识库相关
 const kbSearchQuery = ref('')
@@ -399,9 +578,24 @@ const initAgentInfo = () => {
   }
 }
 
-// 计算当前显示的会话列表
+// 计算当前显示的会话列表（选中的会话置顶）
 const conversations = computed(() => {
-  return activeTab.value === 'pending' ? pendingQueue.value : myConversations.value
+  const list = activeTab.value === 'pending' ? pendingQueue.value : myConversations.value
+  
+  // 如果有选中的会话，将其置顶
+  if (selectedConversation.value) {
+    const selectedUid = selectedConversation.value.userUid
+    const selectedIndex = list.findIndex(c => c.userUid === selectedUid)
+    
+    if (selectedIndex > 0) {
+      // 选中的会话不在第一位，需要重新排序
+      const selected = list[selectedIndex]
+      const others = list.filter((_, i) => i !== selectedIndex)
+      return [selected, ...others]
+    }
+  }
+  
+  return list
 })
 
 // 计算排队中有未读消息的用户数
@@ -410,12 +604,26 @@ const queueCount = computed(() => pendingQueue.value.filter(c => c.unreadCount &
 // 计算"我的会话"中有未读消息的用户数
 const myUnreadCount = computed(() => myConversations.value.filter(c => c.unreadCount && c.unreadCount > 0).length)
 
-// 获取"我的会话"列表 - 从后端 API 加载
-const fetchMyConversations = async () => {
+// 获取"我的会话"列表 - 从后端 API 加载（首次加载）
+const fetchMyConversations = async (keyword?: string) => {
   try {
+    // 重置分页状态
+    conversationPage.value = 0
+    hasMoreConversations.value = true
+    
     // 将 projectIds 数组转换为查询参数
     const projectIdsParam = projectIds.value.join(',')
-    const response = await fetch(`/api/admin/workbench/users?projectIds=${projectIdsParam}`, {
+    let url = `/api/admin/workbench/users?projectIds=${projectIdsParam}&page=0&pageSize=${conversationPageSize}`
+    
+    // 如果有搜索关键词，添加到请求参数
+    if (keyword && keyword.trim()) {
+      url += `&keyword=${encodeURIComponent(keyword.trim())}`
+      isSearchMode.value = true
+    } else {
+      isSearchMode.value = false
+    }
+    
+    const response = await fetch(url, {
       headers: {
         'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
       }
@@ -423,15 +631,97 @@ const fetchMyConversations = async () => {
     
     const data = await response.json()
     
-    if (data.code === 0) {
-      myConversations.value = data.data || []
-      console.log('My conversations loaded:', myConversations.value.length)
-      console.log('Raw API response data:', JSON.stringify(data.data))
+    if (data.code === 0 && data.data) {
+      // 分页接口返回 { list, total, page, pageSize, hasMore }
+      myConversations.value = data.data.list || []
+      totalConversations.value = data.data.total || 0
+      hasMoreConversations.value = data.data.hasMore || false
+      console.log('My conversations loaded:', myConversations.value.length, 'total:', totalConversations.value, 'hasMore:', hasMoreConversations.value, 'keyword:', keyword)
     } else {
       console.error('获取会话列表失败:', data.message)
     }
   } catch (error) {
     console.error('获取会话列表失败:', error)
+  }
+}
+
+// 加载更多会话（上拉分页）
+const loadMoreConversations = async () => {
+  if (loadingMoreConversations.value || !hasMoreConversations.value || activeTab.value !== 'my') {
+    return
+  }
+  
+  loadingMoreConversations.value = true
+  
+  try {
+    const nextPage = conversationPage.value + 1
+    const projectIdsParam = projectIds.value.join(',')
+    let url = `/api/admin/workbench/users?projectIds=${projectIdsParam}&page=${nextPage}&pageSize=${conversationPageSize}`
+    
+    // 如果处于搜索模式，添加搜索关键词
+    if (isSearchMode.value && searchKeyword.value.trim()) {
+      url += `&keyword=${encodeURIComponent(searchKeyword.value.trim())}`
+    }
+    
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      }
+    })
+    
+    const data = await response.json()
+    
+    if (data.code === 0 && data.data) {
+      const newConversations = data.data.list || []
+      
+      if (newConversations.length > 0) {
+        // 去重：过滤掉已存在的会话
+        const existingIds = new Set(myConversations.value.map(c => c.userUid))
+        const uniqueConversations = newConversations.filter((c: UserConversation) => !existingIds.has(c.userUid))
+        
+        // 追加到列表
+        myConversations.value = [...myConversations.value, ...uniqueConversations]
+        conversationPage.value = nextPage
+      }
+      
+      hasMoreConversations.value = data.data.hasMore || false
+      console.log('Loaded more conversations, page:', nextPage, 'total now:', myConversations.value.length, 'hasMore:', hasMoreConversations.value)
+    }
+  } catch (error) {
+    console.error('加载更多会话失败:', error)
+  } finally {
+    loadingMoreConversations.value = false
+  }
+}
+
+// 搜索会话
+const handleSearch = async () => {
+  if (searchLoading.value) return
+  
+  searchLoading.value = true
+  try {
+    await fetchMyConversations(searchKeyword.value)
+  } finally {
+    searchLoading.value = false
+  }
+}
+
+// 清除搜索
+const handleClearSearch = async () => {
+  searchKeyword.value = ''
+  isSearchMode.value = false
+  await fetchMyConversations()
+}
+
+// 处理会话列表滚动事件（上拉加载）
+const handleConversationScroll = () => {
+  const container = conversationListRef.value
+  if (!container || activeTab.value !== 'my') return
+  
+  // 当滚动到底部附近时（距离底部 50px 内），加载更多
+  const scrollBottom = container.scrollHeight - container.scrollTop - container.clientHeight
+  if (scrollBottom < 50) {
+    loadMoreConversations()
   }
 }
 
@@ -460,6 +750,13 @@ const selectConversation = async (conv: UserConversation) => {
   }
   
   showUserPanel.value = true
+  
+  // 加载用户标签
+  if (conv.userId && conv.userId > 0) {
+    await fetchUserTags(conv.userId)
+  } else {
+    userTags.value = []
+  }
   
   // 标记为已读（只有在 userId 有效时才调用后端）
   if (conv.unreadCount && conv.unreadCount > 0) {
@@ -759,20 +1056,160 @@ const insertQuickReply = (content: string) => {
   })
 }
 
-// 添加标签
-const addTag = () => {
-  if (newTagName.value.trim()) {
-    userTags.value.push(newTagName.value.trim())
-    newTagName.value = ''
-    showAddTagDialog.value = false
-    ElMessage.success('标签已添加')
+// ================= 用户标签功能 =================
+
+// 计算未选中的标签（可添加的标签）
+const unselectedTags = computed(() => {
+  const selectedIds = new Set(userTags.value.map(t => t.id))
+  return availableTags.value.filter(t => !selectedIds.has(t.id))
+})
+
+// 加载项目下的可用标签
+const fetchAvailableTags = async (projectId: number) => {
+  try {
+    const response = await fetch(`/api/admin/customer-tags?projectId=${projectId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      }
+    })
+    const data = await response.json()
+    if (data.code === 0 && data.data) {
+      availableTags.value = data.data
+    }
+  } catch (error) {
+    console.error('加载项目标签失败:', error)
+  }
+}
+
+// 加载用户已有的标签
+const fetchUserTags = async (userId: number) => {
+  loadingTags.value = true
+  try {
+    const response = await fetch(`/api/admin/customers/${userId}/tags`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      }
+    })
+    const data = await response.json()
+    if (data.code === 0 && data.data) {
+      userTags.value = data.data
+    } else {
+      userTags.value = []
+    }
+  } catch (error) {
+    console.error('加载用户标签失败:', error)
+    userTags.value = []
+  } finally {
+    loadingTags.value = false
+  }
+}
+
+// 打开标签管理对话框
+const openAddTagDialog = async () => {
+  if (!selectedConversation.value) return
+  
+  showAddTagDialog.value = true
+  newTagName.value = ''
+  
+  // 加载项目下的可用标签
+  if (selectedConversation.value.projectId) {
+    await fetchAvailableTags(selectedConversation.value.projectId)
+  }
+}
+
+// 添加标签到用户
+const addTagToUser = async (tag: CustomerTag) => {
+  if (!selectedConversation.value?.userId) return
+  
+  try {
+    const response = await fetch(`/api/admin/customers/${selectedConversation.value.userId}/tags`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify({ tagId: tag.id })
+    })
+    const data = await response.json()
+    if (data.code === 0) {
+      // 添加到已选标签列表
+      if (!userTags.value.find(t => t.id === tag.id)) {
+        userTags.value.push(tag)
+      }
+      ElMessage.success('标签已添加')
+    } else {
+      ElMessage.error(data.message || '添加标签失败')
+    }
+  } catch (error) {
+    console.error('添加标签失败:', error)
+    ElMessage.error('添加标签失败')
   }
 }
 
 // 删除标签
-const removeTag = (tag: string) => {
-  userTags.value = userTags.value.filter(t => t !== tag)
-  ElMessage.success('标签已删除')
+const removeTag = async (tag: CustomerTag) => {
+  if (!selectedConversation.value?.userId) return
+  
+  try {
+    const response = await fetch(`/api/admin/customers/${selectedConversation.value.userId}/tags/${tag.id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      }
+    })
+    const data = await response.json()
+    if (data.code === 0) {
+      userTags.value = userTags.value.filter(t => t.id !== tag.id)
+      ElMessage.success('标签已移除')
+    } else {
+      ElMessage.error(data.message || '移除标签失败')
+    }
+  } catch (error) {
+    console.error('移除标签失败:', error)
+    ElMessage.error('移除标签失败')
+  }
+}
+
+// 创建新标签并添加到用户
+const createAndAddTag = async () => {
+  if (!newTagName.value.trim() || !selectedConversation.value) return
+  
+  const projectId = selectedConversation.value.projectId
+  if (!projectId) {
+    ElMessage.error('无法确定项目ID')
+    return
+  }
+  
+  try {
+    // 先创建标签
+    const createResponse = await fetch('/api/admin/customer-tags', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify({
+        projectId: projectId,
+        name: newTagName.value.trim(),
+        color: '#409EFF'
+      })
+    })
+    const createData = await createResponse.json()
+    
+    if (createData.code === 0 && createData.data) {
+      const newTag = createData.data
+      // 添加到可用标签列表
+      availableTags.value.push(newTag)
+      // 然后添加到用户
+      await addTagToUser(newTag)
+      newTagName.value = ''
+    } else {
+      ElMessage.error(createData.message || '创建标签失败')
+    }
+  } catch (error) {
+    console.error('创建标签失败:', error)
+    ElMessage.error('创建标签失败')
+  }
 }
 
 // 切换标签页
@@ -786,6 +1223,105 @@ const handleTabClick = () => {
 const scrollToBottom = () => {
   if (messageListRef.value) {
     messageListRef.value.scrollTop = messageListRef.value.scrollHeight
+  }
+}
+
+// ================= 声音提醒功能 =================
+
+// 获取或创建 AudioContext
+const getAudioContext = (): AudioContext | null => {
+  try {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+    }
+    // 如果被挂起，尝试恢复
+    if (audioContext.state === 'suspended') {
+      audioContext.resume()
+    }
+    return audioContext
+  } catch (error) {
+    console.warn('Web Audio API 不支持:', error)
+    return null
+  }
+}
+
+// 使用 Web Audio API 播放提示音
+const playSoundWithWebAudio = (frequencies: number[], duration: number) => {
+  const ctx = getAudioContext()
+  if (!ctx) return
+  
+  const now = ctx.currentTime
+  
+  frequencies.forEach((freq, index) => {
+    const oscillator = ctx.createOscillator()
+    const gainNode = ctx.createGain()
+    
+    oscillator.connect(gainNode)
+    gainNode.connect(ctx.destination)
+    
+    oscillator.frequency.value = freq
+    oscillator.type = 'sine'
+    
+    // 音量渐变
+    gainNode.gain.setValueAtTime(0, now + index * duration)
+    gainNode.gain.linearRampToValueAtTime(0.3, now + index * duration + 0.02)
+    gainNode.gain.linearRampToValueAtTime(0, now + (index + 1) * duration)
+    
+    oscillator.start(now + index * duration)
+    oscillator.stop(now + (index + 1) * duration + 0.05)
+  })
+}
+
+// 播放提示音
+const playNotificationSound = () => {
+  if (!soundEnabled.value) return
+  
+  try {
+    const soundOption = soundOptions.find(s => s.id === selectedSound.value)
+    if (!soundOption) return
+    
+    playSoundWithWebAudio(soundOption.frequency, soundOption.duration)
+  } catch (error) {
+    console.error('播放提示音出错:', error)
+  }
+}
+
+// 预览声音
+const previewSound = (soundId: string) => {
+  const soundOption = soundOptions.find(s => s.id === soundId)
+  if (!soundOption) return
+  
+  try {
+    playSoundWithWebAudio(soundOption.frequency, soundOption.duration)
+  } catch (error) {
+    console.error('播放预览音出错:', error)
+  }
+}
+
+// 切换声音开关
+const toggleSound = () => {
+  // v-model 已经更新了 soundEnabled，这里只需要保存设置
+  localStorage.setItem('workbench_sound_enabled', String(soundEnabled.value))
+  ElMessage.success(soundEnabled.value ? '已开启声音提醒' : '已关闭声音提醒')
+}
+
+// 选择声音
+const selectSound = (soundId: string) => {
+  selectedSound.value = soundId
+  localStorage.setItem('workbench_sound_type', soundId)
+  previewSound(soundId)
+}
+
+// 初始化声音设置
+const initSoundSettings = () => {
+  const savedEnabled = localStorage.getItem('workbench_sound_enabled')
+  if (savedEnabled !== null) {
+    soundEnabled.value = savedEnabled === 'true'
+  }
+  
+  const savedSound = localStorage.getItem('workbench_sound_type')
+  if (savedSound && soundOptions.some(s => s.id === savedSound)) {
+    selectedSound.value = savedSound
   }
 }
 
@@ -921,6 +1457,9 @@ const handleIMMessage = (message: any) => {
           unreadCount: (conv.unreadCount || 0) + 1
         }
         console.log('Unread count updated for conversation:', conv.userUid, 'new count:', myConversations.value[convIndex].unreadCount)
+        
+        // 播放新消息提示音
+        playNotificationSound()
       }
     }
   } else {
@@ -954,6 +1493,8 @@ const handleIMMessage = (message: any) => {
         console.log('Message added to chat window for pending user')
       } else {
         console.log('Pending queue updated for user:', userUid)
+        // 播放新消息提示音
+        playNotificationSound()
       }
     } else {
       // 新用户加入排队 - 从 userUid 解析 projectId 和 userId
@@ -972,6 +1513,9 @@ const handleIMMessage = (message: any) => {
       }
       pendingQueue.value.unshift(newUserConv)
       console.log('New user added to pending queue:', userUid, 'parsed userId:', parsed?.userId, 'projectId:', parsed?.projectId)
+      
+      // 播放新用户提示音
+      playNotificationSound()
     }
   }
 }
@@ -1066,6 +1610,7 @@ const disconnectIM = () => {
 // 初始化
 onMounted(async () => {
   initAgentInfo()
+  initSoundSettings()  // 初始化声音设置
   
   // 加载"我的会话"列表
   await fetchMyConversations()
@@ -1156,6 +1701,21 @@ watch(selectedConversation, (newVal) => {
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.3; }
+}
+
+/* 会话搜索框样式 */
+.conversation-search {
+  margin-top: 10px;
+}
+
+.conversation-search :deep(.el-input-group__append) {
+  padding: 0;
+}
+
+.conversation-search :deep(.el-input-group__append .el-button) {
+  border: none;
+  margin: 0;
+  padding: 8px 12px;
 }
 
 .queue-badge {
@@ -1511,6 +2071,16 @@ watch(selectedConversation, (newVal) => {
   align-items: center;
 }
 
+.no-tags-text {
+  color: #909399;
+  font-size: 13px;
+}
+
+.manage-tag-btn {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
 .history-list {
   padding: 16px;
   max-height: 400px;
@@ -1537,5 +2107,147 @@ watch(selectedConversation, (newVal) => {
 .history-time {
   font-size: 12px;
   color: #909399;
+}
+
+/* 会话列表加载更多样式 */
+.loading-more-conv {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  color: #909399;
+  font-size: 13px;
+}
+
+.no-more-conv {
+  text-align: center;
+  padding: 12px;
+  color: #c0c4cc;
+  font-size: 12px;
+}
+
+/* 声音设置相关样式 */
+.sound-toggle {
+  margin-left: auto;
+  cursor: pointer;
+  font-size: 16px;
+  opacity: 0.6;
+  transition: all 0.2s;
+}
+
+.sound-toggle:hover {
+  opacity: 1;
+}
+
+.sound-toggle.enabled {
+  opacity: 1;
+  color: #67c23a;
+}
+
+.sound-settings {
+  padding: 10px 0;
+}
+
+.sound-switch {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f2f5;
+  margin-bottom: 16px;
+}
+
+.sound-label {
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 12px;
+}
+
+.sound-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sound-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.sound-option:hover {
+  background-color: #f5f7fa;
+  border-color: #c0c4cc;
+}
+
+.sound-option.active {
+  background-color: #ecf5ff;
+  border-color: #409eff;
+  color: #409eff;
+}
+
+.sound-option .check-icon {
+  margin-left: auto;
+  color: #409eff;
+}
+
+/* 标签对话框样式 */
+.tag-dialog-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  margin-bottom: 10px;
+}
+
+.available-tags-section,
+.selected-tags-section {
+  padding-bottom: 15px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.available-tags,
+.selected-tags {
+  min-height: 40px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 8px 0;
+}
+
+.available-tag {
+  cursor: pointer;
+  transition: all 0.2s;
+  margin: 0 !important;
+}
+
+.available-tag:hover {
+  transform: scale(1.05);
+}
+
+.selected-tags .el-tag {
+  margin: 0 !important;
+}
+
+.no-tags-hint {
+  color: #909399;
+  font-size: 13px;
+  padding: 8px 0;
+}
+
+.new-tag-section .new-tag-input {
+  display: flex;
+  gap: 10px;
 }
 </style>

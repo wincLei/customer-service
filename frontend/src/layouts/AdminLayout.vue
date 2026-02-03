@@ -27,9 +27,9 @@
           <div class="nav-label">知识库</div>
         </div>
 
-        <!-- 客户端 - 包含客户管理、标签管理子菜单 -->
+        <!-- 客户端 - 包含客户管理、标签管理、快捷回复子菜单 -->
         <el-popover
-          v-if="hasMenu('customers') || hasMenu('customer-tags')"
+          v-if="hasMenu('customers') || hasMenu('customer-tags') || hasMenu('quick-replies')"
           placement="right-start"
           :width="140"
           trigger="hover"
@@ -60,6 +60,15 @@
             >
               <i class="el-icon-price-tag"></i>
               <span>标签管理</span>
+            </div>
+            <div 
+              v-if="hasMenu('quick-replies')" 
+              class="submenu-item" 
+              :class="{ active: currentView === 'quick-replies' }"
+              @click="navigateTo('quick-replies')"
+            >
+              <i class="el-icon-chat-line-round"></i>
+              <span>快捷回复</span>
             </div>
           </div>
         </el-popover>
@@ -181,9 +190,9 @@ const isSystemMenuActive = computed(() => {
   return ['users', 'agents', 'roles', 'menus'].includes(currentView.value)
 })
 
-// 客户端菜单是否激活（客户管理、标签管理任意一个激活时）
+// 客户端菜单是否激活（客户管理、标签管理、快捷回复任意一个激活时）
 const isClientMenuActive = computed(() => {
-  return ['customers', 'customer-tags'].includes(currentView.value)
+  return ['customers', 'customer-tags', 'quick-replies'].includes(currentView.value)
 })
 
 const navigateTo = (view: string) => {
