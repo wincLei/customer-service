@@ -78,7 +78,7 @@
     <el-dialog
       v-model="dialogVisible"
       :title="isEdit ? '编辑项目' : '新建项目'"
-      width="500px"
+      width="550px"
       :close-on-click-modal="false"
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
@@ -89,10 +89,21 @@
           <el-input
             v-model="form.description"
             type="textarea"
-            :rows="3"
+            :rows="2"
             placeholder="请输入项目描述"
             maxlength="500"
           />
+        </el-form-item>
+        <el-form-item label="欢迎语" prop="welcomeMessage">
+          <el-input
+            v-model="form.welcomeMessage"
+            type="textarea"
+            :rows="3"
+            placeholder="用户进入聊天时显示的欢迎消息"
+            maxlength="500"
+            show-word-limit
+          />
+          <div class="form-tip">用户打开客服聊天窗口时，系统自动发送的欢迎消息</div>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -118,6 +129,7 @@ interface Project {
   description: string
   appKey: string
   appSecret: string
+  welcomeMessage: string
   createdAt: string
   updatedAt: string
 }
@@ -141,7 +153,8 @@ const pagination = reactive({
 
 const form = reactive({
   name: '',
-  description: ''
+  description: '',
+  welcomeMessage: ''
 })
 
 const rules: FormRules = {
@@ -181,6 +194,7 @@ const showCreateDialog = () => {
   editingId.value = null
   form.name = ''
   form.description = ''
+  form.welcomeMessage = '欢迎咨询，我们随时准备为您服务'
   dialogVisible.value = true
 }
 
@@ -190,6 +204,7 @@ const showEditDialog = (project: Project) => {
   editingId.value = project.id
   form.name = project.name
   form.description = project.description || ''
+  form.welcomeMessage = project.welcomeMessage || ''
   dialogVisible.value = true
 }
 
@@ -207,7 +222,8 @@ const submitForm = async () => {
       
       const res = await request[method](url, {
         name: form.name,
-        description: form.description
+        description: form.description,
+        welcomeMessage: form.welcomeMessage
       }) as any
       
       if (res.code === 0) {
@@ -364,5 +380,12 @@ onMounted(() => {
   padding: 2px 6px;
   border-radius: 4px;
   color: #606266;
+}
+
+.form-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 4px;
+  line-height: 1.4;
 }
 </style>

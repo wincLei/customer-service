@@ -12,6 +12,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.List;
@@ -24,6 +28,7 @@ public class ProjectService {
 
     private final ProjectRepository projectRepository;
     private final UserProjectRepository userProjectRepository;
+    private final ObjectMapper objectMapper;
 
     /**
      * 获取所有项目
@@ -68,12 +73,18 @@ public class ProjectService {
      * 创建项目
      */
     @Transactional
-    public Project createProject(String name, String description) {
+    public Project createProject(String name, String description, String welcomeMessage) {
         Project project = new Project();
         project.setName(name);
         project.setDescription(description);
         project.setAppKey(generateAppKey());
         project.setAppSecret(generateAppSecret());
+
+        // 设置配置信息（包括欢迎语）
+        ObjectNode config = objectMapper.createObjectNode();
+        config.put("welcomeMessage", welcomeMessage != null ? welcomeMessage : "欢迎咨询，我们随时准备为您服务");
+        project.setConfig(config);
+
         return projectRepository.save(project);
     }
 
@@ -81,11 +92,22 @@ public class ProjectService {
      * 更新项目
      */
     @Transactional
-    public Project updateProject(Long id, String name, String description) {
+    public Project updateProject(Long id, String name, String description, String welcomeMessage) {
         Project project = projectRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("项目不存在"));
         project.setName(name);
         project.setDescription(description);
+
+        // 更新配置信息（保留其他配置，只更新欢迎语）
+        ObjectNode config;
+        if (project.getConfig() != null && project.getConfig().isObject()) {
+            config = (ObjectNode) project.getConfig();
+        } else {
+            config = objectMapper.createObjectNode();
+        }
+        config.put("welcomeMessage", welcomeMessage != null ? welcomeMessage : "");
+        project.setConfig(config);
+
         return projectRepository.save(project);
     }
 

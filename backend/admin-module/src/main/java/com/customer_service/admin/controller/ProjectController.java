@@ -98,7 +98,8 @@ public class ProjectController {
         }
 
         try {
-            Project project = projectService.createProject(request.getName(), request.getDescription());
+            Project project = projectService.createProject(request.getName(), request.getDescription(),
+                    request.getWelcomeMessage());
             log.info("创建项目成功: {} (ID: {})", project.getName(), project.getId());
             return ApiResponse.success(toProjectVO(project));
         } catch (Exception e) {
@@ -118,7 +119,8 @@ public class ProjectController {
         }
 
         try {
-            Project project = projectService.updateProject(id, request.getName(), request.getDescription());
+            Project project = projectService.updateProject(id, request.getName(), request.getDescription(),
+                    request.getWelcomeMessage());
             log.info("更新项目成功: {} (ID: {})", project.getName(), project.getId());
             return ApiResponse.success(toProjectVO(project));
         } catch (RuntimeException e) {
@@ -168,6 +170,14 @@ public class ProjectController {
         vo.put("appSecret", project.getAppSecret());
         vo.put("createdAt", project.getCreatedAt());
         vo.put("updatedAt", project.getUpdatedAt());
+
+        // 提取欢迎语配置
+        String welcomeMessage = "";
+        if (project.getConfig() != null && project.getConfig().has("welcomeMessage")) {
+            welcomeMessage = project.getConfig().get("welcomeMessage").asText("");
+        }
+        vo.put("welcomeMessage", welcomeMessage);
+
         return vo;
     }
 
@@ -185,11 +195,13 @@ public class ProjectController {
     public static class CreateProjectRequest {
         private String name;
         private String description;
+        private String welcomeMessage;
     }
 
     @Data
     public static class UpdateProjectRequest {
         private String name;
         private String description;
+        private String welcomeMessage;
     }
 }
