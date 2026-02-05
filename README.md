@@ -69,6 +69,35 @@ customer-service/
 - Java 21+ (本地开发)
 - Maven 3.9+ (本地开发)
 
+### 环境变量配置
+
+项目使用 `.env` 文件管理敏感配置信息。在启动服务前，需要先配置环境变量：
+
+```bash
+# 1. 复制环境变量模板
+cp .env.example .env
+
+# 2. 编辑 .env 文件，填入实际的配置值
+vim .env  # 或使用其他编辑器
+```
+
+主要配置项说明：
+
+| 变量名                         | 说明                         | 默认值                         |
+| ------------------------------ | ---------------------------- | ------------------------------ |
+| `POSTGRES_USER`                | 数据库用户名                 | `postgres`                     |
+| `POSTGRES_PASSWORD`            | 数据库密码                   | `postgres123`                  |
+| `POSTGRES_DB`                  | 数据库名称                   | `customer_service`             |
+| `WUKONGIM_APP_KEY`             | WuKongIM API 密钥            | `wukongim_admin_secret_2026`   |
+| `ALIYUN_OSS_ACCESS_KEY_ID`     | 阿里云 OSS Access Key ID     | -                              |
+| `ALIYUN_OSS_ACCESS_KEY_SECRET` | 阿里云 OSS Access Key Secret | -                              |
+| `ALIYUN_OSS_BUCKET`            | OSS Bucket 名称              | -                              |
+| `ALIYUN_OSS_ENDPOINT`          | OSS Endpoint                 | `oss-cn-hangzhou.aliyuncs.com` |
+| `ALIYUN_OSS_REGION`            | OSS Region                   | `cn-hangzhou`                  |
+| `ALIYUN_OSS_DOMAIN`            | 自定义域名（可选）           | -                              |
+
+> ⚠️ **注意**: `.env` 文件已被 `.gitignore` 忽略，不会提交到 Git 仓库。请妥善保管您的敏感配置信息。
+
 ### 使用Docker快速部署
 
 ```bash
@@ -76,7 +105,11 @@ customer-service/
 git clone <repository-url>
 cd customer-service
 
-# 2. 启动所有服务
+# 2. 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，填入实际配置
+
+# 3. 启动所有服务
 docker-compose up -d
 
 # 3. 等待服务启动完成（约30秒）

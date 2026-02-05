@@ -7,9 +7,9 @@ services:
     image: postgres:15-alpine
     container_name: mini-customer-service-postgres
     environment:
-      POSTGRES_DB: customer_service
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: ${POSTGRES_DB:-customer_service}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
       TZ: Asia/Shanghai
     ports:
       - "5432:5432"
@@ -69,13 +69,19 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_service
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres123
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-customer_service}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       WUKONGIM_API_URL: http://wukongim:5001
-      WUKONGIM_APP_KEY: wukongim_admin_secret_2026
+      WUKONGIM_APP_KEY: ${WUKONGIM_APP_KEY:-wukongim_admin_secret_2026}
+      ALIYUN_OSS_ACCESS_KEY_ID: ${ALIYUN_OSS_ACCESS_KEY_ID:-}
+      ALIYUN_OSS_ACCESS_KEY_SECRET: ${ALIYUN_OSS_ACCESS_KEY_SECRET:-}
+      ALIYUN_OSS_BUCKET: ${ALIYUN_OSS_BUCKET:-}
+      ALIYUN_OSS_ENDPOINT: ${ALIYUN_OSS_ENDPOINT:-oss-cn-hangzhou.aliyuncs.com}
+      ALIYUN_OSS_REGION: ${ALIYUN_OSS_REGION:-cn-hangzhou}
+      ALIYUN_OSS_DOMAIN: ${ALIYUN_OSS_DOMAIN:-}
       TZ: Asia/Shanghai
     depends_on:
       postgres:
@@ -96,13 +102,19 @@ services:
     ports:
       - "8082:8081"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customer_service
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres123
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-customer_service}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-postgres123}
       SPRING_REDIS_HOST: redis
       SPRING_REDIS_PORT: 6379
       WUKONGIM_API_URL: http://wukongim:5001
-      WUKONGIM_APP_KEY: wukongim_admin_secret_2026
+      WUKONGIM_APP_KEY: ${WUKONGIM_APP_KEY:-wukongim_admin_secret_2026}
+      ALIYUN_OSS_ACCESS_KEY_ID: ${ALIYUN_OSS_ACCESS_KEY_ID:-}
+      ALIYUN_OSS_ACCESS_KEY_SECRET: ${ALIYUN_OSS_ACCESS_KEY_SECRET:-}
+      ALIYUN_OSS_BUCKET: ${ALIYUN_OSS_BUCKET:-}
+      ALIYUN_OSS_ENDPOINT: ${ALIYUN_OSS_ENDPOINT:-oss-cn-hangzhou.aliyuncs.com}
+      ALIYUN_OSS_REGION: ${ALIYUN_OSS_REGION:-cn-hangzhou}
+      ALIYUN_OSS_DOMAIN: ${ALIYUN_OSS_DOMAIN:-}
       TZ: Asia/Shanghai
     depends_on:
       postgres:

@@ -1,4 +1,4 @@
-package com.customer_service.portal.controller;
+package com.customer_service.admin.controller;
 
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.service.AliyunOssService;
@@ -8,12 +8,12 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 /**
- * OSS 上传凭证接口
+ * 管理端 OSS 上传凭证接口
  */
 @RestController
-@RequestMapping("/api/portal/oss")
+@RequestMapping("/api/admin/oss")
 @RequiredArgsConstructor
-public class PortalOssController {
+public class AdminOssController {
 
     private final AliyunOssService ossService;
 

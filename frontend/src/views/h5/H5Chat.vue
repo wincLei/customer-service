@@ -1,22 +1,34 @@
 <template>
   <div class="h5-chat">
     <!-- IM 连接状态指示器 -->
-    <div class="im-status" :class="{ connected: imConnected, connecting: imConnecting }">
+    <div
+      class="im-status"
+      :class="{ connected: imConnected, connecting: imConnecting }"
+    >
       <span class="status-dot"></span>
-      <span class="status-text">{{ imConnected ? '已连接' : imConnecting ? '连接中...' : '未连接' }}</span>
+      <span class="status-text">{{
+        imConnected ? "已连接" : imConnecting ? "连接中..." : "未连接"
+      }}</span>
     </div>
 
     <!-- 消息列表区域 -->
-    <div class="messages" ref="messagesContainer" @scroll="handleMessagesScroll">
+    <div
+      class="messages"
+      ref="messagesContainer"
+      @scroll="handleMessagesScroll"
+    >
       <!-- 加载更多提示 -->
       <div v-if="loadingMoreMessages" class="loading-more">
         <span class="loading-spinner"></span>
         加载中...
       </div>
-      <div v-else-if="!hasMoreMessages && messages.length > 0" class="no-more-messages">
+      <div
+        v-else-if="!hasMoreMessages && messages.length > 0"
+        class="no-more-messages"
+      >
         没有更多消息了
       </div>
-      
+
       <!-- 日期分隔线 -->
       <template v-for="(group, index) in groupedMessages" :key="index">
         <div class="date-divider">{{ group.date }}</div>
@@ -24,23 +36,33 @@
           v-for="msg in group.messages"
           :key="msg.id"
           class="msg-item"
-          :class="{ 'msg-user': msg.senderType === 'user', 'msg-agent': msg.senderType === 'agent' }"
+          :class="{
+            'msg-user': msg.senderType === 'user',
+            'msg-agent': msg.senderType === 'agent',
+          }"
         >
           <!-- 客服头像（左侧） -->
           <div v-if="msg.senderType === 'agent'" class="msg-avatar">
             <img :src="agentAvatar" alt="客服" />
           </div>
-          
+
           <!-- 消息内容 -->
           <div class="msg-content">
-            <div class="msg-bubble" :class="{ 'image-bubble': msg.msgType === 'image' }">
+            <div
+              class="msg-bubble"
+              :class="{ 'image-bubble': msg.msgType === 'image' }"
+            >
               <!-- 文本消息 -->
               <template v-if="msg.msgType === 'text'">
                 {{ msg.content }}
               </template>
               <!-- 图片消息 -->
               <template v-else-if="msg.msgType === 'image'">
-                <img :src="msg.content" @click="previewImage(msg.content)" class="msg-image" />
+                <img
+                  :src="msg.content"
+                  @click="previewImage(msg.content)"
+                  class="msg-image"
+                />
               </template>
               <!-- 文件消息 -->
               <template v-else-if="msg.msgType === 'file'">
@@ -52,14 +74,14 @@
             </div>
             <div class="msg-time">{{ msg.time }}</div>
           </div>
-          
+
           <!-- 用户头像（右侧） -->
           <div v-if="msg.senderType === 'user'" class="msg-avatar">
             <img :src="userAvatar" alt="用户" />
           </div>
         </div>
       </template>
-      
+
       <!-- 加载中提示 -->
       <div v-if="loading" class="loading-tip">
         <span class="loading-spinner"></span>
@@ -84,7 +106,7 @@
           style="display: none"
           @change="handleImageUpload"
         />
-        
+
         <!-- 输入框 -->
         <input
           v-model="inputMessage"
@@ -93,15 +115,15 @@
           @keyup.enter="sendTextMessage"
           class="msg-input"
         />
-        
+
         <!-- 表情按钮 -->
         <button class="tool-btn" @click="toggleEmojiPicker">
           <span class="tool-icon">😊</span>
         </button>
-        
+
         <!-- 发送按钮 -->
-        <button 
-          class="send-btn" 
+        <button
+          class="send-btn"
           :class="{ active: inputMessage.trim() }"
           :disabled="!inputMessage.trim()"
           @click="sendTextMessage"
@@ -138,7 +160,11 @@
     </div>
 
     <!-- 工单提交弹窗 -->
-    <div v-if="showTicketDialog" class="ticket-dialog-overlay" @click.self="showTicketDialog = false">
+    <div
+      v-if="showTicketDialog"
+      class="ticket-dialog-overlay"
+      @click.self="showTicketDialog = false"
+    >
       <div class="ticket-dialog">
         <div class="ticket-header">
           <h3>提交工单</h3>
@@ -151,11 +177,18 @@
           </div>
           <div class="form-group">
             <label>问题描述 <span class="required">*</span></label>
-            <textarea v-model="ticketForm.description" placeholder="请详细描述您遇到的问题" rows="4"></textarea>
+            <textarea
+              v-model="ticketForm.description"
+              placeholder="请详细描述您遇到的问题"
+              rows="4"
+            ></textarea>
           </div>
           <div class="form-group">
             <label>联系方式</label>
-            <input v-model="ticketForm.contactInfo" placeholder="手机号或邮箱（方便我们联系您）" />
+            <input
+              v-model="ticketForm.contactInfo"
+              placeholder="手机号或邮箱（方便我们联系您）"
+            />
           </div>
           <div class="form-group">
             <label>优先级</label>
@@ -166,7 +199,11 @@
               <option value="urgent">紧急</option>
             </select>
           </div>
-          <button class="submit-ticket-btn" @click="handleSubmitTicket" :disabled="!ticketForm.title || !ticketForm.description">
+          <button
+            class="submit-ticket-btn"
+            @click="handleSubmitTicket"
+            :disabled="!ticketForm.title || !ticketForm.description"
+          >
             提交工单
           </button>
         </div>
@@ -174,188 +211,255 @@
     </div>
 
     <!-- 图片预览弹窗 -->
-    <div v-if="previewImageUrl" class="image-preview-overlay" @click="previewImageUrl = ''">
+    <div
+      v-if="previewImageUrl"
+      class="image-preview-overlay"
+      @click="previewImageUrl = ''"
+    >
       <img :src="previewImageUrl" class="preview-image" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import portalApi, { setPortalToken } from '@/api/portal'
-import { WKIM, WKIMEvent } from 'easyjssdk'
-import { DeviceType, WKChannelType } from '@/constants'
+import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import portalApi, { setPortalToken } from "@/api/portal";
+import { WKIM, WKIMEvent } from "easyjssdk";
+import { DeviceType, WKChannelType } from "@/constants";
 
-const route = useRoute()
-const router = useRouter()
+const route = useRoute();
+const router = useRouter();
 
 // IM 实例
-let imInstance: ReturnType<typeof WKIM.init> | null = null
-const imConnected = ref(false)
-const imConnecting = ref(false)
-const imToken = ref<string | null>(null)  // IM Token（从 user/init 接口获取）
+let imInstance: ReturnType<typeof WKIM.init> | null = null;
+const imConnected = ref(false);
+const imConnecting = ref(false);
+const imToken = ref<string | null>(null); // IM Token（从 user/init 接口获取）
 
 // 状态
-const loading = ref(false)
-const inputMessage = ref('')
-const showEmojiPicker = ref(false)
-const showMorePanel = ref(false)
-const showTicketDialog = ref(false)
-const previewImageUrl = ref('')
-const messagesContainer = ref<HTMLElement | null>(null)
-const imageInput = ref<HTMLInputElement | null>(null)
+const loading = ref(false);
+const inputMessage = ref("");
+const showEmojiPicker = ref(false);
+const showMorePanel = ref(false);
+const showTicketDialog = ref(false);
+const previewImageUrl = ref("");
+const messagesContainer = ref<HTMLElement | null>(null);
+const imageInput = ref<HTMLInputElement | null>(null);
 
 // 分页加载相关状态
-const loadingMoreMessages = ref(false)
-const hasMoreMessages = ref(true)
-const oldestMessageSeq = ref<number>(0)  // 当前最早消息的序号
+const loadingMoreMessages = ref(false);
+const hasMoreMessages = ref(true);
+const oldestMessageSeq = ref<number>(0); // 当前最早消息的序号
 
 // 用户信息
 interface UserInfo {
-  id?: number
-  uid: string
-  externalUid?: string
-  nickname?: string
-  avatar?: string
-  phone?: string
-  projectId: string
-  isGuest: boolean
+  id?: number;
+  uid: string;
+  externalUid?: string;
+  nickname?: string;
+  avatar?: string;
+  phone?: string;
+  projectId: string;
+  isGuest: boolean;
 }
 
-const currentUser = ref<UserInfo | null>(null)
-const projectId = ref('')
-const conversationId = ref<number | null>(null)
-const agentUid = ref<string | null>(null)  // 已分配客服的 UID，用于 Personal Channel 通信
+const currentUser = ref<UserInfo | null>(null);
+const projectId = ref("");
+const conversationId = ref<number | null>(null);
+const agentUid = ref<string | null>(null); // 已分配客服的 UID，用于 Personal Channel 通信
 
 // 计算 WuKongIM 用户 UID，格式: {projectId}_{userId}
 // 这个格式与后端保持一致，使用数据库自增 ID 保证全局唯一
 const imUid = computed(() => {
   if (currentUser.value?.id && projectId.value) {
-    return `${projectId.value}_${currentUser.value.id}`
+    return `${projectId.value}_${currentUser.value.id}`;
   }
-  return null
-})
+  return null;
+});
 
 // 客服信息
-const agentAvatar = ref('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%231890ff"/><text x="50" y="60" text-anchor="middle" fill="white" font-size="40">客</text></svg>')
-const userAvatar = ref('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2387ceeb"/><text x="50" y="60" text-anchor="middle" fill="white" font-size="40">我</text></svg>')
+const agentAvatar = ref(
+  'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%231890ff"/><text x="50" y="60" text-anchor="middle" fill="white" font-size="40">客</text></svg>',
+);
+const userAvatar = ref(
+  'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2387ceeb"/><text x="50" y="60" text-anchor="middle" fill="white" font-size="40">我</text></svg>',
+);
 
 // 消息列表
 interface Message {
-  id: string | number
-  senderType: 'user' | 'agent' | 'system'
-  msgType: 'text' | 'image' | 'file'
-  content: string
-  fileName?: string
-  fileUrl?: string
-  time: string
-  date: string
-  timestamp: number
+  id: string | number;
+  senderType: "user" | "agent" | "system";
+  msgType: "text" | "image" | "file";
+  content: string;
+  fileName?: string;
+  fileUrl?: string;
+  time: string;
+  date: string;
+  timestamp: number;
 }
 
-const messages = ref<Message[]>([])
+const messages = ref<Message[]>([]);
 
 // 按日期分组消息
 const groupedMessages = computed(() => {
-  const groups: { date: string; messages: Message[] }[] = []
-  let currentDate = ''
-  
+  const groups: { date: string; messages: Message[] }[] = [];
+  let currentDate = "";
+
   for (const msg of messages.value) {
     if (msg.date !== currentDate) {
-      currentDate = msg.date
-      groups.push({ date: currentDate, messages: [] })
+      currentDate = msg.date;
+      groups.push({ date: currentDate, messages: [] });
     }
-    groups[groups.length - 1].messages.push(msg)
+    groups[groups.length - 1].messages.push(msg);
   }
-  
-  return groups
-})
+
+  return groups;
+});
 
 // 表情列表
 const emojis = [
-  '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂',
-  '🙂', '😊', '😇', '🥰', '😍', '🤩', '😘', '😗',
-  '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭',
-  '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏', '😒',
-  '🙄', '😬', '😮', '😯', '😲', '😳', '🥺', '😦',
-  '👍', '👎', '👌', '✌️', '🤞', '🤟', '🤘', '🤙',
-  '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '💔'
-]
+  "😀",
+  "😃",
+  "😄",
+  "😁",
+  "😆",
+  "😅",
+  "🤣",
+  "😂",
+  "🙂",
+  "😊",
+  "😇",
+  "🥰",
+  "😍",
+  "🤩",
+  "😘",
+  "😗",
+  "😋",
+  "😛",
+  "😜",
+  "🤪",
+  "😝",
+  "🤑",
+  "🤗",
+  "🤭",
+  "🤔",
+  "🤐",
+  "🤨",
+  "😐",
+  "😑",
+  "😶",
+  "😏",
+  "😒",
+  "🙄",
+  "😬",
+  "😮",
+  "😯",
+  "😲",
+  "😳",
+  "🥺",
+  "😦",
+  "👍",
+  "👎",
+  "👌",
+  "✌️",
+  "🤞",
+  "🤟",
+  "🤘",
+  "🤙",
+  "❤️",
+  "🧡",
+  "💛",
+  "💚",
+  "💙",
+  "💜",
+  "🖤",
+  "💔",
+];
 
 // 工单表单
 const ticketForm = ref({
-  title: '',
-  description: '',
-  contactInfo: '',
-  priority: 'medium'
-})
+  title: "",
+  description: "",
+  contactInfo: "",
+  priority: "medium",
+});
 
 // 游客 UID 存储 Key
-const GUEST_UID_KEY = 'mini_cs_guest_uid'
+const GUEST_UID_KEY = "mini_cs_guest_uid";
 
 const generateGuestUid = (): string => {
-  return 'guest_' + Date.now() + '_' + Math.random().toString(36).substring(2, 11)
-}
+  return (
+    "guest_" + Date.now() + "_" + Math.random().toString(36).substring(2, 11)
+  );
+};
 
 const getOrCreateGuestUid = (pid: string): string => {
-  const key = `${GUEST_UID_KEY}_${pid}`
-  let guestUid = localStorage.getItem(key)
+  const key = `${GUEST_UID_KEY}_${pid}`;
+  let guestUid = localStorage.getItem(key);
   if (!guestUid) {
-    guestUid = generateGuestUid()
-    localStorage.setItem(key, guestUid)
+    guestUid = generateGuestUid();
+    localStorage.setItem(key, guestUid);
   }
-  return guestUid
-}
+  return guestUid;
+};
 
 const formatTime = (date: Date): string => {
-  const h = date.getHours().toString().padStart(2, '0')
-  const m = date.getMinutes().toString().padStart(2, '0')
-  return `${h}:${m}`
-}
+  const h = date.getHours().toString().padStart(2, "0");
+  const m = date.getMinutes().toString().padStart(2, "0");
+  return `${h}:${m}`;
+};
 
 const formatDate = (date: Date): string => {
-  const month = (date.getMonth() + 1).toString()
-  const day = date.getDate().toString()
-  const h = date.getHours().toString().padStart(2, '0')
-  const m = date.getMinutes().toString().padStart(2, '0')
-  return `${month}月${day}日 ${h}:${m}`
-}
+  const month = (date.getMonth() + 1).toString();
+  const day = date.getDate().toString();
+  const h = date.getHours().toString().padStart(2, "0");
+  const m = date.getMinutes().toString().padStart(2, "0");
+  return `${month}月${day}日 ${h}:${m}`;
+};
 
 const initUser = async () => {
   // 从 URL 参数获取配置，支持多种命名风格
-  const pid = route.query.project_id as string || route.query.projectId as string || '1'
-  projectId.value = pid
-  
+  const pid =
+    (route.query.project_id as string) ||
+    (route.query.projectId as string) ||
+    "1";
+  projectId.value = pid;
+
   // 优先使用 URL 传入的 guestUid，否则从本地存储获取或生成新的
-  const urlGuestUid = route.query.guestUid as string || route.query.guest_uid as string
-  const guestUid = urlGuestUid || getOrCreateGuestUid(pid)
-  
+  const urlGuestUid =
+    (route.query.guestUid as string) || (route.query.guest_uid as string);
+  const guestUid = urlGuestUid || getOrCreateGuestUid(pid);
+
   // 如果 URL 传入了 guestUid，保存到本地存储
   if (urlGuestUid) {
-    const key = `${GUEST_UID_KEY}_${pid}`
-    localStorage.setItem(key, urlGuestUid)
+    const key = `${GUEST_UID_KEY}_${pid}`;
+    localStorage.setItem(key, urlGuestUid);
   }
-  
+
   try {
-    const response = await portalApi.post('/portal/user/init', {
+    const response = (await portalApi.post("/portal/user/init", {
       projectId: parseInt(pid),
       guestUid,
-      externalUid: route.query.uid as string || route.query.external_uid as string || route.query.externalUid as string,
-      nickname: route.query.nick_name as string || route.query.nickname as string,
+      externalUid:
+        (route.query.uid as string) ||
+        (route.query.external_uid as string) ||
+        (route.query.externalUid as string),
+      nickname:
+        (route.query.nick_name as string) || (route.query.nickname as string),
       avatar: route.query.avatar as string,
       phone: route.query.phone as string,
-      deviceFlag: DeviceType.H5  // H5 端使用 H5 设备类型
-    }) as any
-    
+      deviceFlag: DeviceType.H5, // H5 端使用 H5 设备类型
+    })) as any;
+
     if (response.code === 0 && response.data) {
-      const userData = response.data
-      
+      const userData = response.data;
+
       if (userData.uid && userData.uid !== guestUid) {
-        const key = `${GUEST_UID_KEY}_${pid}`
-        localStorage.setItem(key, userData.uid)
+        const key = `${GUEST_UID_KEY}_${pid}`;
+        localStorage.setItem(key, userData.uid);
       }
-      
+
       currentUser.value = {
         id: userData.id,
         uid: userData.uid,
@@ -364,521 +468,583 @@ const initUser = async () => {
         avatar: userData.avatar,
         phone: userData.phone,
         projectId: pid,
-        isGuest: userData.isGuest
-      }
-      
+        isGuest: userData.isGuest,
+      };
+
       // 保存 Portal Token（用于后续接口认证）
       if (userData.portalToken) {
-        setPortalToken(userData.portalToken)
-        console.log('Portal Token saved')
+        setPortalToken(userData.portalToken);
+        console.log("Portal Token saved");
       }
-      
+
       // 保存 IM Token（从 user/init 接口直接获取，无需单独调用）
       if (userData.imToken) {
-        imToken.value = userData.imToken
-        console.log('IM Token obtained from user init')
+        imToken.value = userData.imToken;
+        console.log("IM Token obtained from user init");
       }
-      
+
       if (userData.avatar) {
-        userAvatar.value = userData.avatar
+        userAvatar.value = userData.avatar;
       }
     }
   } catch (error) {
-    console.error('Failed to init user:', error)
+    console.error("Failed to init user:", error);
     currentUser.value = {
       uid: guestUid,
       projectId: pid,
-      isGuest: true
-    }
+      isGuest: true,
+    };
   }
-}
+};
 
 const initConversation = async () => {
-  if (!currentUser.value?.id) return
-  
+  if (!currentUser.value?.id) return;
+
   try {
-    const response = await portalApi.post('/portal/conversation/init', {
+    const response = (await portalApi.post("/portal/conversation/init", {
       projectId: parseInt(projectId.value),
-      userId: currentUser.value.id
-    }) as any
-    
+      userId: currentUser.value.id,
+    })) as any;
+
     if (response.code === 0 && response.data) {
-      conversationId.value = response.data.id
-      
+      conversationId.value = response.data.id;
+
       // 保存已分配客服的 UID（如果有）
       if (response.data.agentUid) {
-        agentUid.value = response.data.agentUid
-        console.log('Agent assigned:', agentUid.value)
+        agentUid.value = response.data.agentUid;
+        console.log("Agent assigned:", agentUid.value);
       }
-      
-      await loadHistory()
-      
+
+      await loadHistory();
+
       if (response.data.isNew) {
-        const welcomeMsg = response.data.welcomeMessage || '您好，请问有什么需要帮助的？'
-        addMessage({ senderType: 'agent', msgType: 'text', content: welcomeMsg })
+        const welcomeMsg =
+          response.data.welcomeMessage || "您好，请问有什么需要帮助的？";
+        addMessage({
+          senderType: "agent",
+          msgType: "text",
+          content: welcomeMsg,
+        });
       }
-      
-      initIMConnection()
+
+      initIMConnection();
     }
   } catch (error) {
-    console.error('Failed to init conversation:', error)
-    addMessage({ senderType: 'agent', msgType: 'text', content: '您好，请问有什么需要帮助的？' })
+    console.error("Failed to init conversation:", error);
+    addMessage({
+      senderType: "agent",
+      msgType: "text",
+      content: "您好，请问有什么需要帮助的？",
+    });
   }
-}
+};
 
 // 解析单条消息
 const parseHistoryMessage = (msg: any): Message & { messageSeq?: number } => {
-  const payload = msg.payload || {}
-  const timestamp = (msg.timestamp || msg.message_time || 0) * 1000
-  const msgDate = new Date(timestamp)
-  const msgFromUid = msg.from_uid || msg.fromUid
-  const senderType = msgFromUid === imUid.value ? 'user' : 'agent'
-  
+  const payload = msg.payload || {};
+  const timestamp = (msg.timestamp || msg.message_time || 0) * 1000;
+  const msgDate = new Date(timestamp);
+  const msgFromUid = msg.from_uid || msg.fromUid;
+  const senderType = msgFromUid === imUid.value ? "user" : "agent";
+
   return {
     id: msg.message_id || msg.messageId || msg.client_msg_no || msg.clientMsgNo,
     senderType,
-    msgType: payload.type === 2 ? 'image' : payload.type === 3 ? 'file' : 'text',
-    content: payload.content || payload.url || '',
+    msgType:
+      payload.type === 2 ? "image" : payload.type === 3 ? "file" : "text",
+    content: payload.content || payload.url || "",
     fileName: payload.fileName || payload.file_name,
     time: formatTime(msgDate),
     date: formatDate(msgDate),
     timestamp,
-    messageSeq: msg.message_seq || msg.messageSeq || 0
-  }
-}
+    messageSeq: msg.message_seq || msg.messageSeq || 0,
+  };
+};
 
 const loadHistory = async () => {
   // 访客频道: channel_id = {projectId}_{userId}, channel_type = 10
   if (!imUid.value) {
-    console.log('No imUid (projectId_userId), skip loading history')
-    return
+    console.log("No imUid (projectId_userId), skip loading history");
+    return;
   }
-  
+
   // 重置分页状态
-  hasMoreMessages.value = true
-  oldestMessageSeq.value = 0
-  
-  loading.value = true
+  hasMoreMessages.value = true;
+  oldestMessageSeq.value = 0;
+
+  loading.value = true;
   try {
     // 通过后端代理调用 WuKongIM API 获取历史消息
     // Visitor Channel: channel_id = {projectId}_{userId}, channel_type = 10
     // 首次加载不传 pullMode，默认获取最新消息
-    const response = await portalApi.post('/portal/im/messages/sync', {
+    const response = (await portalApi.post("/portal/im/messages/sync", {
       loginUid: imUid.value,
-      channelId: imUid.value,  // 访客频道 ID = {projectId}_{userId}
+      channelId: imUid.value, // 访客频道 ID = {projectId}_{userId}
       channelType: WKChannelType.VISITOR,
-      limit: 50
-    }) as any
-    
+      limit: 50,
+    })) as any;
+
     if (response.code === 0 && response.data) {
-      const parsedMessages = response.data.map(parseHistoryMessage)
-      messages.value = parsedMessages
-      
+      const parsedMessages = response.data.map(parseHistoryMessage);
+      messages.value = parsedMessages;
+
       // 记录最早消息的序号，用于分页
       if (parsedMessages.length > 0) {
-        const seqs = parsedMessages.map((m: any) => m.messageSeq || 0).filter((s: number) => s > 0)
+        const seqs = parsedMessages
+          .map((m: any) => m.messageSeq || 0)
+          .filter((s: number) => s > 0);
         if (seqs.length > 0) {
-          oldestMessageSeq.value = Math.min(...seqs)
+          oldestMessageSeq.value = Math.min(...seqs);
         }
-        hasMoreMessages.value = parsedMessages.length >= 50
+        hasMoreMessages.value = parsedMessages.length >= 50;
       } else {
-        hasMoreMessages.value = false
+        hasMoreMessages.value = false;
       }
-      
-      scrollToBottom()
+
+      scrollToBottom();
     }
   } catch (error) {
-    console.error('Failed to load history from WuKongIM:', error)
+    console.error("Failed to load history from WuKongIM:", error);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
-}
+};
 
 // 加载更多历史消息（向上滚动时触发）
 const loadMoreMessages = async () => {
   if (!imUid.value || loadingMoreMessages.value || !hasMoreMessages.value) {
-    return
+    return;
   }
-  
+
   if (oldestMessageSeq.value <= 1) {
-    hasMoreMessages.value = false
-    return
+    hasMoreMessages.value = false;
+    return;
   }
-  
-  loadingMoreMessages.value = true
-  
+
+  loadingMoreMessages.value = true;
+
   try {
     // pullMode=0 配合 startMessageSeq 向上拉取更旧的消息
-    const response = await portalApi.post('/portal/im/messages/sync', {
+    const response = (await portalApi.post("/portal/im/messages/sync", {
       loginUid: imUid.value,
       channelId: imUid.value,
       channelType: WKChannelType.VISITOR,
       startMessageSeq: oldestMessageSeq.value,
       limit: 30,
-      pullMode: 0  // 向上拉取更旧消息
-    }) as any
-    
+      pullMode: 0, // 向上拉取更旧消息
+    })) as any;
+
     if (response.code === 0 && response.data && response.data.length > 0) {
-      const olderMessages = response.data.map(parseHistoryMessage)
-      
+      const olderMessages = response.data.map(parseHistoryMessage);
+
       // 去重：过滤掉已存在的消息
-      const existingIds = new Set(messages.value.map(m => m.id))
-      const uniqueOlderMessages = olderMessages.filter((m: any) => !existingIds.has(m.id))
-      
+      const existingIds = new Set(messages.value.map((m) => m.id));
+      const uniqueOlderMessages = olderMessages.filter(
+        (m: any) => !existingIds.has(m.id),
+      );
+
       if (uniqueOlderMessages.length === 0) {
-        hasMoreMessages.value = false
-        return
+        hasMoreMessages.value = false;
+        return;
       }
-      
+
       // 保存当前滚动位置
-      const container = messagesContainer.value
-      const previousScrollHeight = container?.scrollHeight || 0
-      
+      const container = messagesContainer.value;
+      const previousScrollHeight = container?.scrollHeight || 0;
+
       // 将旧消息添加到列表前面
-      messages.value = [...uniqueOlderMessages, ...messages.value]
-      
+      messages.value = [...uniqueOlderMessages, ...messages.value];
+
       // 更新最早消息序号 - 使用新加载的消息中的最小序号
-      const seqs = uniqueOlderMessages.map((m: any) => m.messageSeq || 0).filter((s: number) => s > 0)
+      const seqs = uniqueOlderMessages
+        .map((m: any) => m.messageSeq || 0)
+        .filter((s: number) => s > 0);
       if (seqs.length > 0) {
-        const newOldestSeq = Math.min(...seqs)
+        const newOldestSeq = Math.min(...seqs);
         // 确保序号在减小，防止重复请求
         if (newOldestSeq < oldestMessageSeq.value) {
-          oldestMessageSeq.value = newOldestSeq
+          oldestMessageSeq.value = newOldestSeq;
         } else {
-          hasMoreMessages.value = false
+          hasMoreMessages.value = false;
         }
       }
-      
-      hasMoreMessages.value = olderMessages.length >= 30
-      
+
+      hasMoreMessages.value = olderMessages.length >= 30;
+
       // 恢复滚动位置，保持用户当前查看的消息不动
-      await nextTick()
+      await nextTick();
       if (container) {
-        const newScrollHeight = container.scrollHeight
-        container.scrollTop = newScrollHeight - previousScrollHeight
+        const newScrollHeight = container.scrollHeight;
+        container.scrollTop = newScrollHeight - previousScrollHeight;
       }
     } else {
-      hasMoreMessages.value = false
+      hasMoreMessages.value = false;
     }
   } catch (error) {
-    console.error('Failed to load more messages:', error)
+    console.error("Failed to load more messages:", error);
   } finally {
-    loadingMoreMessages.value = false
+    loadingMoreMessages.value = false;
   }
-}
+};
 
 // 处理消息列表滚动事件
 const handleMessagesScroll = () => {
-  const container = messagesContainer.value
-  if (!container) return
-  
+  const container = messagesContainer.value;
+  if (!container) return;
+
   // 当滚动到顶部附近时（距离顶部 50px 内），加载更多消息
   if (container.scrollTop < 50) {
-    loadMoreMessages()
+    loadMoreMessages();
   }
-}
+};
 
 // IM 事件处理函数（需要保持引用以便移除）
 const handleIMConnect = (result: any) => {
-  console.log('IM Connected:', result)
-  imConnected.value = true
-  imConnecting.value = false
-}
+  console.log("IM Connected:", result);
+  imConnected.value = true;
+  imConnecting.value = false;
+};
 
 const handleIMDisconnect = (disconnectInfo: any) => {
-  console.log('IM Disconnected:', disconnectInfo.code, disconnectInfo.reason)
-  imConnected.value = false
-  imConnecting.value = false
-}
+  console.log("IM Disconnected:", disconnectInfo.code, disconnectInfo.reason);
+  imConnected.value = false;
+  imConnecting.value = false;
+};
 
 const handleIMMessage = (message: any) => {
-  console.log('IM Message Received:', message)
-  
+  console.log("IM Message Received:", message);
+
   // 解析消息内容
-  const payload = message.payload || {}
+  const payload = message.payload || {};
   // 使用 imUid ({projectId}_{userId}) 格式判断发送者
-  const senderType = message.fromUID?.startsWith('agent_') ? 'agent' : 
-                     message.fromUID === imUid.value ? 'user' : 'agent'
-  
+  const senderType = message.fromUID?.startsWith("agent_")
+    ? "agent"
+    : message.fromUID === imUid.value
+      ? "user"
+      : "agent";
+
   // 如果是自己发的消息，跳过（已经通过本地添加）
   if (message.fromUID === imUid.value) {
-    return
+    return;
   }
-  
+
   // 根据 messageId 去重，避免重复显示
-  const messageId = message.messageId || message.messageID || message.message_id
-  if (messageId && messages.value.some(m => m.id === messageId || m.id === String(messageId))) {
-    console.log('Duplicate message ignored:', messageId)
-    return
+  const messageId =
+    message.messageId || message.messageID || message.message_id;
+  if (
+    messageId &&
+    messages.value.some((m) => m.id === messageId || m.id === String(messageId))
+  ) {
+    console.log("Duplicate message ignored:", messageId);
+    return;
   }
-  
+
   // 添加接收到的消息
-  const now = new Date()
+  const now = new Date();
   const newMsg: Message = {
     id: messageId || Date.now(),
     senderType: senderType,
-    msgType: payload.type === 2 ? 'image' : payload.type === 3 ? 'file' : 'text',
-    content: payload.content || payload.url || '',
+    msgType:
+      payload.type === 2 ? "image" : payload.type === 3 ? "file" : "text",
+    content: payload.content || payload.url || "",
     fileName: payload.fileName,
     time: formatTime(now),
     date: formatDate(now),
-    timestamp: now.getTime()
-  }
-  
-  messages.value.push(newMsg)
-  scrollToBottom()
-}
+    timestamp: now.getTime(),
+  };
+
+  messages.value.push(newMsg);
+  scrollToBottom();
+};
 
 const handleIMError = (error: any) => {
-  console.error('IM Error:', error.message || error)
-  imConnecting.value = false
-}
+  console.error("IM Error:", error.message || error);
+  imConnecting.value = false;
+};
 
 const initIMConnection = async () => {
-  if (!currentUser.value || imInstance) return
-  
+  if (!currentUser.value || imInstance) return;
+
   // 检查是否已有 IM Token（从 user/init 接口获取）
   if (!imToken.value) {
-    console.error('No IM token available, cannot connect to IM')
-    return
+    console.error("No IM token available, cannot connect to IM");
+    return;
   }
-  
+
   // 检查 imUid 是否已计算好
   if (!imUid.value) {
-    console.error('No imUid (projectId_userId) available, cannot connect to IM')
-    return
+    console.error(
+      "No imUid (projectId_userId) available, cannot connect to IM",
+    );
+    return;
   }
-  
-  imConnecting.value = true
-  
+
+  imConnecting.value = true;
+
   try {
     // 获取 IM WebSocket 地址（从环境变量或配置）
-    const wsUrl = import.meta.env.VITE_WUKONGIM_WS_URL || 'ws://localhost:5200'
-    
+    const wsUrl = import.meta.env.VITE_WUKONGIM_WS_URL || "ws://localhost:5200";
+
     // 初始化 SDK（使用已获取的 imToken）
     // uid 必须使用 {projectId}_{userId} 格式，与后端获取 token 时一致
     imInstance = WKIM.init(wsUrl, {
-      uid: imUid.value,  // 使用 {projectId}_{userId} 格式
+      uid: imUid.value, // 使用 {projectId}_{userId} 格式
       token: imToken.value,
-      deviceFlag: DeviceType.H5  // 连接时使用相同的 deviceFlag
-    })
-    
+      deviceFlag: DeviceType.H5, // 连接时使用相同的 deviceFlag
+    });
+
     // 注册事件监听
-    imInstance.on(WKIMEvent.Connect, handleIMConnect)
-    imInstance.on(WKIMEvent.Disconnect, handleIMDisconnect)
-    imInstance.on(WKIMEvent.Message, handleIMMessage)
-    imInstance.on(WKIMEvent.Error, handleIMError)
-    
+    imInstance.on(WKIMEvent.Connect, handleIMConnect);
+    imInstance.on(WKIMEvent.Disconnect, handleIMDisconnect);
+    imInstance.on(WKIMEvent.Message, handleIMMessage);
+    imInstance.on(WKIMEvent.Error, handleIMError);
+
     // 连接服务器
-    await imInstance.connect()
-    console.log('IM connection initiated with token from user init')
-    
+    await imInstance.connect();
+    console.log("IM connection initiated with token from user init");
   } catch (error) {
-    console.error('Failed to init IM connection:', error)
-    imConnecting.value = false
+    console.error("Failed to init IM connection:", error);
+    imConnecting.value = false;
   }
-}
+};
 
 // 断开 IM 连接
 const disconnectIM = () => {
   if (imInstance) {
     // 移除事件监听
-    imInstance.off(WKIMEvent.Connect, handleIMConnect)
-    imInstance.off(WKIMEvent.Disconnect, handleIMDisconnect)
-    imInstance.off(WKIMEvent.Message, handleIMMessage)
-    imInstance.off(WKIMEvent.Error, handleIMError)
-    
-    imInstance = null
-    imConnected.value = false
+    imInstance.off(WKIMEvent.Connect, handleIMConnect);
+    imInstance.off(WKIMEvent.Disconnect, handleIMDisconnect);
+    imInstance.off(WKIMEvent.Message, handleIMMessage);
+    imInstance.off(WKIMEvent.Error, handleIMError);
+
+    imInstance = null;
+    imConnected.value = false;
   }
-}
+};
 
 const addMessage = (msg: Partial<Message>) => {
-  const now = new Date()
+  const now = new Date();
   const newMsg: Message = {
     id: Date.now(),
-    senderType: msg.senderType || 'user',
-    msgType: msg.msgType || 'text',
-    content: msg.content || '',
+    senderType: msg.senderType || "user",
+    msgType: msg.msgType || "text",
+    content: msg.content || "",
     fileName: msg.fileName,
     time: formatTime(now),
     date: formatDate(now),
-    timestamp: now.getTime()
-  }
-  messages.value.push(newMsg)
-  scrollToBottom()
-  return newMsg
-}
+    timestamp: now.getTime(),
+  };
+  messages.value.push(newMsg);
+  scrollToBottom();
+  return newMsg;
+};
 
 const sendTextMessage = async () => {
-  const text = inputMessage.value.trim()
+  const text = inputMessage.value.trim();
   if (!text || !imInstance || !imConnected.value) {
     if (!imConnected.value) {
-      console.warn('IM not connected, cannot send message')
+      console.warn("IM not connected, cannot send message");
     }
-    return
+    return;
   }
-  
-  inputMessage.value = ''
-  showEmojiPicker.value = false
-  
+
+  inputMessage.value = "";
+  showEmojiPicker.value = false;
+
   // 先在本地显示消息
-  addMessage({ senderType: 'user', msgType: 'text', content: text })
-  
+  addMessage({ senderType: "user", msgType: "text", content: text });
+
   // 通过 WuKongIM SDK 发送消息到访客频道
   // Visitor Channel (channel_type=10), channel_id = {projectId}_{userId}
-  const visitorChannelId = imUid.value
+  const visitorChannelId = imUid.value;
   if (!visitorChannelId) {
-    console.error('No imUid (projectId_userId) for visitor channel')
-    return
+    console.error("No imUid (projectId_userId) for visitor channel");
+    return;
   }
-  
+
   try {
-    const payload = { type: WKChannelType.PERSONAL, content: text }
+    const payload = { type: WKChannelType.PERSONAL, content: text };
     // 使用数字 10 作为访客频道类型
-    const result = await imInstance.send(visitorChannelId, WKChannelType.VISITOR as any, payload)
-    console.log('Message sent to visitor channel:', result)
+    const result = await imInstance.send(
+      visitorChannelId,
+      WKChannelType.VISITOR as any,
+      payload,
+    );
+    console.log("Message sent to visitor channel:", result);
   } catch (error) {
-    console.error('Failed to send message via IM:', error)
+    console.error("Failed to send message via IM:", error);
   }
-}
+};
 
 const insertEmoji = (emoji: string) => {
-  inputMessage.value += emoji
-}
+  inputMessage.value += emoji;
+};
 
 const toggleEmojiPicker = () => {
-  showEmojiPicker.value = !showEmojiPicker.value
-  showMorePanel.value = false
-}
+  showEmojiPicker.value = !showEmojiPicker.value;
+  showMorePanel.value = false;
+};
 
 const triggerImageUpload = () => {
-  imageInput.value?.click()
-}
+  imageInput.value?.click();
+};
 
 const handleImageUpload = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  // 验证文件类型，只允许上传图片
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'];
+  if (!allowedTypes.includes(file.type)) {
+    alert('只支持上传图片文件（JPG、PNG、GIF、WEBP、BMP）');
+    input.value = '';
+    return;
+  }
+
   try {
-    const tokenRes = await portalApi.get('/portal/oss/token') as any
-    
+    const tokenRes = (await portalApi.get("/portal/oss/token")) as any;
+
     if (tokenRes.code === 0 && tokenRes.data) {
-      const { accessKeyId, policy, signature, host, dir } = tokenRes.data
-      
-      const formData = new FormData()
-      const key = `${dir}${Date.now()}_${file.name}`
-      
-      formData.append('key', key)
-      formData.append('policy', policy)
-      formData.append('OSSAccessKeyId', accessKeyId)
-      formData.append('signature', signature)
-      formData.append('file', file)
-      
-      const uploadRes = await fetch(host, { method: 'POST', body: formData })
-      
+      // V4 签名格式的响应字段
+      const { policy, signature, x_oss_credential, x_oss_date, host, dir, domain } =
+        tokenRes.data;
+
+      const formData = new FormData();
+      const key = `${dir}${Date.now()}_${file.name}`;
+
+      // V4 签名方式的表单字段
+      formData.append("key", key);
+      formData.append("success_action_status", "200");
+      formData.append("policy", policy);
+      formData.append("x-oss-signature", signature);
+      formData.append("x-oss-signature-version", "OSS4-HMAC-SHA256");
+      formData.append("x-oss-credential", x_oss_credential);
+      formData.append("x-oss-date", x_oss_date);
+      formData.append("file", file); // file 必须为最后一个表单域
+
+      const uploadRes = await fetch(host, { method: "POST", body: formData });
+
       if (uploadRes.ok) {
-        const imageUrl = `${host}/${key}`
-        addMessage({ senderType: 'user', msgType: 'image', content: imageUrl })
-        
+        const imageUrl = `${domain}/${key}`;
+        addMessage({ senderType: "user", msgType: "image", content: imageUrl });
+
         // 通过 WuKongIM SDK 发送图片消息到访客频道
-        if (imInstance && imConnected.value && currentUser.value?.uid) {
-          const visitorChannelId = currentUser.value.uid
-          const payload = { type: 2, url: imageUrl }
-          await imInstance.send(visitorChannelId, WKChannelType.VISITOR as any, payload)
+        if (imInstance && imConnected.value && imUid.value) {
+          const visitorChannelId = imUid.value;
+          const payload = { type: 2, url: imageUrl };
+          await imInstance.send(
+            visitorChannelId,
+            WKChannelType.VISITOR as any,
+            payload,
+          );
         }
+      } else {
+        console.error(
+          "Upload failed:",
+          uploadRes.status,
+          await uploadRes.text(),
+        );
+        alert("图片上传失败，请重试");
       }
+    } else {
+      console.error("Failed to get OSS token:", tokenRes);
+      alert("获取上传凭证失败");
     }
   } catch (error) {
-    console.error('Failed to upload image:', error)
-    alert('图片上传失败，请重试')
+    console.error("Failed to upload image:", error);
+    alert("图片上传失败，请重试");
   }
-  
-  input.value = ''
-}
+
+  input.value = "";
+};
 
 const previewImage = (url: string) => {
-  previewImageUrl.value = url
-}
+  previewImageUrl.value = url;
+};
 
 const downloadFile = (msg: Message) => {
   if (msg.fileUrl) {
-    window.open(msg.fileUrl, '_blank')
+    window.open(msg.fileUrl, "_blank");
   }
-}
+};
 
 const submitTicket = () => {
-  showMorePanel.value = false
-  showTicketDialog.value = true
-}
+  showMorePanel.value = false;
+  showTicketDialog.value = true;
+};
 
 const handleSubmitTicket = async () => {
   if (!ticketForm.value.title || !ticketForm.value.description) {
-    alert('请填写工单标题和描述')
-    return
+    alert("请填写工单标题和描述");
+    return;
   }
-  
+
   try {
-    const response = await portalApi.post('/portal/ticket/create', {
+    const response = (await portalApi.post("/portal/ticket/create", {
       projectId: parseInt(projectId.value),
       userId: currentUser.value?.id,
       title: ticketForm.value.title,
       description: ticketForm.value.description,
       contactInfo: ticketForm.value.contactInfo,
-      priority: ticketForm.value.priority
-    }) as any
-    
+      priority: ticketForm.value.priority,
+    })) as any;
+
     if (response.code === 0) {
-      alert('工单提交成功！我们会尽快处理。')
-      showTicketDialog.value = false
-      
-      const title = ticketForm.value.title
-      ticketForm.value = { title: '', description: '', contactInfo: '', priority: 'medium' }
-      
+      alert("工单提交成功！我们会尽快处理。");
+      showTicketDialog.value = false;
+
+      const title = ticketForm.value.title;
+      ticketForm.value = {
+        title: "",
+        description: "",
+        contactInfo: "",
+        priority: "medium",
+      };
+
       addMessage({
-        senderType: 'system',
-        msgType: 'text',
-        content: `您已成功提交工单【${title}】，工单号：${response.data.id}`
-      })
+        senderType: "system",
+        msgType: "text",
+        content: `您已成功提交工单【${title}】，工单号：${response.data.id}`,
+      });
     }
   } catch (error) {
-    console.error('Failed to submit ticket:', error)
-    alert('工单提交失败，请重试')
+    console.error("Failed to submit ticket:", error);
+    alert("工单提交失败，请重试");
   }
-}
+};
 
 const viewFAQ = () => {
-  showMorePanel.value = false
-  router.push(`/portal?project_id=${projectId.value}`)
-}
+  showMorePanel.value = false;
+  router.push(`/portal?project_id=${projectId.value}`);
+};
 
 const scrollToBottom = () => {
   nextTick(() => {
     if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight
+      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
     }
-  })
-}
+  });
+};
 
 const handleClickOutside = () => {
   if (showEmojiPicker.value || showMorePanel.value) {
-    showEmojiPicker.value = false
-    showMorePanel.value = false
+    showEmojiPicker.value = false;
+    showMorePanel.value = false;
   }
-}
+};
 
 onMounted(async () => {
-  document.addEventListener('click', handleClickOutside)
-  await initUser()
-  await initConversation()
-})
+  document.addEventListener("click", handleClickOutside);
+  await initUser();
+  await initConversation();
+});
 
 onUnmounted(() => {
-  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener("click", handleClickOutside);
   // 断开 IM 连接
-  disconnectIM()
-})
+  disconnectIM();
+});
 </script>
 
 <style scoped lang="css">
@@ -926,8 +1092,13 @@ onUnmounted(() => {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 .messages {
@@ -1072,7 +1243,9 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .watermark {

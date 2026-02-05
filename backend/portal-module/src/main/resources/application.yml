@@ -37,4 +37,6 @@ aliyun:
     access-key-secret: ${ALIYUN_OSS_ACCESS_KEY_SECRET:}
     endpoint: ${ALIYUN_OSS_ENDPOINT:oss-cn-hangzhou.aliyuncs.com}
     bucket: ${ALIYUN_OSS_BUCKET:}
+    region: ${ALIYUN_OSS_REGION:cn-hangzhou}
     dir: ${ALIYUN_OSS_DIR:customer-service/uploads/}
+    domain: ${ALIYUN_OSS_DOMAIN:}

@@ -130,7 +130,12 @@
               <el-avatar :size="32">{{ msg.senderType === 'agent' ? 'A' : 'U' }}</el-avatar>
             </div>
             <div class="message-content">
-              <div class="message-text">{{ msg.content }}</div>
+              <!-- 文本消息 -->
+              <div v-if="msg.contentType === 'text'" class="message-text">{{ msg.content }}</div>
+              <!-- 图片消息 -->
+              <div v-else-if="msg.contentType === 'image'" class="message-image" @click="previewImage(msg.content)">
+                <img :src="msg.content" alt="图片消息" />
+              </div>
               <div class="message-time">{{ formatTime(msg.createdAt) }}</div>
             </div>
           </div>
@@ -198,6 +203,16 @@
             <el-button size="small" @click="showQuickReply = !showQuickReply">
               <el-icon><ChatDotSquare /></el-icon> 快捷回复
             </el-button>
+            <el-button size="small" @click="triggerImageUpload" :loading="uploadingImage">
+              <el-icon><Picture /></el-icon> 图片
+            </el-button>
+            <input
+              ref="imageInputRef"
+              type="file"
+              accept="image/*"
+              style="display: none"
+              @change="handleImageUpload"
+            />
           </div>
           <div class="input-box">
             <el-input
@@ -387,13 +402,18 @@
         <el-button type="primary" @click="showSoundSettings = false">确定</el-button>
       </template>
     </el-dialog>
+    
+    <!-- 图片预览弹窗 -->
+    <div v-if="previewImageUrl" class="image-preview-overlay" @click="previewImageUrl = ''">
+      <img :src="previewImageUrl" class="preview-image" />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { User, Close, Notebook, ChatDotSquare, Search, Loading, Bell, MuteNotification, Check } from '@element-plus/icons-vue'
+import { User, Close, Notebook, ChatDotSquare, Search, Loading, Bell, MuteNotification, Check, Picture } from '@element-plus/icons-vue'
 import { WKIM, WKIMEvent } from 'easyjssdk'
 import { DeviceType, WKChannelType } from '@/constants'
 
@@ -457,6 +477,9 @@ const conversationHistory = ref<any[]>([])
 const messageListRef = ref<HTMLElement | null>(null)
 const inputRef = ref<InstanceType<typeof import('element-plus')['ElInput']> | null>(null)
 const conversationListRef = ref<HTMLElement | null>(null)  // 会话列表容器
+const imageInputRef = ref<HTMLInputElement | null>(null)  // 图片上传输入框
+const uploadingImage = ref(false)  // 图片上传中状态
+const previewImageUrl = ref('')  // 预览图片URL
 const showAddTagDialog = ref(false)
 const newTagName = ref('')
 const loadingTags = ref(false)  // 标签加载状态
@@ -1036,6 +1059,127 @@ const closeConversation = () => {
   messages.value = []
   showKbPanel.value = false
   showQuickReply.value = false
+}
+
+// 触发图片上传
+const triggerImageUpload = () => {
+  imageInputRef.value?.click()
+}
+
+// 图片预览
+const previewImage = (url: string) => {
+  previewImageUrl.value = url
+}
+
+// 处理图片上传
+const handleImageUpload = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+
+  // 验证文件类型，只允许上传图片
+  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp']
+  if (!allowedTypes.includes(file.type)) {
+    ElMessage.warning('只支持上传图片文件（JPG、PNG、GIF、WEBP、BMP）')
+    input.value = ''
+    return
+  }
+
+  // 检查 IM 连接和用户 UID
+  if (!imInstance || !imConnected.value) {
+    ElMessage.warning('IM 未连接，请稍后重试')
+    return
+  }
+  
+  if (!selectedConversation.value?.userUid) {
+    ElMessage.warning('请先选择会话')
+    return
+  }
+
+  uploadingImage.value = true
+  
+  try {
+    // 获取 OSS 上传凭证
+    const tokenRes = await fetch('/api/admin/oss/token', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      }
+    })
+    const tokenData = await tokenRes.json()
+    
+    if (tokenData.code === 0 && tokenData.data) {
+      const { policy, signature, x_oss_credential, x_oss_date, host, dir, domain } = tokenData.data
+      
+      const formData = new FormData()
+      const key = `${dir}${Date.now()}_${file.name}`
+      
+      // V4 签名方式的表单字段
+      formData.append('key', key)
+      formData.append('success_action_status', '200')
+      formData.append('policy', policy)
+      formData.append('x-oss-signature', signature)
+      formData.append('x-oss-signature-version', 'OSS4-HMAC-SHA256')
+      formData.append('x-oss-credential', x_oss_credential)
+      formData.append('x-oss-date', x_oss_date)
+      formData.append('file', file)  // file 必须为最后一个表单域
+      
+      const uploadRes = await fetch(host, { method: 'POST', body: formData })
+      
+      if (uploadRes.ok) {
+        const imageUrl = `${domain}/${key}`
+        
+        // 先在本地添加消息（乐观更新）
+        const tempMsg: Message = {
+          id: Date.now(),
+          conversationId: selectedConversation.value.userId,
+          senderId: agentId.value,
+          senderType: 'agent',
+          contentType: 'image',
+          content: imageUrl,
+          createdAt: new Date().toISOString()
+        }
+        messages.value.push(tempMsg)
+        nextTick(() => scrollToBottom())
+        
+        // 通过 WuKongIM SDK 发送图片消息到用户的访客频道
+        const payload = { type: 2, url: imageUrl }
+        const result = await imInstance.send(
+          selectedConversation.value.userUid,
+          WKChannelType.VISITOR as any,
+          payload
+        )
+        
+        console.log('Image sent to visitor channel:', result)
+        
+        if (result.reasonCode !== 1) {
+          ElMessage.error('图片发送失败')
+          messages.value = messages.value.filter(m => m.id !== tempMsg.id)
+        } else {
+          // 发送成功，更新会话列表中的最新消息
+          const convIndex = myConversations.value.findIndex(c => c.userUid === selectedConversation.value?.userUid)
+          if (convIndex !== -1) {
+            myConversations.value[convIndex] = {
+              ...myConversations.value[convIndex],
+              lastMessage: '[图片]',
+              lastMessageTime: new Date().toISOString()
+            }
+          }
+        }
+      } else {
+        console.error('Upload failed:', uploadRes.status, await uploadRes.text())
+        ElMessage.error('图片上传失败，请重试')
+      }
+    } else {
+      console.error('Failed to get OSS token:', tokenData)
+      ElMessage.error('获取上传凭证失败')
+    }
+  } catch (error) {
+    console.error('图片上传失败:', error)
+    ElMessage.error('图片上传失败，请重试')
+  } finally {
+    uploadingImage.value = false
+    input.value = ''
+  }
 }
 
 // 插入知识库内容
@@ -1892,6 +2036,52 @@ watch(selectedConversation, (newVal) => {
 .message-item.agent .message-text {
   background-color: #409eff;
   color: #fff;
+}
+
+/* 图片消息样式 */
+.message-image {
+  max-width: 200px;
+  cursor: pointer;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.message-image img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transition: transform 0.2s;
+}
+
+.message-image:hover img {
+  transform: scale(1.02);
+}
+
+.message-item.agent .message-image {
+  border: 2px solid #409eff;
+}
+
+/* 图片预览遮罩层 */
+.image-preview-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  cursor: pointer;
+}
+
+.preview-image {
+  max-width: 90%;
+  max-height: 90%;
+  object-fit: contain;
+  border-radius: 4px;
 }
 
 .message-time {
