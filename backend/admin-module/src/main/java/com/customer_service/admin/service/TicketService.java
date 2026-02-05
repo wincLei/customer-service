@@ -93,6 +93,26 @@ public class TicketService {
     }
 
     /**
+     * 获取指定用户的工单列表
+     *
+     * @param userId     用户ID
+     * @param projectIds 用户有权限的项目ID列表（null表示管理员，可查看所有）
+     * @return 用户工单列表
+     */
+    public List<Ticket> getTicketsByUserId(Long userId, Set<Long> projectIds) {
+        List<Ticket> tickets = ticketRepository.findByUserIdOrderByCreatedAtDesc(userId);
+
+        // 如果不是管理员，需要过滤掉没有权限的项目工单
+        if (projectIds != null && !projectIds.isEmpty()) {
+            tickets = tickets.stream()
+                    .filter(t -> projectIds.contains(t.getProjectId()))
+                    .toList();
+        }
+
+        return tickets;
+    }
+
+    /**
      * 回复工单
      */
     @Transactional

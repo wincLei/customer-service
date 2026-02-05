@@ -94,10 +94,11 @@
 
     <!-- 输入区域 -->
     <div class="input-section">
-      <div class="input-row">
-        <!-- 图片上传按钮 -->
-        <button class="tool-btn" @click="triggerImageUpload">
-          <span class="tool-icon">🖼️</span>
+      <!-- 工具栏 -->
+      <div class="input-toolbar">
+        <button class="toolbar-btn" @click="triggerImageUpload">
+          <span class="toolbar-icon">🖼️</span>
+          <span class="toolbar-text">图片</span>
         </button>
         <input
           ref="imageInput"
@@ -106,8 +107,26 @@
           style="display: none"
           @change="handleImageUpload"
         />
-
-        <!-- 输入框 -->
+        
+        <button class="toolbar-btn" @click="submitTicket">
+          <span class="toolbar-icon">📝</span>
+          <span class="toolbar-text">提交工单</span>
+        </button>
+        
+        <button class="toolbar-btn" @click="openMyTickets">
+          <span class="toolbar-icon">📋</span>
+          <span class="toolbar-text">我的工单</span>
+          <span v-if="hasUnreadTicketReply" class="unread-dot"></span>
+        </button>
+        
+        <button class="toolbar-btn" @click.stop="toggleEmojiPicker">
+          <span class="toolbar-icon">😊</span>
+          <span class="toolbar-text">表情</span>
+        </button>
+      </div>
+      
+      <!-- 输入行 -->
+      <div class="input-row">
         <input
           v-model="inputMessage"
           type="text"
@@ -115,13 +134,6 @@
           @keyup.enter="sendTextMessage"
           class="msg-input"
         />
-
-        <!-- 表情按钮 -->
-        <button class="tool-btn" @click="toggleEmojiPicker">
-          <span class="tool-icon">😊</span>
-        </button>
-
-        <!-- 发送按钮 -->
         <button
           class="send-btn"
           :class="{ active: inputMessage.trim() }"
@@ -210,6 +222,130 @@
       </div>
     </div>
 
+    <!-- 我的工单列表弹窗 -->
+    <div
+      v-if="showMyTickets"
+      class="ticket-dialog-overlay"
+      @click.self="showMyTickets = false"
+    >
+      <div class="ticket-dialog ticket-list-dialog">
+        <div class="ticket-header">
+          <h3>我的工单</h3>
+          <button class="close-btn" @click="showMyTickets = false">✕</button>
+        </div>
+        <div class="ticket-list-content" v-if="!loadingTickets">
+          <div v-if="myTickets.length > 0" class="ticket-list">
+            <div 
+              v-for="ticket in myTickets" 
+              :key="ticket.id" 
+              class="ticket-list-item"
+              @click="openTicketDetail(ticket)"
+            >
+              <div class="ticket-item-header">
+                <span class="ticket-item-title">{{ ticket.title }}</span>
+                <span v-if="ticket.hasNewReply" class="new-reply-badge">有新回复</span>
+              </div>
+              <div class="ticket-item-tags">
+                <span class="ticket-tag" :class="'status-' + ticket.status">
+                  {{ getStatusLabel(ticket.status) }}
+                </span>
+                <span class="ticket-tag" :class="'priority-' + ticket.priority">
+                  {{ getPriorityLabel(ticket.priority) }}
+                </span>
+              </div>
+              <div class="ticket-item-time">
+                {{ formatTicketTime(ticket.createdAt) }}
+              </div>
+            </div>
+          </div>
+          <div v-else class="empty-tickets">
+            <span class="empty-icon">📭</span>
+            <span>暂无工单记录</span>
+          </div>
+        </div>
+        <div v-else class="loading-tickets">
+          <span class="loading-spinner"></span>
+          加载中...
+        </div>
+      </div>
+    </div>
+
+    <!-- 工单详情弹窗 -->
+    <div
+      v-if="showTicketDetail"
+      class="ticket-dialog-overlay"
+      @click.self="showTicketDetail = false"
+    >
+      <div class="ticket-dialog ticket-detail-dialog">
+        <div class="ticket-header">
+          <button class="back-btn" @click="backToTicketList">← 返回</button>
+          <h3>工单详情</h3>
+          <button class="close-btn" @click="showTicketDetail = false">✕</button>
+        </div>
+        <div class="ticket-detail-content" v-if="currentTicketDetail">
+          <!-- 工单基本信息 -->
+          <div class="ticket-info-card">
+            <div class="ticket-detail-title">{{ currentTicketDetail.ticket.title }}</div>
+            <div class="ticket-detail-tags">
+              <span class="ticket-tag" :class="'status-' + currentTicketDetail.ticket.status">
+                {{ getStatusLabel(currentTicketDetail.ticket.status) }}
+              </span>
+              <span class="ticket-tag" :class="'priority-' + currentTicketDetail.ticket.priority">
+                {{ getPriorityLabel(currentTicketDetail.ticket.priority) }}
+              </span>
+            </div>
+            <div class="ticket-detail-desc">{{ currentTicketDetail.ticket.description }}</div>
+            <div class="ticket-detail-time">
+              创建时间：{{ formatTicketTime(currentTicketDetail.ticket.createdAt) }}
+            </div>
+          </div>
+          
+          <!-- 回复记录 -->
+          <div class="ticket-events">
+            <div class="events-title">处理记录</div>
+            <div v-if="currentTicketDetail.events.length > 0" class="events-list">
+              <div 
+                v-for="event in currentTicketDetail.events" 
+                :key="event.id" 
+                class="event-item"
+                :class="{ 'event-agent': event.operatorType === 'agent', 'event-user': event.operatorType === 'user' }"
+              >
+                <div class="event-header">
+                  <span class="event-sender">{{ event.operatorType === 'agent' ? '客服' : '我' }}</span>
+                  <span class="event-time">{{ formatTicketTime(event.createdAt) }}</span>
+                </div>
+                <div class="event-content">{{ event.content }}</div>
+              </div>
+            </div>
+            <div v-else class="no-events">暂无处理记录</div>
+          </div>
+          
+          <!-- 回复输入框 -->
+          <div class="ticket-reply-section" v-if="currentTicketDetail.ticket.status !== 'closed'">
+            <textarea 
+              v-model="ticketReplyContent" 
+              placeholder="输入回复内容..."
+              rows="3"
+            ></textarea>
+            <button 
+              class="reply-btn" 
+              @click="submitTicketReply"
+              :disabled="!ticketReplyContent.trim() || submittingReply"
+            >
+              {{ submittingReply ? '发送中...' : '发送回复' }}
+            </button>
+          </div>
+          <div v-else class="ticket-closed-tip">
+            该工单已关闭，无法继续回复
+          </div>
+        </div>
+        <div v-else class="loading-tickets">
+          <span class="loading-spinner"></span>
+          加载中...
+        </div>
+      </div>
+    </div>
+
     <!-- 图片预览弹窗 -->
     <div
       v-if="previewImageUrl"
@@ -246,6 +382,17 @@ const showTicketDialog = ref(false);
 const previewImageUrl = ref("");
 const messagesContainer = ref<HTMLElement | null>(null);
 const imageInput = ref<HTMLInputElement | null>(null);
+
+// 工单相关状态
+const showMyTickets = ref(false);
+const showTicketDetail = ref(false);
+const loadingTickets = ref(false);
+const myTickets = ref<any[]>([]);
+const currentTicketDetail = ref<any>(null);
+const ticketReplyContent = ref("");
+const submittingReply = ref(false);
+const hasUnreadTicketReply = ref(false);  // 是否有未读工单回复
+const TICKET_READ_KEY = "mini_cs_ticket_read_";  // 工单已读状态本地存储 key
 
 // 分页加载相关状态
 const loadingMoreMessages = ref(false);
@@ -995,6 +1142,11 @@ const handleSubmitTicket = async () => {
       showTicketDialog.value = false;
 
       const title = ticketForm.value.title;
+      const newTicketId = response.data.id;
+      
+      // 立即标记新工单为已读，避免显示红点
+      markTicketAsRead(newTicketId);
+      
       ticketForm.value = {
         title: "",
         description: "",
@@ -1005,12 +1157,162 @@ const handleSubmitTicket = async () => {
       addMessage({
         senderType: "system",
         msgType: "text",
-        content: `您已成功提交工单【${title}】，工单号：${response.data.id}`,
+        content: `您已成功提交工单【${title}】，工单号：${newTicketId}`,
       });
+      
+      // 刷新工单列表
+      await fetchMyTickets();
     }
   } catch (error) {
     console.error("Failed to submit ticket:", error);
     alert("工单提交失败，请重试");
+  }
+};
+
+// ========== 工单列表和详情相关方法 ==========
+// 获取状态标签
+const getStatusLabel = (status: string) => {
+  const statusMap: Record<string, string> = {
+    'open': '待处理',
+    'pending': '待处理',
+    'processing': '处理中',
+    'resolved': '已解决',
+    'closed': '已关闭'
+  };
+  return statusMap[status] || status;
+};
+
+// 获取优先级标签
+const getPriorityLabel = (priority: string) => {
+  const priorityMap: Record<string, string> = {
+    'low': '低',
+    'medium': '中',
+    'high': '高',
+    'urgent': '紧急'
+  };
+  return priorityMap[priority] || priority;
+};
+
+// 格式化工单时间
+const formatTicketTime = (time: string) => {
+  if (!time) return '-';
+  const date = new Date(time);
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  const hours = date.getHours().toString().padStart(2, '0');
+  const minutes = date.getMinutes().toString().padStart(2, '0');
+  return `${month}月${day}日 ${hours}:${minutes}`;
+};
+
+// 获取工单最后已读时间
+const getTicketReadTime = (ticketId: number): number => {
+  const key = `${TICKET_READ_KEY}${currentUser.value?.id}_${ticketId}`;
+  const time = localStorage.getItem(key);
+  return time ? parseInt(time) : 0;
+};
+
+// 标记工单为已读
+const markTicketAsRead = (ticketId: number) => {
+  const key = `${TICKET_READ_KEY}${currentUser.value?.id}_${ticketId}`;
+  localStorage.setItem(key, Date.now().toString());
+};
+
+// 检查工单是否有新回复
+const checkTicketNewReply = (ticket: any): boolean => {
+  if (!ticket.updatedAt) return false;
+  const readTime = getTicketReadTime(ticket.id);
+  const updateTime = new Date(ticket.updatedAt).getTime();
+  return updateTime > readTime;
+};
+
+// 获取我的工单列表
+const fetchMyTickets = async () => {
+  if (!currentUser.value?.id) return;
+  
+  loadingTickets.value = true;
+  try {
+    const response = (await portalApi.get(`/portal/ticket/list?userId=${currentUser.value.id}`)) as any;
+    if (response.code === 0 && response.data) {
+      // 为每个工单添加 hasNewReply 标记
+      myTickets.value = response.data.map((ticket: any) => ({
+        ...ticket,
+        hasNewReply: checkTicketNewReply(ticket)
+      }));
+      
+      // 更新是否有未读回复
+      hasUnreadTicketReply.value = myTickets.value.some((t: any) => t.hasNewReply);
+    }
+  } catch (error) {
+    console.error("Failed to fetch tickets:", error);
+  } finally {
+    loadingTickets.value = false;
+  }
+};
+
+// 打开我的工单列表
+const openMyTickets = async () => {
+  showMyTickets.value = true;
+  await fetchMyTickets();
+};
+
+// 打开工单详情
+const openTicketDetail = async (ticket: any) => {
+  showMyTickets.value = false;
+  showTicketDetail.value = true;
+  currentTicketDetail.value = null;
+  
+  try {
+    const response = (await portalApi.get(`/portal/ticket/${ticket.id}`)) as any;
+    if (response.code === 0 && response.data) {
+      currentTicketDetail.value = response.data;
+      // 标记为已读
+      markTicketAsRead(ticket.id);
+      // 更新列表中的已读状态
+      const ticketIndex = myTickets.value.findIndex((t: any) => t.id === ticket.id);
+      if (ticketIndex > -1) {
+        myTickets.value[ticketIndex].hasNewReply = false;
+      }
+      // 更新全局未读状态
+      hasUnreadTicketReply.value = myTickets.value.some((t: any) => t.hasNewReply);
+    }
+  } catch (error) {
+    console.error("Failed to fetch ticket detail:", error);
+    alert("获取工单详情失败");
+  }
+};
+
+// 返回工单列表
+const backToTicketList = () => {
+  showTicketDetail.value = false;
+  showMyTickets.value = true;
+  ticketReplyContent.value = "";
+};
+
+// 提交工单回复
+const submitTicketReply = async () => {
+  if (!ticketReplyContent.value.trim() || !currentTicketDetail.value) return;
+  
+  submittingReply.value = true;
+  try {
+    const response = (await portalApi.post(`/portal/ticket/${currentTicketDetail.value.ticket.id}/reply`, {
+      userId: currentUser.value?.id,
+      content: ticketReplyContent.value.trim()
+    })) as any;
+    
+    if (response.code === 0) {
+      // 添加到事件列表
+      currentTicketDetail.value.events.push(response.data);
+      ticketReplyContent.value = "";
+      // 更新工单状态
+      markTicketAsRead(currentTicketDetail.value.ticket.id);
+    } else {
+      alert(response.message || "回复失败");
+    }
+  } catch (error) {
+    console.error("Failed to reply ticket:", error);
+    alert("回复失败，请重试");
+  } finally {
+    submittingReply.value = false;
   }
 };
 
@@ -1038,6 +1340,8 @@ onMounted(async () => {
   document.addEventListener("click", handleClickOutside);
   await initUser();
   await initConversation();
+  // 加载工单列表以检查是否有未读回复
+  await fetchMyTickets();
 });
 
 onUnmounted(() => {
@@ -1267,30 +1571,57 @@ onUnmounted(() => {
   z-index: 10;
 }
 
+/* 工具栏样式 */
+.input-toolbar {
+  display: flex;
+  gap: 4px;
+  padding: 8px 0;
+  border-bottom: 1px solid #f0f0f0;
+  margin-bottom: 8px;
+}
+
+.toolbar-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  flex: 1;
+  position: relative;
+}
+
+.toolbar-btn:active {
+  background-color: #e8e8e8;
+}
+
+.toolbar-icon {
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+
+.toolbar-text {
+  font-size: 11px;
+  color: #666;
+}
+
+.unread-dot {
+  position: absolute;
+  top: 4px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  background: #ff4d4f;
+  border-radius: 50%;
+}
+
 .input-row {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.tool-btn {
-  width: 36px;
-  height: 36px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.tool-btn:active {
-  background-color: #f0f0f0;
-}
-
-.tool-icon {
-  font-size: 22px;
 }
 
 .msg-input {
@@ -1521,5 +1852,320 @@ onUnmounted(() => {
   max-width: 95%;
   max-height: 95%;
   object-fit: contain;
+}
+
+/* 工单列表弹窗样式 */
+.ticket-list-dialog {
+  max-height: 85vh;
+}
+
+.ticket-list-content {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.ticket-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ticket-list-item {
+  padding: 12px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ticket-list-item:active {
+  background: #f0f0f0;
+}
+
+.ticket-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.ticket-item-title {
+  font-weight: 500;
+  font-size: 14px;
+  color: #333;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.new-reply-badge {
+  background: #ff4d4f;
+  color: white;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+
+.ticket-item-tags {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.ticket-tag {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #f0f0f0;
+  color: #666;
+}
+
+.ticket-tag.status-open,
+.ticket-tag.status-pending {
+  background: #fff7e6;
+  color: #d46b08;
+}
+
+.ticket-tag.status-processing {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.ticket-tag.status-resolved {
+  background: #f6ffed;
+  color: #52c41a;
+}
+
+.ticket-tag.status-closed {
+  background: #f5f5f5;
+  color: #999;
+}
+
+.ticket-tag.priority-low {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.ticket-tag.priority-medium {
+  background: #e6f7ff;
+  color: #1890ff;
+}
+
+.ticket-tag.priority-high {
+  background: #fff7e6;
+  color: #fa8c16;
+}
+
+.ticket-tag.priority-urgent {
+  background: #fff1f0;
+  color: #f5222d;
+}
+
+.ticket-item-time {
+  font-size: 12px;
+  color: #999;
+}
+
+.empty-tickets {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.loading-tickets {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  color: #999;
+}
+
+/* 工单详情弹窗样式 */
+.ticket-detail-dialog {
+  max-height: 90vh;
+}
+
+.ticket-detail-dialog .ticket-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ticket-detail-dialog .ticket-header h3 {
+  flex: 1;
+  margin: 0;
+  text-align: center;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: #1890ff;
+  cursor: pointer;
+  padding: 4px 8px;
+}
+
+.ticket-detail-content {
+  max-height: calc(90vh - 160px);
+  overflow-y: auto;
+}
+
+.ticket-info-card {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 16px;
+}
+
+.ticket-detail-title {
+  font-weight: 600;
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.ticket-detail-tags {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.ticket-detail-desc {
+  font-size: 14px;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.ticket-detail-time {
+  font-size: 12px;
+  color: #999;
+}
+
+/* 回复记录 */
+.ticket-events {
+  margin-bottom: 16px;
+}
+
+.events-title {
+  font-weight: 500;
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #f5f5f5;
+}
+
+.event-item.event-agent {
+  background: #e6f7ff;
+  border-left: 3px solid #1890ff;
+}
+
+.event-item.event-user {
+  background: #f0f9eb;
+  border-left: 3px solid #52c41a;
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.event-sender {
+  font-weight: 500;
+  font-size: 13px;
+  color: #333;
+}
+
+.event-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.event-content {
+  font-size: 14px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.no-events {
+  text-align: center;
+  padding: 20px;
+  color: #999;
+  font-size: 14px;
+}
+
+/* 回复输入区域 */
+.ticket-reply-section {
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.ticket-reply-section textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  box-sizing: border-box;
+  resize: none;
+  margin-bottom: 10px;
+}
+
+.ticket-reply-section textarea:focus {
+  border-color: #1890ff;
+}
+
+.reply-btn {
+  width: 100%;
+  height: 40px;
+  background-color: #1890ff;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.reply-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.reply-btn:not(:disabled):active {
+  background-color: #0050b3;
+}
+
+.ticket-closed-tip {
+  text-align: center;
+  padding: 16px;
+  color: #999;
+  font-size: 14px;
+  background: #f5f5f5;
+  border-radius: 8px;
 }
 </style>

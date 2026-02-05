@@ -206,6 +206,10 @@
             <el-button size="small" @click="triggerImageUpload" :loading="uploadingImage">
               <el-icon><Picture /></el-icon> 图片
             </el-button>
+            <el-button size="small" @click="openUserTickets" :loading="loadingTickets" class="ticket-btn">
+              <el-icon><Tickets /></el-icon> 工单
+              <span v-if="hasUnreadUserTicket" class="ticket-unread-dot"></span>
+            </el-button>
             <input
               ref="imageInputRef"
               type="file"
@@ -403,6 +407,112 @@
       </template>
     </el-dialog>
     
+    <!-- 用户工单弹窗 -->
+    <el-dialog v-model="showUserTickets" :title="currentTicketDetail ? '工单详情' : '用户工单'" width="700px">
+      <!-- 工单列表视图 -->
+      <div v-if="!currentTicketDetail" class="user-tickets-content" v-loading="loadingTickets">
+        <div v-if="userTickets.length > 0" class="tickets-list">
+          <div 
+            v-for="ticket in userTickets" 
+            :key="ticket.id" 
+            class="ticket-item"
+            @click="viewTicketDetail(ticket)"
+          >
+            <div class="ticket-header">
+              <span class="ticket-title">{{ ticket.title }}</span>
+              <div class="ticket-tags">
+                <el-tag :type="getTicketStatusType(ticket.status)" size="small">
+                  {{ getTicketStatusLabel(ticket.status) }}
+                </el-tag>
+                <el-tag :type="getTicketPriorityType(ticket.priority)" size="small">
+                  {{ getTicketPriorityLabel(ticket.priority) }}
+                </el-tag>
+              </div>
+            </div>
+            <div class="ticket-desc">{{ ticket.description?.substring(0, 100) }}{{ ticket.description?.length > 100 ? '...' : '' }}</div>
+            <div class="ticket-footer">
+              <span class="ticket-time">创建时间：{{ formatTicketTime(ticket.createdAt) }}</span>
+              <span class="ticket-id">#{{ ticket.id }}</span>
+            </div>
+          </div>
+        </div>
+        <el-empty v-else description="该用户暂无工单" :image-size="80" />
+      </div>
+      
+      <!-- 工单详情视图 -->
+      <div v-else class="ticket-detail-view" v-loading="loadingTicketDetail">
+        <!-- 工单基本信息 -->
+        <div class="ticket-info-section">
+          <div class="ticket-detail-header">
+            <h4>{{ currentTicketDetail.ticket.title }}</h4>
+            <div class="ticket-detail-tags">
+              <el-tag :type="getTicketStatusType(currentTicketDetail.ticket.status)" size="small">
+                {{ getTicketStatusLabel(currentTicketDetail.ticket.status) }}
+              </el-tag>
+              <el-tag :type="getTicketPriorityType(currentTicketDetail.ticket.priority)" size="small">
+                {{ getTicketPriorityLabel(currentTicketDetail.ticket.priority) }}
+              </el-tag>
+            </div>
+          </div>
+          <div class="ticket-detail-desc">{{ currentTicketDetail.ticket.description }}</div>
+          <div class="ticket-detail-meta">
+            <span>创建时间：{{ formatTicketTime(currentTicketDetail.ticket.createdAt) }}</span>
+            <span v-if="currentTicketDetail.ticket.contactInfo">联系方式：{{ currentTicketDetail.ticket.contactInfo }}</span>
+          </div>
+        </div>
+        
+        <!-- 回复记录 -->
+        <div class="ticket-events-section">
+          <div class="section-title">处理记录</div>
+          <div class="events-list" v-if="currentTicketDetail.events?.length > 0">
+            <div 
+              v-for="event in currentTicketDetail.events" 
+              :key="event.id" 
+              class="event-item"
+              :class="event.operatorType"
+            >
+              <div class="event-header">
+                <span class="event-sender">{{ event.operatorType === 'agent' ? '客服' : '用户' }}</span>
+                <span class="event-time">{{ formatTicketTime(event.createdAt) }}</span>
+              </div>
+              <div class="event-content">{{ event.content }}</div>
+            </div>
+          </div>
+          <div v-else class="no-events">暂无处理记录</div>
+        </div>
+        
+        <!-- 快速回复区域 -->
+        <div class="quick-reply-section" v-if="currentTicketDetail.ticket.status !== 'closed'">
+          <el-input
+            v-model="ticketReplyContent"
+            type="textarea"
+            :rows="3"
+            placeholder="输入回复内容..."
+          />
+          <div class="reply-actions">
+            <el-select v-model="ticketNewStatus" placeholder="更新状态" size="small" style="width: 120px">
+              <el-option label="不变" value="" />
+              <el-option label="处理中" value="processing" />
+              <el-option label="已解决" value="resolved" />
+              <el-option label="已关闭" value="closed" />
+            </el-select>
+            <el-button type="primary" @click="submitTicketReply" :loading="submittingTicketReply" :disabled="!ticketReplyContent.trim()">
+              发送回复
+            </el-button>
+          </div>
+        </div>
+        <div v-else class="ticket-closed-notice">
+          <el-alert title="该工单已关闭" type="info" :closable="false" />
+        </div>
+      </div>
+      
+      <template #footer>
+        <el-button v-if="currentTicketDetail" @click="currentTicketDetail = null">返回列表</el-button>
+        <el-button @click="closeTicketDialog">关闭</el-button>
+        <el-button v-if="!currentTicketDetail" type="primary" @click="goToTicketManagement">前往工单管理</el-button>
+      </template>
+    </el-dialog>
+    
     <!-- 图片预览弹窗 -->
     <div v-if="previewImageUrl" class="image-preview-overlay" @click="previewImageUrl = ''">
       <img :src="previewImageUrl" class="preview-image" />
@@ -413,7 +523,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import { User, Close, Notebook, ChatDotSquare, Search, Loading, Bell, MuteNotification, Check, Picture } from '@element-plus/icons-vue'
+import { User, Close, Notebook, ChatDotSquare, Search, Loading, Bell, MuteNotification, Check, Picture, Tickets } from '@element-plus/icons-vue'
 import { WKIM, WKIMEvent } from 'easyjssdk'
 import { DeviceType, WKChannelType } from '@/constants'
 
@@ -483,6 +593,41 @@ const previewImageUrl = ref('')  // 预览图片URL
 const showAddTagDialog = ref(false)
 const newTagName = ref('')
 const loadingTags = ref(false)  // 标签加载状态
+
+// 工单相关状态
+interface Ticket {
+  id: number
+  title: string
+  description: string
+  status: string
+  priority: string
+  contactInfo?: string
+  createdAt: string
+  updatedAt: string
+}
+interface TicketEvent {
+  id: number
+  ticketId: number
+  operatorId: number
+  operatorType: string
+  action: string
+  content: string
+  createdAt: string
+}
+interface TicketDetail {
+  ticket: Ticket
+  events: TicketEvent[]
+}
+const showUserTickets = ref(false)
+const loadingTickets = ref(false)
+const userTickets = ref<Ticket[]>([])
+const currentTicketDetail = ref<TicketDetail | null>(null)
+const loadingTicketDetail = ref(false)
+const ticketReplyContent = ref('')
+const ticketNewStatus = ref('')
+const submittingTicketReply = ref(false)
+const hasUnreadUserTicket = ref(false)  // 是否有用户回复的未读工单
+const AGENT_TICKET_READ_KEY = 'mini_cs_agent_ticket_read_'  // 客服端工单已读状态 key
 
 // 消息分页加载相关状态
 const loadingMoreMessages = ref(false)
@@ -777,8 +922,11 @@ const selectConversation = async (conv: UserConversation) => {
   // 加载用户标签
   if (conv.userId && conv.userId > 0) {
     await fetchUserTags(conv.userId)
+    // 检查用户是否有未读工单
+    await checkUserHasUnreadTicket()
   } else {
     userTags.value = []
+    hasUnreadUserTicket.value = false
   }
   
   // 标记为已读（只有在 userId 有效时才调用后端）
@@ -1069,6 +1217,242 @@ const triggerImageUpload = () => {
 // 图片预览
 const previewImage = (url: string) => {
   previewImageUrl.value = url
+}
+
+// ========== 工单相关方法 ==========
+// 检查工单是否有未读的用户回复
+const checkTicketUnread = (ticket: Ticket): boolean => {
+  if (!selectedConversation.value?.userId) return false
+  const key = `${AGENT_TICKET_READ_KEY}${selectedConversation.value.userId}_${ticket.id}`
+  const readTime = localStorage.getItem(key)
+  if (!readTime) {
+    // 从未查看过，检查是否有用户回复（通过 updatedAt 判断）
+    return ticket.status !== 'closed'
+  }
+  // 比较工单更新时间与已读时间
+  const ticketUpdateTime = new Date(ticket.updatedAt).getTime()
+  return ticketUpdateTime > parseInt(readTime)
+}
+
+// 标记工单为已读
+const markTicketRead = (ticketId: number) => {
+  if (!selectedConversation.value?.userId) return
+  const key = `${AGENT_TICKET_READ_KEY}${selectedConversation.value.userId}_${ticketId}`
+  localStorage.setItem(key, Date.now().toString())
+}
+
+// 检查当前用户是否有未读工单
+const checkUserHasUnreadTicket = async () => {
+  if (!selectedConversation.value?.userId) {
+    hasUnreadUserTicket.value = false
+    return
+  }
+  
+  try {
+    const response = await fetch(`/api/admin/ticket/user/${selectedConversation.value.userId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      }
+    })
+    const data = await response.json()
+    if (data.code === 0 && data.data) {
+      // 检查是否有未读的工单
+      hasUnreadUserTicket.value = data.data.some((ticket: Ticket) => checkTicketUnread(ticket))
+    } else {
+      hasUnreadUserTicket.value = false
+    }
+  } catch (error) {
+    console.error('检查未读工单失败:', error)
+    hasUnreadUserTicket.value = false
+  }
+}
+
+// 打开用户工单列表
+const openUserTickets = async () => {
+  if (!selectedConversation.value?.userId) {
+    ElMessage.warning('请先选择会话')
+    return
+  }
+  
+  showUserTickets.value = true
+  currentTicketDetail.value = null
+  loadingTickets.value = true
+  
+  try {
+    const response = await fetch(`/api/admin/ticket/user/${selectedConversation.value.userId}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      }
+    })
+    const data = await response.json()
+    if (data.code === 0 && data.data) {
+      userTickets.value = data.data
+      // 打开工单列表后，清除未读状态
+      hasUnreadUserTicket.value = false
+    } else {
+      userTickets.value = []
+    }
+  } catch (error) {
+    console.error('加载用户工单失败:', error)
+    userTickets.value = []
+    ElMessage.error('加载工单失败')
+  } finally {
+    loadingTickets.value = false
+  }
+}
+
+// 查看工单详情（在弹窗内）
+const viewTicketDetail = async (ticket: Ticket) => {
+  loadingTicketDetail.value = true
+  ticketReplyContent.value = ''
+  ticketNewStatus.value = ''
+  
+  // 标记工单为已读
+  markTicketRead(ticket.id)
+  
+  try {
+    const response = await fetch(`/api/admin/ticket/${ticket.id}`, {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      }
+    })
+    const data = await response.json()
+    if (data.code === 0 && data.data) {
+      currentTicketDetail.value = data.data
+    }
+  } catch (error) {
+    console.error('加载工单详情失败:', error)
+    ElMessage.error('加载工单详情失败')
+  } finally {
+    loadingTicketDetail.value = false
+  }
+}
+
+// 提交工单回复
+const submitTicketReply = async () => {
+  if (!ticketReplyContent.value.trim() || !currentTicketDetail.value) return
+  
+  submittingTicketReply.value = true
+  
+  try {
+    // 发送回复
+    const replyResponse = await fetch(`/api/admin/ticket/${currentTicketDetail.value.ticket.id}/reply`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+      },
+      body: JSON.stringify({ content: ticketReplyContent.value.trim() })
+    })
+    const replyData = await replyResponse.json()
+    
+    if (replyData.code !== 0) {
+      ElMessage.error(replyData.message || '回复失败')
+      return
+    }
+    
+    // 如果需要更新状态
+    if (ticketNewStatus.value) {
+      await fetch(`/api/admin/ticket/${currentTicketDetail.value.ticket.id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: JSON.stringify({ status: ticketNewStatus.value })
+      })
+    }
+    
+    ElMessage.success('回复成功')
+    ticketReplyContent.value = ''
+    ticketNewStatus.value = ''
+    
+    // 重新加载工单详情
+    await viewTicketDetail(currentTicketDetail.value.ticket)
+    
+    // 同时更新列表中的工单状态
+    const ticketIndex = userTickets.value.findIndex(t => t.id === currentTicketDetail.value!.ticket.id)
+    if (ticketIndex > -1 && ticketNewStatus.value) {
+      userTickets.value[ticketIndex].status = ticketNewStatus.value
+    }
+  } catch (error) {
+    console.error('回复工单失败:', error)
+    ElMessage.error('回复失败，请重试')
+  } finally {
+    submittingTicketReply.value = false
+  }
+}
+
+// 关闭工单弹窗
+const closeTicketDialog = () => {
+  showUserTickets.value = false
+  currentTicketDetail.value = null
+  ticketReplyContent.value = ''
+  ticketNewStatus.value = ''
+}
+
+// 获取工单状态类型
+const getTicketStatusType = (status: string) => {
+  const statusMap: Record<string, string> = {
+    'open': 'warning',
+    'pending': 'warning',
+    'processing': 'primary',
+    'resolved': 'success',
+    'closed': 'info'
+  }
+  return statusMap[status] || 'info'
+}
+
+// 获取工单状态标签
+const getTicketStatusLabel = (status: string) => {
+  const labelMap: Record<string, string> = {
+    'open': '待处理',
+    'pending': '待处理',
+    'processing': '处理中',
+    'resolved': '已解决',
+    'closed': '已关闭'
+  }
+  return labelMap[status] || status
+}
+
+// 获取工单优先级类型
+const getTicketPriorityType = (priority: string) => {
+  const priorityMap: Record<string, string> = {
+    'low': 'info',
+    'medium': '',
+    'high': 'warning',
+    'urgent': 'danger'
+  }
+  return priorityMap[priority] || ''
+}
+
+// 获取工单优先级标签
+const getTicketPriorityLabel = (priority: string) => {
+  const labelMap: Record<string, string> = {
+    'low': '低',
+    'medium': '中',
+    'high': '高',
+    'urgent': '紧急'
+  }
+  return labelMap[priority] || priority
+}
+
+// 格式化工单时间
+const formatTicketTime = (time: string) => {
+  if (!time) return '-'
+  const date = new Date(time)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
+}
+
+// 跳转到工单管理页面
+const goToTicketManagement = () => {
+  showUserTickets.value = false
+  currentTicketDetail.value = null
+  if (selectedConversation.value?.userId) {
+    window.open(`/admin/tickets?userId=${selectedConversation.value.userId}`, '_blank')
+  } else {
+    window.open('/admin/tickets', '_blank')
+  }
 }
 
 // 处理图片上传
@@ -2058,10 +2442,6 @@ watch(selectedConversation, (newVal) => {
   transform: scale(1.02);
 }
 
-.message-item.agent .message-image {
-  border: 2px solid #409eff;
-}
-
 /* 图片预览遮罩层 */
 .image-preview-overlay {
   position: fixed;
@@ -2439,5 +2819,256 @@ watch(selectedConversation, (newVal) => {
 .new-tag-section .new-tag-input {
   display: flex;
   gap: 10px;
+}
+
+/* 用户工单弹窗样式 */
+.user-tickets-content {
+  min-height: 200px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.tickets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ticket-item {
+  padding: 14px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ticket-item:hover {
+  border-color: #409eff;
+  box-shadow: 0 2px 8px rgba(64, 158, 255, 0.15);
+}
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.ticket-title {
+  font-weight: 500;
+  font-size: 14px;
+  color: #303133;
+  flex: 1;
+  margin-right: 12px;
+}
+
+.ticket-tags {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.ticket-desc {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.ticket-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: #909399;
+}
+
+.ticket-id {
+  font-family: monospace;
+}
+
+/* 工单详情视图样式 */
+.ticket-detail-view {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.detail-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.back-btn {
+  padding: 4px 8px;
+}
+
+.detail-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  flex: 1;
+}
+
+.ticket-info-section {
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 24px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.info-label {
+  color: #909399;
+  min-width: 56px;
+}
+
+.info-value {
+  color: #606266;
+}
+
+.ticket-desc-section {
+  padding: 12px;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.6;
+}
+
+.ticket-events-section {
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.events-header {
+  padding: 10px 12px;
+  background: #f8f9fa;
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.events-list {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.event-item {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.event-item:last-child {
+  border-bottom: none;
+}
+
+.event-item.agent {
+  background: #ecf5ff;
+}
+
+.event-item.user {
+  background: #fff;
+}
+
+.event-item.system {
+  background: #fafafa;
+}
+
+.event-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+
+.event-creator {
+  font-size: 13px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.event-time {
+  font-size: 12px;
+  color: #909399;
+}
+
+.event-content {
+  font-size: 13px;
+  color: #606266;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.no-events {
+  padding: 20px;
+  text-align: center;
+  color: #909399;
+  font-size: 13px;
+}
+
+.quick-reply-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.reply-header {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.reply-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.status-select {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.status-label {
+  font-size: 13px;
+  color: #606266;
+}
+
+/* 工单按钮红点样式 */
+.ticket-btn {
+  position: relative;
+}
+
+.ticket-unread-dot {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 8px;
+  height: 8px;
+  background: #ff4d4f;
+  border-radius: 50%;
+  border: 1px solid #fff;
 }
 </style>

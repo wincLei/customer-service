@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -80,6 +81,16 @@ public class TicketController {
         return ticketService.getTicketDetail(id, projectIds)
                 .map(ApiResponse::success)
                 .orElse(ApiResponse.fail(404, "工单不存在"));
+    }
+
+    /**
+     * 获取指定用户的工单列表
+     */
+    @GetMapping("/user/{userId}")
+    public ApiResponse<List<Ticket>> getUserTickets(@PathVariable Long userId) {
+        Set<Long> projectIds = getCurrentUserProjectIds();
+        List<Ticket> tickets = ticketService.getTicketsByUserId(userId, projectIds);
+        return ApiResponse.success(tickets);
     }
 
     /**
