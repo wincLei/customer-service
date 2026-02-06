@@ -155,3 +155,5 @@ volumes:
     driver: local
   redis_data:
     driver: local
+  wukongim_data:
+    driver: local
