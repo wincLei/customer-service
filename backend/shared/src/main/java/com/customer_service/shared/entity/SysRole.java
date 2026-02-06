@@ -2,6 +2,8 @@ package com.customer_service.shared.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -27,6 +29,7 @@ public class SysRole {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "JSONB")
     private String permissions;
 

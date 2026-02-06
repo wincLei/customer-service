@@ -4,6 +4,8 @@ import com.customer_service.admin.service.SysRoleService;
 import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.SysRole;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 public class SysRoleController {
 
     private final SysRoleService sysRoleService;
+    private final ObjectMapper objectMapper;
 
     /**
      * 获取所有角色（用于下拉选择）
@@ -81,13 +84,22 @@ public class SysRoleController {
         }
 
         try {
+            // 将 permissions 对象转换为 JSON 字符串
+            String permissionsJson = null;
+            if (request.getPermissions() != null) {
+                permissionsJson = objectMapper.writeValueAsString(request.getPermissions());
+            }
+
             SysRole role = sysRoleService.createRole(
                     request.getCode(),
                     request.getName(),
                     request.getDescription(),
-                    request.getPermissions());
+                    permissionsJson);
             log.info("创建角色成功: {} (ID: {})", role.getName(), role.getId());
             return ApiResponse.success(toRoleVO(role));
+        } catch (JsonProcessingException e) {
+            log.error("权限数据格式错误", e);
+            return ApiResponse.error("权限数据格式错误");
         } catch (RuntimeException e) {
             return ApiResponse.error(e.getMessage());
         }
@@ -99,13 +111,22 @@ public class SysRoleController {
     @PutMapping("/{id}")
     public ApiResponse<?> updateRole(@PathVariable Long id, @RequestBody UpdateRoleRequest request) {
         try {
+            // 将 permissions 对象转换为 JSON 字符串
+            String permissionsJson = null;
+            if (request.getPermissions() != null) {
+                permissionsJson = objectMapper.writeValueAsString(request.getPermissions());
+            }
+
             SysRole role = sysRoleService.updateRole(
                     id,
                     request.getName(),
                     request.getDescription(),
-                    request.getPermissions());
+                    permissionsJson);
             log.info("更新角色成功: {} (ID: {})", role.getName(), role.getId());
             return ApiResponse.success(toRoleVO(role));
+        } catch (JsonProcessingException e) {
+            log.error("权限数据格式错误", e);
+            return ApiResponse.error("权限数据格式错误");
         } catch (RuntimeException e) {
             return ApiResponse.error(e.getMessage());
         }
@@ -146,13 +167,13 @@ public class SysRoleController {
         private String code;
         private String name;
         private String description;
-        private String permissions;
+        private Object permissions; // 支持对象或字符串
     }
 
     @Data
     public static class UpdateRoleRequest {
         private String name;
         private String description;
-        private String permissions;
+        private Object permissions; // 支持对象或字符串
     }
 }
