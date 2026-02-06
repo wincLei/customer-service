@@ -33,8 +33,12 @@ COPY --from=builder /build/dist .
 # 复制 nginx 配置
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
+# 复制启动脚本
+COPY frontend/docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
 # 暴露端口
 EXPOSE 80
 
-# 启动 nginx
-CMD ["nginx", "-g", "daemon off;"]
+# 使用启动脚本（支持运行时配置注入）
+ENTRYPOINT ["/docker-entrypoint.sh"]

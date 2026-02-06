@@ -2096,7 +2096,8 @@ const initIMConnection = async () => {
     console.log('[IM] Agent IM Token obtained:', data.token.substring(0, 8) + '...')
     
     // 2. 初始化 SDK（使用相同的 deviceFlag）
-    const wsUrl = import.meta.env.VITE_WUKONGIM_WS_URL || 'ws://localhost:5200'
+    // 优先使用运行时配置，其次使用构建时环境变量，最后使用默认值
+    const wsUrl = (window as any).__RUNTIME_CONFIG__?.WUKONGIM_WS_URL || import.meta.env.VITE_WUKONGIM_WS_URL || 'ws://localhost:5200'
     console.log('[IM] Connecting to WebSocket:', wsUrl, 'with deviceFlag:', DeviceType.WEB)
     
     imInstance = WKIM.init(wsUrl, {

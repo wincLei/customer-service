@@ -930,7 +930,8 @@ const initIMConnection = async () => {
 
   try {
     // 获取 IM WebSocket 地址（从环境变量或配置）
-    const wsUrl = import.meta.env.VITE_WUKONGIM_WS_URL || "ws://localhost:5200";
+    // 优先使用运行时配置，其次使用构建时环境变量，最后使用默认值
+    const wsUrl = (window as any).__RUNTIME_CONFIG__?.WUKONGIM_WS_URL || import.meta.env.VITE_WUKONGIM_WS_URL || "ws://localhost:5200";
 
     // 初始化 SDK（使用已获取的 imToken）
     // uid 必须使用 {projectId}_{userId} 格式，与后端获取 token 时一致

@@ -129,6 +129,9 @@ services:
     container_name: mini-customer-service-frontend
     ports:
       - "81:80"
+    environment:
+      # 运行时配置（容器启动时注入）
+      VITE_WUKONGIM_WS_URL: ${VITE_WUKONGIM_WS_URL:-ws://localhost:5200}
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
     depends_on:
