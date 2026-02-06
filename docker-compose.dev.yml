@@ -42,8 +42,9 @@ services:
       - mini-customer-service-net
 
   # WuKongIM 即时通讯服务 (v2 支持 JSON-RPC 协议)
+  # 注意: 锁定版本以避免新版本兼容性问题 (v2.2.3 payload序列化有变化)
   wukongim:
-    image: wukongim/wukongim:v2
+    image: wukongim/wukongim:v2.2.2-20251229
     container_name: wukongim
     ports:
       - "5001:5001"  # HTTP API
