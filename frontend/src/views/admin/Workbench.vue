@@ -252,6 +252,10 @@
               <span>{{ selectedConversation.userId }}</span>
             </div>
             <div class="detail-item">
+              <label>项目名称:</label>
+              <span>{{ projectName || '-' }}</span>
+            </div>
+            <div class="detail-item">
               <label>昵称:</label>
               <span>{{ selectedConversation.userName || '用户' + selectedConversation.userId }}</span>
             </div>
@@ -526,6 +530,7 @@ import { ElMessage } from 'element-plus'
 import { User, Close, Notebook, ChatDotSquare, Search, Loading, Bell, MuteNotification, Check, Picture, Tickets } from '@element-plus/icons-vue'
 import { WKIM, WKIMEvent } from 'easyjssdk'
 import { DeviceType, WKChannelType } from '@/constants'
+import api from '@/api/index'
 
 // IM 相关状态
 let imInstance: ReturnType<typeof WKIM.init> | null = null
@@ -593,6 +598,7 @@ const previewImageUrl = ref('')  // 预览图片URL
 const showAddTagDialog = ref(false)
 const newTagName = ref('')
 const loadingTags = ref(false)  // 标签加载状态
+const projectName = ref('')  // 当前会话用户的项目名称
 
 // 工单相关状态
 interface Ticket {
@@ -746,24 +752,30 @@ const initAgentInfo = () => {
   }
 }
 
-// 计算当前显示的会话列表（选中的会话置顶）
+// 计算当前显示的会话列表（按最新消息时间排序，选中的会话置顶）
 const conversations = computed(() => {
   const list = activeTab.value === 'pending' ? pendingQueue.value : myConversations.value
+  
+  // 先按 lastMessageTime 降序排列（最新消息排最前面）
+  const sorted = [...list].sort((a, b) => {
+    const timeA = a.lastMessageTime ? new Date(a.lastMessageTime).getTime() : 0
+    const timeB = b.lastMessageTime ? new Date(b.lastMessageTime).getTime() : 0
+    return timeB - timeA
+  })
   
   // 如果有选中的会话，将其置顶
   if (selectedConversation.value) {
     const selectedUid = selectedConversation.value.userUid
-    const selectedIndex = list.findIndex(c => c.userUid === selectedUid)
+    const selectedIndex = sorted.findIndex(c => c.userUid === selectedUid)
     
     if (selectedIndex > 0) {
-      // 选中的会话不在第一位，需要重新排序
-      const selected = list[selectedIndex]
-      const others = list.filter((_, i) => i !== selectedIndex)
+      const selected = sorted[selectedIndex]
+      const others = sorted.filter((_, i) => i !== selectedIndex)
       return [selected, ...others]
     }
   }
   
-  return list
+  return sorted
 })
 
 // 计算排队中有未读消息的用户数
@@ -898,6 +910,25 @@ const isUserInMyConversations = (userUid: string): boolean => {
   return myConversations.value.some(conv => conv.userUid === userUid)
 }
 
+// 获取项目名称
+const fetchProjectName = async (pid?: number) => {
+  if (!pid) {
+    projectName.value = '-'
+    return
+  }
+  try {
+    const response = await api.get(`/admin/projects/${pid}`) as any
+    if (response.code === 0 && response.data) {
+      projectName.value = response.data.name || '-'
+    } else {
+      projectName.value = '-'
+    }
+  } catch (error) {
+    console.error('Failed to fetch project name:', error)
+    projectName.value = '-'
+  }
+}
+
 // 选择会话
 const selectConversation = async (conv: UserConversation) => {
   // 如果 userId 为 0 但有 userUid，尝试解析获取真实的 userId
@@ -918,6 +949,9 @@ const selectConversation = async (conv: UserConversation) => {
   }
   
   showUserPanel.value = true
+  
+  // 加载项目名称
+  await fetchProjectName(conv.projectId)
   
   // 加载用户标签
   if (conv.userId && conv.userId > 0) {

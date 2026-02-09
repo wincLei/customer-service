@@ -43,17 +43,7 @@ public class PortalConversationService {
      */
     @Transactional
     public ConversationInitResult initOrGetConversation(Long projectId, Long userId) {
-        // 查找用户现有的活跃会话
-        Optional<Conversation> existingConv = conversationRepository
-                .findActiveByProjectIdAndUserId(projectId, userId);
-
-        if (existingConv.isPresent()) {
-            Conversation conv = existingConv.get();
-            log.info("Found existing conversation: id={}", conv.getId());
-            return new ConversationInitResult(conv, false, null);
-        }
-
-        // 获取项目欢迎语
+        // 获取项目欢迎语（无论会话是否已存在，都需要返回）
         String welcomeMessage = "您好，请问有什么需要帮助的？";
         Optional<Project> projectOpt = projectRepository.findById(projectId);
         if (projectOpt.isPresent() && projectOpt.get().getConfig() != null) {
@@ -65,6 +55,16 @@ public class PortalConversationService {
             } catch (Exception e) {
                 log.warn("Failed to parse project config", e);
             }
+        }
+
+        // 查找用户现有的活跃会话
+        Optional<Conversation> existingConv = conversationRepository
+                .findActiveByProjectIdAndUserId(projectId, userId);
+
+        if (existingConv.isPresent()) {
+            Conversation conv = existingConv.get();
+            log.info("Found existing conversation: id={}", conv.getId());
+            return new ConversationInitResult(conv, false, welcomeMessage);
         }
 
         // 创建新会话

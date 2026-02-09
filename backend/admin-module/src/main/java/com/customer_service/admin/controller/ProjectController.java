@@ -80,7 +80,7 @@ public class ProjectController {
      * 获取单个项目详情
      */
     @GetMapping("/{id}")
-    @RequirePermission(value = "project:manage", roles = { "admin" })
+    @RequirePermission(value = "project:manage", roles = { "admin", "agent" })
     public ApiResponse<?> getProject(@PathVariable Long id) {
         return projectService.getProjectById(id)
                 .map(project -> ApiResponse.success(toProjectVO(project)))

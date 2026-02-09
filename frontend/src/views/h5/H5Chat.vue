@@ -125,15 +125,22 @@
         </button>
       </div>
       
+      <!-- 频率限制提示 -->
+      <div v-if="rateLimitTip" class="rate-limit-tip">{{ rateLimitTip }}</div>
+      
       <!-- 输入行 -->
       <div class="input-row">
         <input
           v-model="inputMessage"
           type="text"
           placeholder="请输入内容"
+          :maxlength="MAX_CHARS_PER_MESSAGE"
           @keyup.enter="sendTextMessage"
           class="msg-input"
         />
+        <span v-if="inputMessage.length > MAX_CHARS_PER_MESSAGE * 0.8" class="char-count" :class="{ warning: inputMessage.length >= MAX_CHARS_PER_MESSAGE }">
+          {{ inputMessage.length }}/{{ MAX_CHARS_PER_MESSAGE }}
+        </span>
         <button
           class="send-btn"
           :class="{ active: inputMessage.trim() }"
@@ -398,6 +405,13 @@ const TICKET_READ_KEY = "mini_cs_ticket_read_";  // 工单已读状态本地存�
 const loadingMoreMessages = ref(false);
 const hasMoreMessages = ref(true);
 const oldestMessageSeq = ref<number>(0); // 当前最早消息的序号
+
+// 消息发送频率限制
+const MAX_CHARS_PER_MESSAGE = 200; // 单条消息最大字数
+const MAX_CHARS_PER_MINUTE = 1000; // 每分钟最大总字数
+const RATE_LIMIT_WINDOW = 60 * 1000; // 频率限制时间窗口（1分钟）
+const recentSentChars = ref<{ timestamp: number; count: number }[]>([]); // 最近发送的字数记录
+const rateLimitTip = ref(''); // 频率限制提示信息
 
 // 用户信息
 interface UserInfo {
@@ -664,7 +678,17 @@ const initConversation = async () => {
 
       await loadHistory();
 
-      if (response.data.isNew) {
+      // 判断是否需要展示欢迎语：新会话 或 距离上次访问超过5分钟
+      const WELCOME_INTERVAL = 5 * 60 * 1000; // 5分钟（毫秒）
+      const storageKey = `h5chat_last_visit_${projectId.value}_${currentUser.value?.id}`;
+      const lastVisit = localStorage.getItem(storageKey);
+      const now = Date.now();
+      const shouldShowWelcome =
+        response.data.isNew ||
+        !lastVisit ||
+        now - parseInt(lastVisit) > WELCOME_INTERVAL;
+
+      if (shouldShowWelcome) {
         const welcomeMsg =
           response.data.welcomeMessage || "您好，请问有什么需要帮助的？";
         addMessage({
@@ -673,6 +697,9 @@ const initConversation = async () => {
           content: welcomeMsg,
         });
       }
+
+      // 更新最后访问时间
+      localStorage.setItem(storageKey, now.toString());
 
       initIMConnection();
     }
@@ -987,6 +1014,35 @@ const addMessage = (msg: Partial<Message>) => {
   return newMsg;
 };
 
+// 检查消息发送频率限制
+const checkRateLimit = (text: string): boolean => {
+  // 检查单条消息字数限制
+  if (text.length > MAX_CHARS_PER_MESSAGE) {
+    rateLimitTip.value = `单条消息不能超过${MAX_CHARS_PER_MESSAGE}字，当前${text.length}字`;
+    setTimeout(() => { rateLimitTip.value = ''; }, 3000);
+    return false;
+  }
+
+  // 清理超过时间窗口的记录
+  const now = Date.now();
+  recentSentChars.value = recentSentChars.value.filter(
+    (r) => now - r.timestamp < RATE_LIMIT_WINDOW
+  );
+
+  // 计算时间窗口内已发送的总字数
+  const totalCharsInWindow = recentSentChars.value.reduce(
+    (sum, r) => sum + r.count, 0
+  );
+
+  if (totalCharsInWindow + text.length > MAX_CHARS_PER_MINUTE) {
+    rateLimitTip.value = '发送过于频繁，请稍后再试';
+    setTimeout(() => { rateLimitTip.value = ''; }, 3000);
+    return false;
+  }
+
+  return true;
+};
+
 const sendTextMessage = async () => {
   const text = inputMessage.value.trim();
   if (!text || !imInstance || !imConnected.value) {
@@ -995,6 +1051,14 @@ const sendTextMessage = async () => {
     }
     return;
   }
+
+  // 检查频率限制
+  if (!checkRateLimit(text)) {
+    return;
+  }
+
+  // 记录本次发送字数
+  recentSentChars.value.push({ timestamp: Date.now(), count: text.length });
 
   inputMessage.value = "";
   showEmojiPicker.value = false;
@@ -1617,6 +1681,31 @@ onUnmounted(() => {
   height: 8px;
   background: #ff4d4f;
   border-radius: 50%;
+}
+
+/* 频率限制提示样式 */
+.rate-limit-tip {
+  text-align: center;
+  font-size: 12px;
+  color: #ff4d4f;
+  padding: 4px 0;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 字数统计样式 */
+.char-count {
+  font-size: 11px;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.char-count.warning {
+  color: #ff4d4f;
 }
 
 .input-row {
