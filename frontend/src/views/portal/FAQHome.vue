@@ -93,7 +93,7 @@
 
     <!-- FAQ详情对话框 -->
     <el-dialog v-model="showFAQDetail" :title="selectedFAQ?.title" width="90%" top="5vh">
-      <div class="faq-detail-content" v-html="selectedFAQ?.content"></div>
+      <div class="faq-detail-content markdown-body" v-html="renderedContent"></div>
       <div v-if="selectedFAQ && !selectedFAQ.content" class="loading-detail">
         <div class="loading-spinner"></div>
         <span>加载中...</span>
@@ -103,8 +103,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { marked } from 'marked'
 import portalApi from '@/api/portal'
 
 interface FAQ {
@@ -131,6 +132,23 @@ const searchResults = ref<FAQ[]>([])
 
 const hotFAQs = ref<FAQ[]>([])
 const categories = ref<CategoryGroup[]>([])
+
+// 配置 marked 选项
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+})
+
+// 将 Markdown 内容渲染为 HTML
+const renderedContent = computed(() => {
+  if (!selectedFAQ.value?.content) return ''
+  try {
+    return marked(selectedFAQ.value.content) as string
+  } catch (e) {
+    console.error('Markdown parse error:', e)
+    return selectedFAQ.value.content
+  }
+})
 
 // 从 URL 获取 project_id
 const getProjectId = (): string => {
@@ -381,10 +399,97 @@ onMounted(() => {
 }
 
 .faq-detail-content :deep(pre) {
-  background: #f5f5f5;
-  padding: 12px;
-  border-radius: 4px;
+  background: #f6f8fa;
+  padding: 16px;
+  border-radius: 6px;
   overflow-x: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  border: 1px solid #e1e4e8;
+}
+
+.faq-detail-content :deep(code) {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+}
+
+.faq-detail-content :deep(:not(pre) > code) {
+  background: #f0f2f5;
+  padding: 2px 6px;
+  border-radius: 3px;
+  color: #c7254e;
+}
+
+.faq-detail-content :deep(h1),
+.faq-detail-content :deep(h2),
+.faq-detail-content :deep(h3),
+.faq-detail-content :deep(h4) {
+  margin-top: 20px;
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #1a1a1a;
+  line-height: 1.4;
+}
+
+.faq-detail-content :deep(h1) { font-size: 22px; }
+.faq-detail-content :deep(h2) { font-size: 19px; }
+.faq-detail-content :deep(h3) { font-size: 16px; }
+.faq-detail-content :deep(h4) { font-size: 14px; }
+
+.faq-detail-content :deep(p) {
+  margin-bottom: 12px;
+}
+
+.faq-detail-content :deep(ul),
+.faq-detail-content :deep(ol) {
+  padding-left: 24px;
+  margin-bottom: 12px;
+}
+
+.faq-detail-content :deep(li) {
+  margin-bottom: 6px;
+}
+
+.faq-detail-content :deep(blockquote) {
+  border-left: 4px solid #1890ff;
+  padding: 10px 16px;
+  margin: 12px 0;
+  background: #f5f7fa;
+  color: #666;
+  border-radius: 0 4px 4px 0;
+}
+
+.faq-detail-content :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+
+.faq-detail-content :deep(th),
+.faq-detail-content :deep(td) {
+  border: 1px solid #e1e4e8;
+  padding: 8px 12px;
+  text-align: left;
+}
+
+.faq-detail-content :deep(th) {
+  background: #f6f8fa;
+  font-weight: 600;
+}
+
+.faq-detail-content :deep(a) {
+  color: #1890ff;
+  text-decoration: none;
+}
+
+.faq-detail-content :deep(a:hover) {
+  text-decoration: underline;
+}
+
+.faq-detail-content :deep(hr) {
+  border: none;
+  border-top: 1px solid #e1e4e8;
+  margin: 20px 0;
 }
 
 .loading-detail {
