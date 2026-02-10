@@ -6,6 +6,7 @@ import com.customer_service.shared.constant.WKChannelType;
 import com.customer_service.shared.entity.Message;
 import com.customer_service.shared.repository.MessageRepository;
 import com.customer_service.shared.service.WuKongIMService;
+import com.customer_service.shared.util.I18nUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
@@ -94,7 +95,7 @@ public class PortalMessageService {
             String content) {
         var convOpt = conversationService.getConversation(conversationId);
         if (convOpt.isEmpty()) {
-            throw new IllegalArgumentException("会话不存在");
+            throw new IllegalArgumentException(I18nUtil.getMessage("conversation.not.found"));
         }
 
         var conv = convOpt.get();

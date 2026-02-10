@@ -11,6 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+import com.customer_service.shared.util.I18nUtil;
+
 /**
  * 客户标签管理服务
  */
@@ -52,7 +54,7 @@ public class CustomerTagService {
             Long createdBy) {
         // 检查名称是否已存在
         if (customerTagRepository.existsByProjectIdAndName(projectId, name)) {
-            throw new RuntimeException("标签名称已存在");
+            throw new RuntimeException(I18nUtil.getMessage("tag.name.exists"));
         }
 
         CustomerTag tag = CustomerTag.builder()
@@ -73,12 +75,12 @@ public class CustomerTagService {
     @Transactional
     public CustomerTag updateTag(Long id, String name, String color, String description, Integer sortOrder) {
         CustomerTag tag = customerTagRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("标签不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("tag.not.found")));
 
         // 检查名称是否与其他标签重复
         if (name != null && !name.equals(tag.getName())) {
             if (customerTagRepository.existsByProjectIdAndName(tag.getProjectId(), name)) {
-                throw new RuntimeException("标签名称已存在");
+                throw new RuntimeException(I18nUtil.getMessage("tag.name.exists"));
             }
             tag.setName(name);
         }
@@ -102,7 +104,7 @@ public class CustomerTagService {
     @Transactional
     public void deleteTag(Long id) {
         CustomerTag tag = customerTagRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("标签不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("tag.not.found")));
 
         // 删除所有关联关系
         // 由于有外键级联删除，这里不需要手动删除

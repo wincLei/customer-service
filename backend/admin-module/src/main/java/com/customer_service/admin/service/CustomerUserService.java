@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.customer_service.shared.util.I18nUtil;
+
 /**
  * 客户端用户管理服务
  * 管理使用客服系统的终端用户（访客/客户）
@@ -101,7 +103,7 @@ public class CustomerUserService {
     @Transactional
     public User updateUser(Long id, String nickname, String phone, String email) {
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("customer.not.found")));
 
         if (nickname != null) {
             user.setNickname(nickname);
@@ -191,15 +193,15 @@ public class CustomerUserService {
     @Transactional
     public User mergeGuestToUser(Long guestUserId, Long targetUserId) {
         User guestUser = userRepository.findById(guestUserId)
-                .orElseThrow(() -> new RuntimeException("游客用户不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("user.anonymous.not.found")));
         User targetUser = userRepository.findById(targetUserId)
-                .orElseThrow(() -> new RuntimeException("目标用户不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("user.target.not.found")));
 
         if (!guestUser.getIsGuest()) {
-            throw new RuntimeException("只能合并游客用户");
+            throw new RuntimeException(I18nUtil.getMessage("user.merge.only.anonymous"));
         }
         if (!guestUser.getProjectId().equals(targetUser.getProjectId())) {
-            throw new RuntimeException("用户必须属于同一项目");
+            throw new RuntimeException(I18nUtil.getMessage("user.merge.same.project"));
         }
 
         // 标记游客用户已被合并

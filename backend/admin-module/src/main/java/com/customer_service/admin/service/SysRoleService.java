@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import com.customer_service.shared.util.I18nUtil;
+
 @Service
 @RequiredArgsConstructor
 public class SysRoleService {
@@ -52,7 +54,7 @@ public class SysRoleService {
     @Transactional
     public SysRole createRole(String code, String name, String description, String permissions) {
         if (sysRoleRepository.findByCode(code).isPresent()) {
-            throw new RuntimeException("角色代码已存在");
+            throw new RuntimeException(I18nUtil.getMessage("role.code.exists"));
         }
 
         SysRole role = new SysRole();
@@ -71,7 +73,7 @@ public class SysRoleService {
     @Transactional
     public SysRole updateRole(Long id, String name, String description, String permissions) {
         SysRole role = sysRoleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("角色不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("role.not.found")));
 
         // 系统角色不允许修改 code
         if (name != null) {
@@ -93,11 +95,11 @@ public class SysRoleService {
     @Transactional
     public void deleteRole(Long id) {
         SysRole role = sysRoleRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("角色不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("role.not.found")));
 
         // 系统角色不允许删除
         if (Boolean.TRUE.equals(role.getIsSystem())) {
-            throw new RuntimeException("系统内置角色不能删除");
+            throw new RuntimeException(I18nUtil.getMessage("role.builtin.cannot.delete"));
         }
 
         sysRoleRepository.deleteById(id);

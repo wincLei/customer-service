@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.customer_service.shared.util.I18nUtil;
+
 @Service
 @RequiredArgsConstructor
 public class ProjectService {
@@ -82,7 +84,8 @@ public class ProjectService {
 
         // 设置配置信息（包括欢迎语）
         ObjectNode config = objectMapper.createObjectNode();
-        config.put("welcomeMessage", welcomeMessage != null ? welcomeMessage : "欢迎咨询，我们随时准备为您服务");
+        config.put("welcomeMessage",
+                welcomeMessage != null ? welcomeMessage : I18nUtil.getMessage("portal.welcome.message"));
         project.setConfig(config);
 
         return projectRepository.save(project);
@@ -94,7 +97,7 @@ public class ProjectService {
     @Transactional
     public Project updateProject(Long id, String name, String description, String welcomeMessage) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("项目不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("project.not.found")));
         project.setName(name);
         project.setDescription(description);
 
@@ -117,7 +120,7 @@ public class ProjectService {
     @Transactional
     public void deleteProject(Long id) {
         if (!projectRepository.existsById(id)) {
-            throw new RuntimeException("项目不存在");
+            throw new RuntimeException(I18nUtil.getMessage("project.not.found"));
         }
         projectRepository.deleteById(id);
     }
@@ -128,7 +131,7 @@ public class ProjectService {
     @Transactional
     public Project regenerateAppSecret(Long id) {
         Project project = projectRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("项目不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("project.not.found")));
         project.setAppSecret(generateAppSecret());
         return projectRepository.save(project);
     }

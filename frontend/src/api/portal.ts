@@ -1,5 +1,8 @@
 import axios, { AxiosResponse } from 'axios'
 import { StorageKeys, API_TIMEOUT } from '@/constants'
+import i18n from '@/locales'
+
+const { t } = i18n.global
 
 export interface ApiResponse<T = any> {
   code: number
@@ -43,7 +46,7 @@ portalApi.interceptors.response.use(
     
     return Promise.reject({
       code: error.response?.status || 500,
-      message: error.message || '请求失败',
+      message: error.message || t('auth.requestFailed'),
       data: null,
     })
   }

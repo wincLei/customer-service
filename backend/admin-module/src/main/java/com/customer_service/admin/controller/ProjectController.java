@@ -6,6 +6,7 @@ import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.context.UserContextHolder;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.Project;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -85,7 +86,7 @@ public class ProjectController {
     public ApiResponse<?> getProject(@PathVariable Long id) {
         return projectService.getProjectById(id)
                 .map(project -> ApiResponse.success(toProjectVO(project)))
-                .orElse(ApiResponse.error("项目不存在"));
+                .orElse(ApiResponse.error(I18nUtil.getMessage("project.not.found")));
     }
 
     /**
@@ -95,7 +96,7 @@ public class ProjectController {
     @RequirePermission(value = "project:manage", roles = { RoleCode.ADMIN })
     public ApiResponse<?> createProject(@RequestBody CreateProjectRequest request) {
         if (request.getName() == null || request.getName().trim().isEmpty()) {
-            return ApiResponse.error("项目名称不能为空");
+            return ApiResponse.error(I18nUtil.getMessage("project.name.required"));
         }
 
         try {
@@ -105,7 +106,7 @@ public class ProjectController {
             return ApiResponse.success(toProjectVO(project));
         } catch (Exception e) {
             log.error("创建项目失败: {}", e.getMessage(), e);
-            return ApiResponse.error("创建项目失败: " + e.getMessage());
+            return ApiResponse.error(I18nUtil.getMessage("project.create.error") + ": " + e.getMessage());
         }
     }
 
@@ -116,7 +117,7 @@ public class ProjectController {
     @RequirePermission(value = "project:manage", roles = { RoleCode.ADMIN })
     public ApiResponse<?> updateProject(@PathVariable Long id, @RequestBody UpdateProjectRequest request) {
         if (request.getName() == null || request.getName().trim().isEmpty()) {
-            return ApiResponse.error("项目名称不能为空");
+            return ApiResponse.error(I18nUtil.getMessage("project.name.required"));
         }
 
         try {
@@ -138,7 +139,7 @@ public class ProjectController {
         try {
             projectService.deleteProject(id);
             log.info("删除项目成功: ID={}", id);
-            return ApiResponse.success("删除成功");
+            return ApiResponse.success(I18nUtil.getMessage("common.delete.success"));
         } catch (RuntimeException e) {
             return ApiResponse.error(e.getMessage());
         }

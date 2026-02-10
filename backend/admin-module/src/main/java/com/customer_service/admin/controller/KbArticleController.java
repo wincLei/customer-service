@@ -5,6 +5,7 @@ import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.KbArticle;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
@@ -59,7 +60,7 @@ public class KbArticleController {
     public ApiResponse<KbArticle> getArticle(@PathVariable Long id) {
         KbArticle article = kbArticleService.getArticleById(id);
         if (article == null) {
-            return ApiResponse.error("文章不存在");
+            return ApiResponse.error(I18nUtil.getMessage("kb.article.not.found"));
         }
         return ApiResponse.success(article);
     }

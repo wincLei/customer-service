@@ -2,18 +2,18 @@
   <div class="dashboard">
     <!-- 页面标题 -->
     <div class="page-header">
-      <h2>数据概览</h2>
+      <h2>{{ $t('dashboard.title') }}</h2>
       <div class="header-actions">
         <el-date-picker
           v-model="dateRange"
           type="daterange"
-          range-separator="至"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
+          :range-separator="$t('dashboard.rangeTo')"
+          :start-placeholder="$t('dashboard.startDate')"
+          :end-placeholder="$t('dashboard.endDate')"
           size="default"
           @change="refreshData"
         />
-        <el-button type="primary" :icon="Refresh" @click="refreshData">刷新</el-button>
+        <el-button type="primary" :icon="Refresh" @click="refreshData">{{ $t('common.refresh') }}</el-button>
       </div>
     </div>
 
@@ -25,7 +25,7 @@
             <el-icon :size="32"><Clock /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-label">排队中</div>
+            <div class="stat-label">{{ $t('dashboard.queueing') }}</div>
             <div class="stat-value">{{ stats.queueCount }}</div>
             <div class="stat-trend up">+{{ stats.queueTrend }}%</div>
           </div>
@@ -38,9 +38,9 @@
             <el-icon :size="32"><ChatDotRound /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-label">进行中会话</div>
+            <div class="stat-label">{{ $t('dashboard.activeConversations') }}</div>
             <div class="stat-value">{{ stats.activeConversations }}</div>
-            <div class="stat-trend">实时</div>
+            <div class="stat-trend">{{ $t('dashboard.realtime') }}</div>
           </div>
         </div>
       </el-card>
@@ -51,7 +51,7 @@
             <el-icon :size="32"><MessageBox /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-label">今日会话数</div>
+            <div class="stat-label">{{ $t('dashboard.todayConversations') }}</div>
             <div class="stat-value">{{ stats.todayConversations }}</div>
             <div class="stat-trend" :class="stats.conversationTrend >= 0 ? 'up' : 'down'">
               {{ stats.conversationTrend >= 0 ? '+' : '' }}{{ stats.conversationTrend }}%
@@ -66,7 +66,7 @@
             <el-icon :size="32"><ChatLineRound /></el-icon>
           </div>
           <div class="stat-info">
-            <div class="stat-label">今日消息数</div>
+            <div class="stat-label">{{ $t('dashboard.todayMessages') }}</div>
             <div class="stat-value">{{ stats.todayMessages }}</div>
             <div class="stat-trend up">+{{ stats.messageTrend }}%</div>
           </div>
@@ -80,13 +80,13 @@
         <el-card class="chart-card">
           <template #header>
             <div class="card-header">
-              <span>满意度统计</span>
+              <span>{{ $t('dashboard.satisfactionStats') }}</span>
             </div>
           </template>
           <div class="satisfaction-stats">
             <div class="satisfaction-summary">
               <div class="avg-score">
-                <div class="score-label">平均评分</div>
+                <div class="score-label">{{ $t('dashboard.averageRating') }}</div>
                 <div class="score-value">{{ stats.avgSatisfaction }}</div>
                 <el-rate v-model="stats.avgSatisfaction" disabled show-score text-color="#ff9900" />
               </div>
@@ -95,7 +95,7 @@
               <div v-for="item in satisfactionData" :key="item.score" class="breakdown-item">
                 <div class="breakdown-label">
                   {{ item.label }}
-                  <span class="breakdown-count">{{ item.count }}次</span>
+                  <span class="breakdown-count">{{ item.count }}{{ $t('dashboard.times') }}</span>
                 </div>
                 <el-progress :percentage="item.percentage" :color="item.color" />
               </div>
@@ -108,8 +108,8 @@
         <el-card class="chart-card">
           <template #header>
             <div class="card-header">
-              <span>客服状态</span>
-              <el-tag size="small">在线 {{ onlineAgents.length }}/{{ allAgents.length }}</el-tag>
+              <span>{{ $t('dashboard.agentStatus') }}</span>
+              <el-tag size="small">{{ $t('dashboard.online') }} {{ onlineAgents.length }}/{{ allAgents.length }}</el-tag>
             </div>
           </template>
           <div class="agent-list">
@@ -121,9 +121,9 @@
                 <div class="agent-name">{{ agent.nickname }}</div>
                 <div class="agent-meta">
                   <el-tag :type="agent.status === 'online' ? 'success' : 'info'" size="small">
-                    {{ agent.status === 'online' ? '在线' : '离线' }}
+                    {{ agent.status === 'online' ? $t('dashboard.online') : $t('dashboard.offline') }}
                   </el-tag>
-                  <span class="conversation-count">进行中: {{ agent.activeCount }}</span>
+                  <span class="conversation-count">{{ $t('dashboard.ongoing') }} {{ agent.activeCount }}</span>
                 </div>
               </div>
             </div>
@@ -136,7 +136,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { Clock, ChatDotRound, MessageBox, ChatLineRound, Refresh } from '@element-plus/icons-vue'
+
+const { t } = useI18n()
 
 interface Stats {
   queueCount: number
@@ -172,11 +175,11 @@ const stats = ref<Stats>({
 })
 
 const satisfactionData = ref([
-  { score: 5, label: '非常满意', percentage: 60, count: 120, color: '#67c23a' },
-  { score: 4, label: '满意', percentage: 25, count: 50, color: '#409eff' },
-  { score: 3, label: '一般', percentage: 10, count: 20, color: '#e6a23c' },
-  { score: 2, label: '不满意', percentage: 3, count: 6, color: '#f56c6c' },
-  { score: 1, label: '非常不满意', percentage: 2, count: 4, color: '#909399' }
+  { score: 5, label: t('dashboard.satisfaction.veryGood'), percentage: 60, count: 120, color: '#67c23a' },
+  { score: 4, label: t('dashboard.satisfaction.good'), percentage: 25, count: 50, color: '#409eff' },
+  { score: 3, label: t('dashboard.satisfaction.average'), percentage: 10, count: 20, color: '#e6a23c' },
+  { score: 2, label: t('dashboard.satisfaction.bad'), percentage: 3, count: 6, color: '#f56c6c' },
+  { score: 1, label: t('dashboard.satisfaction.veryBad'), percentage: 2, count: 4, color: '#909399' }
 ])
 
 const allAgents = ref<Agent[]>([])

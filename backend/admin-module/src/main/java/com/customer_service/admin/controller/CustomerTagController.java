@@ -7,6 +7,7 @@ import com.customer_service.shared.context.UserContextHolder;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.CustomerTag;
 import com.customer_service.shared.repository.UserProjectRepository;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +37,7 @@ public class CustomerTagController {
     @GetMapping
     public ApiResponse<?> getTags(@RequestParam Long projectId) {
         if (!hasProjectAccess(projectId)) {
-            return ApiResponse.error(403, "您没有权限访问该项目");
+            return ApiResponse.error(403, I18nUtil.getMessage("tag.no.project.permission"));
         }
 
         List<CustomerTag> tags = customerTagService.getTagsByProject(projectId);
@@ -53,11 +54,11 @@ public class CustomerTagController {
     public ApiResponse<?> getTag(@PathVariable Long id) {
         CustomerTag tag = customerTagService.getTagById(id);
         if (tag == null) {
-            return ApiResponse.error(404, "标签不存在");
+            return ApiResponse.error(404, I18nUtil.getMessage("tag.not.found"));
         }
 
         if (!hasProjectAccess(tag.getProjectId())) {
-            return ApiResponse.error(403, "您没有权限访问该标签");
+            return ApiResponse.error(403, I18nUtil.getMessage("tag.no.permission"));
         }
 
         Map<String, Object> result = toTagVO(tag);
@@ -71,11 +72,11 @@ public class CustomerTagController {
     @PostMapping
     public ApiResponse<?> createTag(@RequestBody CreateTagRequest request) {
         if (!hasProjectAccess(request.getProjectId())) {
-            return ApiResponse.error(403, "您没有权限操作该项目");
+            return ApiResponse.error(403, I18nUtil.getMessage("tag.no.operate.permission"));
         }
 
         if (request.getName() == null || request.getName().trim().isEmpty()) {
-            return ApiResponse.error("标签名称不能为空");
+            return ApiResponse.error(I18nUtil.getMessage("tag.name.required"));
         }
 
         try {
@@ -101,11 +102,11 @@ public class CustomerTagController {
     public ApiResponse<?> updateTag(@PathVariable Long id, @RequestBody UpdateTagRequest request) {
         CustomerTag tag = customerTagService.getTagById(id);
         if (tag == null) {
-            return ApiResponse.error(404, "标签不存在");
+            return ApiResponse.error(404, I18nUtil.getMessage("tag.not.found"));
         }
 
         if (!hasProjectAccess(tag.getProjectId())) {
-            return ApiResponse.error(403, "您没有权限操作该标签");
+            return ApiResponse.error(403, I18nUtil.getMessage("tag.no.update.permission"));
         }
 
         try {
@@ -129,16 +130,16 @@ public class CustomerTagController {
     public ApiResponse<?> deleteTag(@PathVariable Long id) {
         CustomerTag tag = customerTagService.getTagById(id);
         if (tag == null) {
-            return ApiResponse.error(404, "标签不存在");
+            return ApiResponse.error(404, I18nUtil.getMessage("tag.not.found"));
         }
 
         if (!hasProjectAccess(tag.getProjectId())) {
-            return ApiResponse.error(403, "您没有权限删除该标签");
+            return ApiResponse.error(403, I18nUtil.getMessage("tag.no.delete.permission"));
         }
 
         try {
             customerTagService.deleteTag(id);
-            return ApiResponse.success("删除成功");
+            return ApiResponse.success(I18nUtil.getMessage("common.delete.success"));
         } catch (Exception e) {
             return ApiResponse.error(e.getMessage());
         }

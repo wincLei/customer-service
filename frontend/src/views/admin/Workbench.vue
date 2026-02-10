@@ -4,23 +4,23 @@
     <div class="conversation-list">
       <div class="list-header">
         <el-tabs v-model="activeTab" @tab-click="handleTabClick">
-          <el-tab-pane label="排队中" name="pending">
+          <el-tab-pane :label="$t('workbench.queueTab')" name="pending">
             <template #label>
-              排队中 <el-badge :value="queueCount" v-if="queueCount > 0" class="queue-badge" />
+              {{ $t('workbench.queueTab') }} <el-badge :value="queueCount" v-if="queueCount > 0" class="queue-badge" />
             </template>
           </el-tab-pane>
-          <el-tab-pane label="我的会话" name="my">
+          <el-tab-pane :label="$t('workbench.myConversations')" name="my">
             <template #label>
-              我的会话 <el-badge :value="myUnreadCount" v-if="myUnreadCount > 0" class="queue-badge" />
+              {{ $t('workbench.myConversations') }} <el-badge :value="myUnreadCount" v-if="myUnreadCount > 0" class="queue-badge" />
             </template>
           </el-tab-pane>
         </el-tabs>
         <!-- IM 连接状态指示器 -->
         <div class="im-status" :class="{ connected: imConnected, connecting: imConnecting }">
           <span class="status-dot"></span>
-          <span class="status-text">{{ imConnected ? 'IM已连接' : imConnecting ? '连接中...' : 'IM未连接' }}</span>
+          <span class="status-text">{{ imConnected ? $t('workbench.imConnected') : imConnecting ? $t('workbench.imConnecting') : $t('workbench.imDisconnected') }}</span>
           <!-- 声音设置按钮 -->
-          <el-tooltip :content="soundEnabled ? '声音提醒已开启' : '声音提醒已关闭'" placement="top">
+          <el-tooltip :content="soundEnabled ? $t('workbench.soundOn') : $t('workbench.soundOff')" placement="top">
             <el-icon 
               class="sound-toggle" 
               :class="{ enabled: soundEnabled }"
@@ -36,7 +36,7 @@
         <div class="conversation-search" v-if="activeTab === 'my'">
           <el-input
             v-model="searchKeyword"
-            placeholder="输入 UID 搜索用户"
+            :placeholder="$t('workbench.searchUid')"
             size="small"
             clearable
             @keyup.enter="handleSearch"
@@ -44,7 +44,7 @@
           >
             <template #prefix><el-icon><Search /></el-icon></template>
             <template #append>
-              <el-button @click="handleSearch" :loading="searchLoading">搜索</el-button>
+              <el-button @click="handleSearch" :loading="searchLoading">{{ $t('common.search') }}</el-button>
             </template>
           </el-input>
         </div>
@@ -65,11 +65,11 @@
             <div class="conv-header">
               <span class="conv-user">
                 {{ conv.userName || conv.userId }}
-                <el-tag size="small" type="info" class="device-tag">{{ conv.deviceType || 'PC端' }}</el-tag>
+                <el-tag size="small" type="info" class="device-tag">{{ conv.deviceType || $t('workbench.pcDevice') }}</el-tag>
               </span>
               <span class="conv-time">{{ formatTime(conv.lastMessageTime) }}</span>
             </div>
-            <div class="conv-message">{{ conv.lastMessage || '暂无消息' }}</div>
+            <div class="conv-message">{{ conv.lastMessage || $t('workbench.noMessages') }}</div>
           </div>
           <div class="conv-unread" v-if="conv.unreadCount && conv.unreadCount > 0">
             <el-badge :value="conv.unreadCount" :max="99" />
@@ -79,13 +79,13 @@
         <!-- 会话列表加载更多提示 -->
         <div v-if="loadingMoreConversations" class="loading-more-conv">
           <el-icon class="is-loading"><Loading /></el-icon>
-          <span>加载中...</span>
+          <span>{{ $t('workbench.loadMore') }}</span>
         </div>
         <div v-else-if="!hasMoreConversations && myConversations.length > 0 && activeTab === 'my'" class="no-more-conv">
           没有更多会话了
         </div>
         
-        <el-empty v-if="conversations.length === 0" description="暂无会话" :image-size="80" />
+        <el-empty v-if="conversations.length === 0" :description="$t('workbench.noConversations')" :image-size="80" />
       </div>
     </div>
 
@@ -97,14 +97,14 @@
           <div class="user-info-bar">
             <el-avatar :size="32" :src="selectedConversation.avatar">{{ selectedConversation.userName?.charAt(0) || 'U' }}</el-avatar>
             <span class="user-name">{{ selectedConversation.userName || selectedConversation.userId }}</span>
-            <el-tag size="small" type="info">{{ selectedConversation.deviceType || 'PC端' }}</el-tag>
+            <el-tag size="small" type="info">{{ selectedConversation.deviceType || $t('workbench.pcDevice') }}</el-tag>
           </div>
           <div class="chat-actions">
             <el-button size="small" @click="showUserPanel = !showUserPanel">
-              <el-icon><User /></el-icon> 用户信息
+              <el-icon><User /></el-icon> {{ $t('workbench.userInfo') }}
             </el-button>
             <el-button size="small" type="info" @click="closeConversation">
-              <el-icon><Close /></el-icon> 关闭
+              <el-icon><Close /></el-icon> {{ $t('common.close') }}
             </el-button>
           </div>
         </div>
@@ -114,10 +114,10 @@
           <!-- 加载更多提示 -->
           <div v-if="loadingMoreMessages" class="loading-more">
             <el-icon class="is-loading"><Loading /></el-icon>
-            <span>加载中...</span>
+            <span>{{ $t('workbench.loadMore') }}</span>
           </div>
           <div v-else-if="!hasMoreMessages && messages.length > 0" class="no-more-messages">
-            没有更多消息了
+            {{ $t('workbench.noMoreMessages') }}
           </div>
           
           <div 
@@ -134,14 +134,14 @@
               <div v-if="msg.contentType === 'text'" class="message-text">{{ msg.content }}</div>
               <!-- 图片消息 -->
               <div v-else-if="msg.contentType === 'image'" class="message-image" @click="previewImage(msg.content)">
-                <img :src="msg.content" alt="图片消息" />
+                <img :src="msg.content" :alt="$t('workbench.imageMessage')" />
               </div>
               <div class="message-time">{{ formatTime(msg.createdAt) }}</div>
             </div>
           </div>
           
           <div v-if="messages.length === 0" class="empty-messages">
-            <el-empty description="暂无消息" :image-size="60" />
+            <el-empty :description="$t('workbench.noMessages')" :image-size="60" />
           </div>
         </div>
 
@@ -152,11 +152,11 @@
           <!-- 知识库弹窗 -->
           <div class="kb-panel" v-if="showKbPanel" @click.stop>
             <div class="kb-header">
-              <span>知识库</span>
+              <span>{{ $t('workbench.knowledgeBase') }}</span>
               <el-icon @click="showKbPanel = false" style="cursor: pointer"><Close /></el-icon>
             </div>
             <div class="kb-search">
-              <el-input v-model="kbSearchQuery" placeholder="搜索知识库..." size="small" clearable>
+              <el-input v-model="kbSearchQuery" :placeholder="$t('workbench.searchKb')" size="small" clearable>
                 <template #prefix><el-icon><Search /></el-icon></template>
               </el-input>
             </div>
@@ -170,7 +170,7 @@
                 <div class="kb-title">{{ item.title }}</div>
                 <div class="kb-content">{{ item.content }}</div>
               </div>
-              <el-empty v-if="filteredKbItems.length === 0" description="暂无匹配内容" :image-size="40" />
+              <el-empty v-if="filteredKbItems.length === 0" :description="$t('workbench.noKbMatch')" :image-size="40" />
             </div>
           </div>
           
@@ -179,7 +179,7 @@
           <!-- 快捷回复弹窗 -->
           <div class="quick-reply-panel" v-if="showQuickReply" @click.stop>
             <div class="kb-header">
-              <span>快捷回复</span>
+              <span>{{ $t('workbench.quickReply') }}</span>
               <el-icon @click="showQuickReply = false" style="cursor: pointer"><Close /></el-icon>
             </div>
             <div class="kb-list">
@@ -192,22 +192,22 @@
                 <div class="kb-title">{{ reply.title }}</div>
                 <div class="kb-content">{{ reply.content }}</div>
               </div>
-              <el-empty v-if="quickReplies.length === 0" description="暂无快捷回复" :image-size="40" />
+              <el-empty v-if="quickReplies.length === 0" :description="$t('workbench.noQuickReply')" :image-size="40" />
             </div>
           </div>
           
           <div class="input-toolbar">
             <el-button size="small" @click="showKbPanel = !showKbPanel">
-              <el-icon><Notebook /></el-icon> 知识库
+              <el-icon><Notebook /></el-icon> {{ $t('workbench.knowledgeBase') }}
             </el-button>
             <el-button size="small" @click="showQuickReply = !showQuickReply">
-              <el-icon><ChatDotSquare /></el-icon> 快捷回复
+              <el-icon><ChatDotSquare /></el-icon> {{ $t('workbench.quickReply') }}
             </el-button>
             <el-button size="small" @click="triggerImageUpload" :loading="uploadingImage">
-              <el-icon><Picture /></el-icon> 图片
+              <el-icon><Picture /></el-icon> {{ $t('workbench.image') }}
             </el-button>
             <el-button size="small" @click="openUserTickets" :loading="loadingTickets" class="ticket-btn">
-              <el-icon><Tickets /></el-icon> 工单
+              <el-icon><Tickets /></el-icon> {{ $t('workbench.ticketTool') }}
               <span v-if="hasUnreadUserTicket" class="ticket-unread-dot"></span>
             </el-button>
             <input
@@ -224,62 +224,62 @@
               v-model="inputMessage"
               type="textarea"
               :rows="3"
-              placeholder="输入消息，Enter发送，Shift+Enter换行，可粘贴图片"
+              :placeholder="$t('workbench.inputPlaceholder')"
               @keydown.enter.exact.prevent="sendMessage"
               @paste="handlePaste"
             />
             <el-button type="primary" @click="sendMessage" :disabled="!inputMessage.trim()">
-              发送
+              {{ $t('workbench.send') }}
             </el-button>
           </div>
         </div>
       </template>
       
-      <el-empty v-else description="请选择会话开始聊天" :image-size="120" />
+      <el-empty v-else :description="$t('workbench.selectConversation')" :image-size="120" />
     </div>
 
     <!-- 右侧用户信息面板 -->
     <div class="side-panel" v-if="selectedConversation && showUserPanel">
       <div class="panel-header">
-        <h3>用户信息</h3>
+        <h3>{{ $t('workbench.userInfo') }}</h3>
         <el-icon @click="showUserPanel = false" style="cursor: pointer"><Close /></el-icon>
       </div>
       
       <el-tabs v-model="activeSideTab">
-        <el-tab-pane label="基本信息" name="user">
+        <el-tab-pane :label="$t('workbench.basicInfo')" name="user">
           <div class="user-detail">
             <div class="detail-item">
-              <label>用户ID:</label>
+              <label>{{ $t('workbench.userId') }}</label>
               <span>{{ selectedConversation.userId }}</span>
             </div>
             <div class="detail-item">
-              <label>项目名称:</label>
+              <label>{{ $t('workbench.projectName') }}</label>
               <span>{{ projectName || '-' }}</span>
             </div>
             <div class="detail-item">
-              <label>昵称:</label>
-              <span>{{ selectedConversation.userName || '用户' + selectedConversation.userId }}</span>
+              <label>{{ $t('workbench.nickname') }}</label>
+              <span>{{ selectedConversation.userName || $t('workbench.user') + selectedConversation.userId }}</span>
             </div>
             <div class="detail-item">
-              <label>外部UID:</label>
+              <label>{{ $t('workbench.externalUid') }}</label>
               <span>{{ selectedConversation.externalUid || '-' }}</span>
             </div>
             <div class="detail-item">
-              <label>邮箱:</label>
+              <label>{{ $t('workbench.email') }}</label>
               <span>{{ selectedConversation.email || '-' }}</span>
             </div>
             <div class="detail-item">
-              <label>手机号:</label>
+              <label>{{ $t('workbench.phone') }}</label>
               <span>{{ selectedConversation.phone || '-' }}</span>
             </div>
             <div class="detail-item">
-              <label>设备类型:</label>
+              <label>{{ $t('workbench.deviceType') }}</label>
               <el-tag type="info" size="small">
-                {{ selectedConversation.deviceType || 'PC端' }}
+                {{ selectedConversation.deviceType || $t('workbench.pcDevice') }}
               </el-tag>
             </div>
             <div class="detail-item">
-              <label>用户标签:</label>
+              <label>{{ $t('workbench.userTags') }}</label>
               <div class="tags" v-loading="loadingTags">
                 <template v-if="userTags.length > 0">
                   <el-tag 
@@ -295,34 +295,34 @@
                     {{ tag.name }}
                   </el-tag>
                 </template>
-                <span v-else class="no-tags-text">暂无标签</span>
+                <span v-else class="no-tags-text">{{ $t('workbench.noTags') }}</span>
                 <el-button size="small" @click="openAddTagDialog" class="manage-tag-btn">
-                  管理
+                  {{ $t('workbench.manage') }}
                 </el-button>
               </div>
             </div>
           </div>
         </el-tab-pane>
         
-        <el-tab-pane label="会话记录" name="history">
+        <el-tab-pane :label="$t('workbench.conversationHistory')" name="history">
           <div class="history-list">
             <div class="history-item" v-for="h in conversationHistory" :key="h.id">
-              <div class="history-title">会话 #{{ h.id }}</div>
+              <div class="history-title">{{ $t('workbench.conversationPrefix') }}{{ h.id }}</div>
               <div class="history-time">{{ formatTime(h.createdAt) }}</div>
             </div>
             
-            <el-empty v-if="conversationHistory.length === 0" description="暂无历史记录" :image-size="60" />
+            <el-empty v-if="conversationHistory.length === 0" :description="$t('workbench.noHistory')" :image-size="60" />
           </div>
         </el-tab-pane>
       </el-tabs>
     </div>
     
     <!-- 添加标签对话框 -->
-    <el-dialog v-model="showAddTagDialog" title="管理用户标签" width="450px">
+    <el-dialog v-model="showAddTagDialog" :title="$t('workbench.manageTagsTitle')" width="450px">
       <div class="tag-dialog-content">
         <!-- 可选标签列表 -->
         <div class="available-tags-section">
-          <div class="section-title">项目标签（点击添加）</div>
+          <div class="section-title">{{ $t('workbench.projectTags') }}</div>
           <div class="available-tags" v-loading="loadingTags">
             <template v-if="unselectedTags.length > 0">
               <el-tag
@@ -340,13 +340,13 @@
                 {{ tag.name }}
               </el-tag>
             </template>
-            <div v-else class="no-tags-hint">暂无可添加的标签</div>
+            <div v-else class="no-tags-hint">{{ $t('workbench.noTagsToAdd') }}</div>
           </div>
         </div>
         
         <!-- 已选标签 -->
         <div class="selected-tags-section">
-          <div class="section-title">已添加的标签</div>
+          <div class="section-title">{{ $t('workbench.addedTags') }}</div>
           <div class="selected-tags">
             <template v-if="userTags.length > 0">
               <el-tag
@@ -363,35 +363,35 @@
                 {{ tag.name }}
               </el-tag>
             </template>
-            <div v-else class="no-tags-hint">暂未添加标签</div>
+            <div v-else class="no-tags-hint">{{ $t('workbench.noTagsAdded') }}</div>
           </div>
         </div>
         
         <!-- 自定义添加新标签 -->
         <div class="new-tag-section">
-          <div class="section-title">创建新标签</div>
+          <div class="section-title">{{ $t('workbench.createNewTag') }}</div>
           <div class="new-tag-input">
-            <el-input v-model="newTagName" placeholder="输入新标签名称" size="small" style="flex: 1" />
+            <el-input v-model="newTagName" :placeholder="$t('workbench.newTagPlaceholder')" size="small" style="flex: 1" />
             <el-button type="primary" size="small" @click="createAndAddTag" :disabled="!newTagName.trim()">
-              创建并添加
+              {{ $t('workbench.createAndAdd') }}
             </el-button>
           </div>
         </div>
       </div>
       <template #footer>
-        <el-button @click="showAddTagDialog = false">关闭</el-button>
+        <el-button @click="showAddTagDialog = false">{{ $t('common.close') }}</el-button>
       </template>
     </el-dialog>
     
     <!-- 声音设置对话框 -->
-    <el-dialog v-model="showSoundSettings" title="声音提醒设置" width="400px">
+    <el-dialog v-model="showSoundSettings" :title="$t('workbench.soundSettingsTitle')" width="400px">
       <div class="sound-settings">
         <div class="sound-switch">
-          <span>开启声音提醒</span>
+          <span>{{ $t('workbench.enableSound') }}</span>
           <el-switch v-model="soundEnabled" @change="toggleSound" />
         </div>
         <div class="sound-options" v-if="soundEnabled">
-          <div class="sound-label">选择提示音：</div>
+          <div class="sound-label">{{ $t('workbench.selectSound') }}</div>
           <div class="sound-list">
             <div 
               v-for="sound in soundOptions" 
@@ -408,12 +408,12 @@
         </div>
       </div>
       <template #footer>
-        <el-button type="primary" @click="showSoundSettings = false">确定</el-button>
+        <el-button type="primary" @click="showSoundSettings = false">{{ $t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
     
     <!-- 用户工单弹窗 -->
-    <el-dialog v-model="showUserTickets" :title="currentTicketDetail ? '工单详情' : '用户工单'" width="700px">
+    <el-dialog v-model="showUserTickets" :title="currentTicketDetail ? $t('workbench.ticketDetail') : $t('workbench.userTickets')" width="700px">
       <!-- 工单列表视图 -->
       <div v-if="!currentTicketDetail" class="user-tickets-content" v-loading="loadingTickets">
         <div v-if="userTickets.length > 0" class="tickets-list">
@@ -436,12 +436,12 @@
             </div>
             <div class="ticket-desc">{{ ticket.description?.substring(0, 100) }}{{ ticket.description?.length > 100 ? '...' : '' }}</div>
             <div class="ticket-footer">
-              <span class="ticket-time">创建时间：{{ formatTicketTime(ticket.createdAt) }}</span>
+              <span class="ticket-time">{{ $t('common.createdAt') }}：{{ formatTicketTime(ticket.createdAt) }}</span>
               <span class="ticket-id">#{{ ticket.id }}</span>
             </div>
           </div>
         </div>
-        <el-empty v-else description="该用户暂无工单" :image-size="80" />
+        <el-empty v-else :description="$t('workbench.noTickets')" :image-size="80" />
       </div>
       
       <!-- 工单详情视图 -->
@@ -461,14 +461,14 @@
           </div>
           <div class="ticket-detail-desc">{{ currentTicketDetail.ticket.description }}</div>
           <div class="ticket-detail-meta">
-            <span>创建时间：{{ formatTicketTime(currentTicketDetail.ticket.createdAt) }}</span>
-            <span v-if="currentTicketDetail.ticket.contactInfo">联系方式：{{ currentTicketDetail.ticket.contactInfo }}</span>
+            <span>{{ $t('common.createdAt') }}：{{ formatTicketTime(currentTicketDetail.ticket.createdAt) }}</span>
+            <span v-if="currentTicketDetail.ticket.contactInfo">{{ $t('workbench.contactInfo') }}{{ currentTicketDetail.ticket.contactInfo }}</span>
           </div>
         </div>
         
         <!-- 回复记录 -->
         <div class="ticket-events-section">
-          <div class="section-title">处理记录</div>
+          <div class="section-title">{{ $t('workbench.processRecords') }}</div>
           <div class="events-list" v-if="currentTicketDetail.events?.length > 0">
             <div 
               v-for="event in currentTicketDetail.events" 
@@ -477,13 +477,13 @@
               :class="event.operatorType"
             >
               <div class="event-header">
-                <span class="event-sender">{{ event.operatorType === 'agent' ? '客服' : '用户' }}</span>
+                <span class="event-sender">{{ event.operatorType === 'agent' ? $t('workbench.agent') : $t('workbench.user') }}</span>
                 <span class="event-time">{{ formatTicketTime(event.createdAt) }}</span>
               </div>
               <div class="event-content">{{ event.content }}</div>
             </div>
           </div>
-          <div v-else class="no-events">暂无处理记录</div>
+          <div v-else class="no-events">{{ $t('workbench.noRecords') }}</div>
         </div>
         
         <!-- 快速回复区域 -->
@@ -492,29 +492,29 @@
             v-model="ticketReplyContent"
             type="textarea"
             :rows="3"
-            placeholder="输入回复内容..."
+            :placeholder="$t('workbench.replyPlaceholder')"
           />
           <div class="reply-actions">
             <el-select v-model="ticketNewStatus" placeholder="更新状态" size="small" style="width: 120px">
-              <el-option label="不变" value="" />
-              <el-option label="处理中" value="processing" />
-              <el-option label="已解决" value="resolved" />
-              <el-option label="已关闭" value="closed" />
+              <el-option :label="$t('workbench.statusNoChange')" value="" />
+              <el-option :label="$t('workbench.statusProcessing')" value="processing" />
+              <el-option :label="$t('workbench.statusResolved')" value="resolved" />
+              <el-option :label="$t('workbench.statusClosed')" value="closed" />
             </el-select>
             <el-button type="primary" @click="submitTicketReply" :loading="submittingTicketReply" :disabled="!ticketReplyContent.trim()">
-              发送回复
+              {{ $t('workbench.sendReply') }}
             </el-button>
           </div>
         </div>
         <div v-else class="ticket-closed-notice">
-          <el-alert title="该工单已关闭" type="info" :closable="false" />
+          <el-alert :title="$t('workbench.ticketClosed')" type="info" :closable="false" />
         </div>
       </div>
       
       <template #footer>
-        <el-button v-if="currentTicketDetail" @click="currentTicketDetail = null">返回列表</el-button>
-        <el-button @click="closeTicketDialog">关闭</el-button>
-        <el-button v-if="!currentTicketDetail" type="primary" @click="goToTicketManagement">前往工单管理</el-button>
+        <el-button v-if="currentTicketDetail" @click="currentTicketDetail = null">{{ $t('workbench.backToList') }}</el-button>
+        <el-button @click="closeTicketDialog">{{ $t('common.close') }}</el-button>
+        <el-button v-if="!currentTicketDetail" type="primary" @click="goToTicketManagement">{{ $t('workbench.goToTicketManagement') }}</el-button>
       </template>
     </el-dialog>
     
@@ -527,11 +527,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { User, Close, Notebook, ChatDotSquare, Search, Loading, Bell, MuteNotification, Check, Picture, Tickets } from '@element-plus/icons-vue'
 import { WKIM, WKIMEvent } from 'easyjssdk'
 import { DeviceType, WKChannelType, StorageKeys, TicketStatusLabel, TicketStatusType, TicketPriorityLabel, TicketPriorityType, IMPayloadType, IM_INITIAL_LOAD_LIMIT, IM_LOAD_MORE_LIMIT, WORKBENCH_PAGE_SIZE, MAX_UPLOAD_SIZE, ALLOWED_IMAGE_TYPES, AGENT_UID_PREFIX } from '@/constants'
 import api from '@/api/index'
+
+const { t } = useI18n()
 
 // IM 相关状态
 let imInstance: ReturnType<typeof WKIM.init> | null = null
@@ -657,13 +660,13 @@ const isSearchMode = ref(false)  // 是否处于搜索模式
 const soundEnabled = ref(true)  // 是否开启声音提醒
 const selectedSound = ref('ding')  // 当前选择的声音
 const showSoundSettings = ref(false)  // 是否显示声音设置弹窗
-const soundOptions = [
-  { id: 'ding', name: '叮咚', frequency: [880, 660], duration: 0.15 },
-  { id: 'notification', name: '通知', frequency: [523, 659, 784], duration: 0.12 },
-  { id: 'message', name: '消息', frequency: [800], duration: 0.1 },
-  { id: 'alert', name: '提示', frequency: [440, 550, 660], duration: 0.1 },
-  { id: 'pop', name: '气泡', frequency: [600, 400], duration: 0.08 }
-]
+const soundOptions = computed(() => [
+  { id: 'ding', name: t('workbench.soundDing'), frequency: [880, 660], duration: 0.15 },
+  { id: 'notification', name: t('workbench.soundNotify'), frequency: [523, 659, 784], duration: 0.12 },
+  { id: 'message', name: t('workbench.soundMessage'), frequency: [800], duration: 0.1 },
+  { id: 'alert', name: t('workbench.soundAlert'), frequency: [440, 550, 660], duration: 0.1 },
+  { id: 'pop', name: t('workbench.soundBubble'), frequency: [600, 400], duration: 0.08 }
+])
 let audioContext: AudioContext | null = null
 
 // 知识库相关
@@ -1178,12 +1181,12 @@ const sendMessage = async () => {
   
   // 检查 IM 连接和用户 UID
   if (!imInstance || !imConnected.value) {
-    ElMessage.warning('IM 未连接，请稍后重试')
+    ElMessage.warning(t('workbench.imNotConnected'))
     return
   }
   
   if (!selectedConversation.value.userUid) {
-    ElMessage.warning('无法获取用户信息，请刷新会话')
+    ElMessage.warning(t('workbench.cannotGetUserInfo'))
     return
   }
   
@@ -1216,7 +1219,7 @@ const sendMessage = async () => {
     console.log('Message sent to visitor channel:', result)
     
     if (result.reasonCode !== 1) {
-      ElMessage.error('消息发送失败')
+      ElMessage.error(t('workbench.sendFailed'))
       messages.value = messages.value.filter(m => m.id !== tempMsg.id)
     } else {
       // 发送成功，更新会话列表中的最新消息
@@ -1231,7 +1234,7 @@ const sendMessage = async () => {
     }
   } catch (error) {
     console.error('发送消息失败:', error)
-    ElMessage.error('发送失败')
+    ElMessage.error(t('workbench.sendError'))
     messages.value = messages.value.filter(m => m.id !== tempMsg.id)
   }
 }
@@ -1305,7 +1308,7 @@ const checkUserHasUnreadTicket = async () => {
 // 打开用户工单列表
 const openUserTickets = async () => {
   if (!selectedConversation.value?.userId) {
-    ElMessage.warning('请先选择会话')
+    ElMessage.warning(t('workbench.selectConversationFirst'))
     return
   }
   
@@ -1330,7 +1333,7 @@ const openUserTickets = async () => {
   } catch (error) {
     console.error('加载用户工单失败:', error)
     userTickets.value = []
-    ElMessage.error('加载工单失败')
+    ElMessage.error(t('workbench.loadTicketFailed'))
   } finally {
     loadingTickets.value = false
   }
@@ -1357,7 +1360,7 @@ const viewTicketDetail = async (ticket: Ticket) => {
     }
   } catch (error) {
     console.error('加载工单详情失败:', error)
-    ElMessage.error('加载工单详情失败')
+    ElMessage.error(t('workbench.loadTicketDetailFailed'))
   } finally {
     loadingTicketDetail.value = false
   }
@@ -1382,7 +1385,7 @@ const submitTicketReply = async () => {
     const replyData = await replyResponse.json()
     
     if (replyData.code !== 0) {
-      ElMessage.error(replyData.message || '回复失败')
+      ElMessage.error(replyData.message || t('workbench.replyFailed'))
       return
     }
     
@@ -1398,7 +1401,7 @@ const submitTicketReply = async () => {
       })
     }
     
-    ElMessage.success('回复成功')
+    ElMessage.success(t('workbench.replySuccess'))
     ticketReplyContent.value = ''
     ticketNewStatus.value = ''
     
@@ -1412,7 +1415,7 @@ const submitTicketReply = async () => {
     }
   } catch (error) {
     console.error('回复工单失败:', error)
-    ElMessage.error('回复失败，请重试')
+    ElMessage.error(t('workbench.replyRetry'))
   } finally {
     submittingTicketReply.value = false
   }
@@ -1433,7 +1436,8 @@ const getTicketStatusType = (status: string) => {
 
 // 获取工单状态标签
 const getTicketStatusLabel = (status: string) => {
-  return TicketStatusLabel[status] || status
+  const key = TicketStatusLabel[status]
+  return key ? t(key) : status
 }
 
 // 获取工单优先级类型
@@ -1443,7 +1447,8 @@ const getTicketPriorityType = (priority: string) => {
 
 // 获取工单优先级标签
 const getTicketPriorityLabel = (priority: string) => {
-  return TicketPriorityLabel[priority] || priority
+  const key = TicketPriorityLabel[priority]
+  return key ? t(key) : priority
 }
 
 // 格式化工单时间
@@ -1468,24 +1473,24 @@ const goToTicketManagement = () => {
 const uploadAndSendImage = async (file: File) => {
   // 验证文件类型
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    ElMessage.warning('只支持上传图片文件（JPG、PNG、GIF、WEBP、BMP）')
+    ElMessage.warning(t('workbench.imageTypeOnly'))
     return
   }
 
   // 限制文件大小（10MB）
   if (file.size > MAX_UPLOAD_SIZE) {
-    ElMessage.warning('图片大小不能超过 10MB')
+    ElMessage.warning(t('workbench.imageSizeLimit'))
     return
   }
 
   // 检查 IM 连接和用户 UID
   if (!imInstance || !imConnected.value) {
-    ElMessage.warning('IM 未连接，请稍后重试')
+    ElMessage.warning(t('workbench.imNotConnected'))
     return
   }
   
   if (!selectedConversation.value?.userUid) {
-    ElMessage.warning('请先选择会话')
+    ElMessage.warning(t('workbench.selectConversationFirst'))
     return
   }
 
@@ -1547,7 +1552,7 @@ const uploadAndSendImage = async (file: File) => {
         console.log('Image sent to visitor channel:', result)
         
         if (result.reasonCode !== 1) {
-          ElMessage.error('图片发送失败')
+          ElMessage.error(t('workbench.imageSendFailed'))
           messages.value = messages.value.filter(m => m.id !== tempMsg.id)
         } else {
           // 发送成功，更新会话列表中的最新消息
@@ -1562,15 +1567,15 @@ const uploadAndSendImage = async (file: File) => {
         }
       } else {
         console.error('Upload failed:', uploadRes.status, await uploadRes.text())
-        ElMessage.error('图片上传失败，请重试')
+        ElMessage.error(t('workbench.imageUploadFailed'))
       }
     } else {
       console.error('Failed to get OSS token:', tokenData)
-      ElMessage.error('获取上传凭证失败')
+      ElMessage.error(t('workbench.uploadCredentialFailed'))
     }
   } catch (error) {
     console.error('图片上传失败:', error)
-    ElMessage.error('图片上传失败，请重试')
+    ElMessage.error(t('workbench.imageUploadFailed'))
   } finally {
     uploadingImage.value = false
   }
@@ -1702,13 +1707,13 @@ const addTagToUser = async (tag: CustomerTag) => {
       if (!userTags.value.find(t => t.id === tag.id)) {
         userTags.value.push(tag)
       }
-      ElMessage.success('标签已添加')
+      ElMessage.success(t('workbench.tagAdded'))
     } else {
-      ElMessage.error(data.message || '添加标签失败')
+      ElMessage.error(data.message || t('workbench.tagAddFailed'))
     }
   } catch (error) {
     console.error('添加标签失败:', error)
-    ElMessage.error('添加标签失败')
+    ElMessage.error(t('workbench.tagAddFailed'))
   }
 }
 
@@ -1843,7 +1848,7 @@ const playNotificationSound = () => {
   if (!soundEnabled.value) return
   
   try {
-    const soundOption = soundOptions.find(s => s.id === selectedSound.value)
+    const soundOption = soundOptions.value.find(s => s.id === selectedSound.value)
     if (!soundOption) return
     
     playSoundWithWebAudio(soundOption.frequency, soundOption.duration)
@@ -1854,7 +1859,7 @@ const playNotificationSound = () => {
 
 // 预览声音
 const previewSound = (soundId: string) => {
-  const soundOption = soundOptions.find(s => s.id === soundId)
+  const soundOption = soundOptions.value.find(s => s.id === soundId)
   if (!soundOption) return
   
   try {
@@ -1868,7 +1873,7 @@ const previewSound = (soundId: string) => {
 const toggleSound = () => {
   // v-model 已经更新了 soundEnabled，这里只需要保存设置
   localStorage.setItem('workbench_sound_enabled', String(soundEnabled.value))
-  ElMessage.success(soundEnabled.value ? '已开启声音提醒' : '已关闭声音提醒')
+  ElMessage.success(soundEnabled.value ? t('workbench.soundOn') : t('workbench.soundOff'))
 }
 
 // 选择声音
@@ -1886,7 +1891,7 @@ const initSoundSettings = () => {
   }
   
   const savedSound = localStorage.getItem('workbench_sound_type')
-  if (savedSound && soundOptions.some(s => s.id === savedSound)) {
+  if (savedSound && soundOptions.value.some(s => s.id === savedSound)) {
     selectedSound.value = savedSound
   }
 }
@@ -1938,7 +1943,7 @@ const handleIMConnect = async (result: any) => {
   // 使用访客频道模式，客服在用户初始化会话时已被添加为订阅者
   // 不需要订阅队列频道
   
-  ElMessage.success('IM 已连接')
+  ElMessage.success(t('workbench.imConnected'))
 }
 
 const handleIMDisconnect = (disconnectInfo: any) => {

@@ -25,23 +25,26 @@ export type WKChannelTypeValue = typeof WKChannelType[keyof typeof WKChannelType
 /**
  * 获取频道类型名称
  */
+import i18n from '@/locales'
+
 export function getChannelTypeName(channelType: number): string {
+  const { t } = i18n.global
   switch (channelType) {
     case WKChannelType.PERSONAL:
-      return '个人频道'
+      return t('channel.personal')
     case WKChannelType.GROUP:
-      return '群组频道'
+      return t('channel.group')
     case WKChannelType.CUSTOMER_SERVICE:
-      return '客服频道(已废弃)'
+      return t('channel.service')
     case WKChannelType.COMMUNITY_TOPIC:
-      return '社区话题频道'
+      return t('channel.communityTopic')
     case WKChannelType.COMMUNITY:
-      return '社区频道'
+      return t('channel.community')
     case WKChannelType.DATA:
-      return '数据频道'
+      return t('channel.data')
     case WKChannelType.VISITOR:
-      return '访客频道'
+      return t('channel.visitor')
     default:
-      return '未知频道'
+      return t('channel.unknown')
   }
 }

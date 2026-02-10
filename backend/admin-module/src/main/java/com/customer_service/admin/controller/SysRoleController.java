@@ -5,6 +5,7 @@ import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.SysRole;
+import com.customer_service.shared.util.I18nUtil;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
@@ -69,7 +70,7 @@ public class SysRoleController {
     public ApiResponse<?> getRole(@PathVariable Long id) {
         return sysRoleService.getRoleById(id)
                 .map(role -> ApiResponse.success(toRoleVO(role)))
-                .orElse(ApiResponse.error("角色不存在"));
+                .orElse(ApiResponse.error(I18nUtil.getMessage("role.not.found")));
     }
 
     /**
@@ -78,10 +79,10 @@ public class SysRoleController {
     @PostMapping
     public ApiResponse<?> createRole(@RequestBody CreateRoleRequest request) {
         if (request.getCode() == null || request.getCode().trim().isEmpty()) {
-            return ApiResponse.error("角色代码不能为空");
+            return ApiResponse.error(I18nUtil.getMessage("role.code.required"));
         }
         if (request.getName() == null || request.getName().trim().isEmpty()) {
-            return ApiResponse.error("角色名称不能为空");
+            return ApiResponse.error(I18nUtil.getMessage("role.name.required"));
         }
 
         try {
@@ -100,7 +101,7 @@ public class SysRoleController {
             return ApiResponse.success(toRoleVO(role));
         } catch (JsonProcessingException e) {
             log.error("权限数据格式错误", e);
-            return ApiResponse.error("权限数据格式错误");
+            return ApiResponse.error(I18nUtil.getMessage("role.permission.format.error"));
         } catch (RuntimeException e) {
             return ApiResponse.error(e.getMessage());
         }
@@ -127,7 +128,7 @@ public class SysRoleController {
             return ApiResponse.success(toRoleVO(role));
         } catch (JsonProcessingException e) {
             log.error("权限数据格式错误", e);
-            return ApiResponse.error("权限数据格式错误");
+            return ApiResponse.error(I18nUtil.getMessage("role.permission.format.error"));
         } catch (RuntimeException e) {
             return ApiResponse.error(e.getMessage());
         }
@@ -141,7 +142,7 @@ public class SysRoleController {
         try {
             sysRoleService.deleteRole(id);
             log.info("删除角色成功: ID={}", id);
-            return ApiResponse.success("删除成功");
+            return ApiResponse.success(I18nUtil.getMessage("common.delete.success"));
         } catch (RuntimeException e) {
             return ApiResponse.error(e.getMessage());
         }

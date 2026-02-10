@@ -1,11 +1,11 @@
 <template>
   <div class="agent-management">
     <div class="page-header">
-      <h2>客服管理</h2>
+      <h2>{{ $t('agentMgmt.title') }}</h2>
       <div class="header-actions">
         <el-button type="primary" @click="showCreateDialog">
           <el-icon><Plus /></el-icon>
-          新建客服
+          {{ $t('agentMgmt.newAgent') }}
         </el-button>
       </div>
     </div>
@@ -13,25 +13,25 @@
     <!-- 客服列表 -->
     <el-table :data="agents" style="width: 100%" v-loading="loading">
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column label="用户账号" width="140">
+      <el-table-column :label="$t('agentMgmt.userAccount')" width="140">
         <template #default="{ row }">
           <span>{{ row.user?.username || '-' }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="nickname" label="客服昵称" width="140" />
-      <el-table-column label="工作状态" width="100">
+      <el-table-column prop="nickname" :label="$t('agentMgmt.agentNickname')" width="140" />
+      <el-table-column :label="$t('agentMgmt.workStatus')" width="100">
         <template #default="{ row }">
           <el-tag :type="getStatusTagType(row.workStatus)">
             {{ getStatusLabel(row.workStatus) }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="接待量" width="120">
+      <el-table-column :label="$t('agentMgmt.receptionCount')" width="120">
         <template #default="{ row }">
           <span>{{ row.currentLoad }} / {{ row.maxLoad }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="关联项目" min-width="200">
+      <el-table-column :label="$t('agentMgmt.relatedProjects')" min-width="200">
         <template #default="{ row }">
           <span v-if="row.projectIds && row.projectIds.length > 0" class="project-tags">
             <el-tag 
@@ -47,21 +47,21 @@
               <el-tag size="small" type="info">+{{ row.projectIds.length - 3 }}</el-tag>
             </el-tooltip>
           </span>
-          <span v-else class="text-gray">未关联项目</span>
+          <span v-else class="text-gray">{{ $t('agentMgmt.noProject') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="自动回复" width="90">
+      <el-table-column :label="$t('agentMgmt.autoReply')" width="90">
         <template #default="{ row }">
           <el-tag :type="row.autoReplyEnabled ? 'success' : 'info'" size="small">
-            {{ row.autoReplyEnabled ? '已开启' : '未开启' }}
+            {{ row.autoReplyEnabled ? $t('agentMgmt.autoReplyOn') : $t('agentMgmt.autoReplyOff') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="180" fixed="right">
+      <el-table-column :label="$t('common.operation')" width="180" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="showEditDialog(row)">编辑</el-button>
-          <el-button link type="warning" @click="showStatusDialog(row)">状态</el-button>
-          <el-button link type="danger" @click="deleteAgent(row)">删除</el-button>
+          <el-button link type="primary" @click="showEditDialog(row)">{{ $t('common.edit') }}</el-button>
+          <el-button link type="warning" @click="showStatusDialog(row)">{{ $t('agentMgmt.statusLabel') }}</el-button>
+          <el-button link type="danger" @click="deleteAgent(row)">{{ $t('common.delete') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -69,15 +69,15 @@
     <!-- 创建/编辑客服对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '编辑客服' : '新建客服'"
+      :title="isEdit ? $t('agentMgmt.editAgent') : $t('agentMgmt.newAgent')"
       width="550px"
       :close-on-click-modal="false"
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-        <el-form-item v-if="!isEdit" label="选择用户" prop="userId">
+        <el-form-item v-if="!isEdit" :label="$t('agentMgmt.selectUser')" prop="userId">
           <el-select 
             v-model="form.userId" 
-            placeholder="请选择用户（仅显示客服角色用户）" 
+            :placeholder="$t('agentMgmt.selectUserPlaceholder')" 
             style="width: 100%"
             filterable
           >
@@ -91,21 +91,21 @@
               <span v-if="user.email" style="color: #909399; margin-left: 8px;">{{ user.email }}</span>
             </el-option>
           </el-select>
-          <div class="form-tip">仅显示角色为"客服"且尚未创建客服记录的用户</div>
+          <div class="form-tip">{{ $t('agentMgmt.userTip') }}</div>
         </el-form-item>
-        <el-form-item v-else label="用户账号">
+        <el-form-item v-else :label="$t('agentMgmt.userAccount')">
           <el-input :value="editingAgent?.user?.username" disabled />
         </el-form-item>
-        <el-form-item label="客服昵称" prop="nickname">
-          <el-input v-model="form.nickname" placeholder="请输入客服昵称" maxlength="50" />
+        <el-form-item :label="$t('agentMgmt.agentNickname')" prop="nickname">
+          <el-input v-model="form.nickname" :placeholder="$t('agentMgmt.nicknamePlaceholder')" maxlength="50" />
         </el-form-item>
-        <el-form-item label="最大接待量" prop="maxLoad">
+        <el-form-item :label="$t('agentMgmt.maxLoad')" prop="maxLoad">
           <el-input-number v-model="form.maxLoad" :min="1" :max="50" />
         </el-form-item>
-        <el-form-item label="关联项目" prop="projectIds">
+        <el-form-item :label="$t('agentMgmt.relatedProjects')" prop="projectIds">
           <el-select 
             v-model="form.projectIds" 
-            placeholder="请选择客服负责的项目（可多选）" 
+            :placeholder="$t('agentMgmt.selectProjectPlaceholder')" 
             style="width: 100%"
             multiple
             collapse-tags
@@ -118,24 +118,24 @@
               :value="project.id"
             />
           </el-select>
-          <div class="form-tip">客服只能查看和处理关联项目的会话</div>
+          <div class="form-tip">{{ $t('agentMgmt.projectTip') }}</div>
         </el-form-item>
-        <el-form-item label="欢迎语">
+        <el-form-item :label="$t('agentMgmt.welcomeMsg')">
           <el-input 
             v-model="form.welcomeMessage" 
             type="textarea" 
             :rows="3"
-            placeholder="客服的欢迎语（可选）" 
+            :placeholder="$t('agentMgmt.welcomeMsgPlaceholder')" 
           />
         </el-form-item>
-        <el-form-item label="自动回复">
+        <el-form-item :label="$t('agentMgmt.autoReply')">
           <el-switch v-model="form.autoReplyEnabled" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="dialogVisible = false">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitForm" :loading="submitting">
-          {{ isEdit ? '保存' : '创建' }}
+          {{ isEdit ? $t('common.save') : $t('common.create') }}
         </el-button>
       </template>
     </el-dialog>
@@ -143,25 +143,25 @@
     <!-- 修改状态对话框 -->
     <el-dialog
       v-model="statusDialogVisible"
-      title="修改工作状态"
+      :title="$t('agentMgmt.changeStatus')"
       width="400px"
       :close-on-click-modal="false"
     >
       <el-form label-width="80px">
-        <el-form-item label="客服">
+        <el-form-item :label="$t('agentMgmt.agentLabel')">
           {{ editingAgent?.nickname || editingAgent?.user?.username }}
         </el-form-item>
-        <el-form-item label="状态">
+        <el-form-item :label="$t('agentMgmt.statusLabel')">
           <el-radio-group v-model="statusForm.workStatus">
-            <el-radio value="online">在线</el-radio>
-            <el-radio value="busy">忙碌</el-radio>
-            <el-radio value="offline">离线</el-radio>
+            <el-radio value="online">{{ $t('agentMgmt.online') }}</el-radio>
+            <el-radio value="busy">{{ $t('agentMgmt.busy') }}</el-radio>
+            <el-radio value="offline">{{ $t('agentMgmt.offline') }}</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="statusDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitStatus" :loading="submitting">确定</el-button>
+        <el-button @click="statusDialogVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitStatus" :loading="submitting">{{ $t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -169,9 +169,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import request from '@/api'
+
+const { t } = useI18n()
 
 interface User {
   id: number
@@ -226,13 +229,13 @@ const statusForm = reactive({
 
 const rules: FormRules = {
   userId: [
-    { required: true, message: '请选择用户', trigger: 'change' }
+    { required: true, message: () => t('agentMgmt.selectUserRequired'), trigger: 'change' }
   ],
   nickname: [
-    { required: true, message: '请输入客服昵称', trigger: 'blur' }
+    { required: true, message: () => t('agentMgmt.nicknameRequired'), trigger: 'blur' }
   ],
   maxLoad: [
-    { required: true, message: '请设置最大接待量', trigger: 'blur' }
+    { required: true, message: () => t('agentMgmt.maxLoadRequired'), trigger: 'blur' }
   ]
 }
 
@@ -244,10 +247,10 @@ const loadAgents = async () => {
     if (res.code === 0) {
       agents.value = res.data
     } else {
-      ElMessage.error(res.message || '加载失败')
+      ElMessage.error(res.message || t('common.loadFailed'))
     }
   } catch (error) {
-    ElMessage.error('加载客服列表失败')
+    ElMessage.error(t('agentMgmt.loadListFailed'))
   } finally {
     loading.value = false
   }
@@ -341,14 +344,14 @@ const submitForm = async () => {
       const res = await request[method](url, data) as any
       
       if (res.code === 0) {
-        ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
+        ElMessage.success(isEdit.value ? t('common.updateSuccess') : t('common.createSuccess'))
         dialogVisible.value = false
         loadAgents()
       } else {
-        ElMessage.error(res.message || '操作失败')
+        ElMessage.error(res.message || t('common.operateFailed'))
       }
     } catch (error) {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('common.operateFailed'))
     } finally {
       submitting.value = false
     }
@@ -364,14 +367,14 @@ const submitStatus = async () => {
     }) as any
     
     if (res.code === 0) {
-      ElMessage.success('状态修改成功')
+      ElMessage.success(t('agentMgmt.statusUpdateSuccess'))
       statusDialogVisible.value = false
       loadAgents()
     } else {
-      ElMessage.error(res.message || '修改失败')
+      ElMessage.error(res.message || t('agentMgmt.statusUpdateFailed'))
     }
   } catch (error) {
-    ElMessage.error('修改失败')
+    ElMessage.error(t('agentMgmt.statusUpdateFailed'))
   } finally {
     submitting.value = false
   }
@@ -381,17 +384,17 @@ const submitStatus = async () => {
 const deleteAgent = async (agent: Agent) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除客服 "${agent.nickname || agent.user?.username}" 吗？删除后该用户将无法处理客服业务！`,
-      '删除确认',
-      { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }
+      t('agentMgmt.deleteConfirm', { name: agent.nickname || agent.user?.username }),
+      t('agentMgmt.deleteConfirmTitle'),
+      { confirmButtonText: t('common.confirmDelete'), cancelButtonText: t('common.cancel'), type: 'warning' }
     )
     
     const res = await request.delete(`/api/admin/agents/${agent.id}`) as any
     if (res.code === 0) {
-      ElMessage.success('删除成功')
+      ElMessage.success(t('common.deleteSuccess'))
       loadAgents()
     } else {
-      ElMessage.error(res.message || '删除失败')
+      ElMessage.error(res.message || t('common.deleteFailed'))
     }
   } catch (error) {
     // 用户取消
@@ -401,7 +404,7 @@ const deleteAgent = async (agent: Agent) => {
 // 获取项目名称
 const getProjectName = (projectId: number) => {
   const project = projects.value.find(p => p.id === projectId)
-  return project?.name || `项目${projectId}`
+  return project?.name || `${t('agentMgmt.projectPrefix')}${projectId}`
 }
 
 // 获取项目名称列表
@@ -422,9 +425,9 @@ const getStatusTagType = (status: string) => {
 // 获取状态标签文本
 const getStatusLabel = (status: string) => {
   const map: Record<string, string> = {
-    online: '在线',
-    busy: '忙碌',
-    offline: '离线'
+    online: t('agentMgmt.online'),
+    busy: t('agentMgmt.busy'),
+    offline: t('agentMgmt.offline')
   }
   return map[status] || status
 }

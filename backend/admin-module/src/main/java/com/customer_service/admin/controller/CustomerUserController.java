@@ -9,6 +9,7 @@ import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.CustomerTag;
 import com.customer_service.shared.entity.User;
 import com.customer_service.shared.repository.UserProjectRepository;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,7 +48,7 @@ public class CustomerUserController {
 
         // 权限检查：客服只能查看自己关联的项目
         if (!hasProjectAccess(projectId)) {
-            return ApiResponse.error(403, "您没有权限访问该项目的用户");
+            return ApiResponse.error(403, I18nUtil.getMessage("customer.no.project.permission"));
         }
 
         Page<User> userPage = customerUserService.getUsers(projectId, keyword, isGuest, page - 1, size);
@@ -69,13 +70,13 @@ public class CustomerUserController {
     public ApiResponse<?> getCustomerDetail(@PathVariable Long id) {
         Map<String, Object> detail = customerUserService.getUserDetail(id);
         if (detail == null) {
-            return ApiResponse.error(404, "用户不存在");
+            return ApiResponse.error(404, I18nUtil.getMessage("customer.not.found"));
         }
 
         User user = (User) detail.get("user");
         // 权限检查
         if (!hasProjectAccess(user.getProjectId())) {
-            return ApiResponse.error(403, "您没有权限访问该用户");
+            return ApiResponse.error(403, I18nUtil.getMessage("customer.no.view.permission"));
         }
 
         Map<String, Object> result = toUserVO(user);
@@ -90,12 +91,12 @@ public class CustomerUserController {
     public ApiResponse<?> updateCustomer(@PathVariable Long id, @RequestBody UpdateCustomerRequest request) {
         User user = customerUserService.getUserById(id);
         if (user == null) {
-            return ApiResponse.error(404, "用户不存在");
+            return ApiResponse.error(404, I18nUtil.getMessage("customer.not.found"));
         }
 
         // 权限检查
         if (!hasProjectAccess(user.getProjectId())) {
-            return ApiResponse.error(403, "您没有权限修改该用户");
+            return ApiResponse.error(403, I18nUtil.getMessage("customer.no.edit.permission"));
         }
 
         try {
@@ -114,17 +115,17 @@ public class CustomerUserController {
     public ApiResponse<?> addTagToCustomer(@PathVariable Long id, @RequestBody AddTagRequest request) {
         User user = customerUserService.getUserById(id);
         if (user == null) {
-            return ApiResponse.error(404, "用户不存在");
+            return ApiResponse.error(404, I18nUtil.getMessage("customer.not.found"));
         }
 
         if (!hasProjectAccess(user.getProjectId())) {
-            return ApiResponse.error(403, "您没有权限操作该用户");
+            return ApiResponse.error(403, I18nUtil.getMessage("customer.no.operate.permission"));
         }
 
         try {
             Long operatorId = UserContextHolder.getUserId();
             customerUserService.addTagToUser(id, request.getTagId(), operatorId);
-            return ApiResponse.success("标签添加成功");
+            return ApiResponse.success(I18nUtil.getMessage("customer.tag.add.success"));
         } catch (Exception e) {
             return ApiResponse.error(e.getMessage());
         }
@@ -137,16 +138,16 @@ public class CustomerUserController {
     public ApiResponse<?> removeTagFromCustomer(@PathVariable Long id, @PathVariable Long tagId) {
         User user = customerUserService.getUserById(id);
         if (user == null) {
-            return ApiResponse.error(404, "用户不存在");
+            return ApiResponse.error(404, I18nUtil.getMessage("customer.not.found"));
         }
 
         if (!hasProjectAccess(user.getProjectId())) {
-            return ApiResponse.error(403, "您没有权限操作该用户");
+            return ApiResponse.error(403, I18nUtil.getMessage("customer.no.operate.permission"));
         }
 
         try {
             customerUserService.removeTagFromUser(id, tagId);
-            return ApiResponse.success("标签移除成功");
+            return ApiResponse.success(I18nUtil.getMessage("customer.tag.remove.success"));
         } catch (Exception e) {
             return ApiResponse.error(e.getMessage());
         }
@@ -159,17 +160,17 @@ public class CustomerUserController {
     public ApiResponse<?> setCustomerTags(@PathVariable Long id, @RequestBody SetTagsRequest request) {
         User user = customerUserService.getUserById(id);
         if (user == null) {
-            return ApiResponse.error(404, "用户不存在");
+            return ApiResponse.error(404, I18nUtil.getMessage("customer.not.found"));
         }
 
         if (!hasProjectAccess(user.getProjectId())) {
-            return ApiResponse.error(403, "您没有权限操作该用户");
+            return ApiResponse.error(403, I18nUtil.getMessage("customer.no.operate.permission"));
         }
 
         try {
             Long operatorId = UserContextHolder.getUserId();
             customerUserService.setUserTags(id, request.getTagIds(), operatorId);
-            return ApiResponse.success("标签设置成功");
+            return ApiResponse.success(I18nUtil.getMessage("customer.tag.set.success"));
         } catch (Exception e) {
             return ApiResponse.error(e.getMessage());
         }
@@ -182,11 +183,11 @@ public class CustomerUserController {
     public ApiResponse<?> getCustomerTags(@PathVariable Long id) {
         User user = customerUserService.getUserById(id);
         if (user == null) {
-            return ApiResponse.error(404, "用户不存在");
+            return ApiResponse.error(404, I18nUtil.getMessage("customer.not.found"));
         }
 
         if (!hasProjectAccess(user.getProjectId())) {
-            return ApiResponse.error(403, "您没有权限查看该用户");
+            return ApiResponse.error(403, I18nUtil.getMessage("customer.no.detail.permission"));
         }
 
         List<CustomerTag> tags = customerUserService.getUserTags(id);
@@ -205,7 +206,7 @@ public class CustomerUserController {
         try {
             Long operatorId = UserContextHolder.getUserId();
             customerUserService.batchAddTagToUsers(request.getUserIds(), request.getTagId(), operatorId);
-            return ApiResponse.success("批量添加标签成功");
+            return ApiResponse.success(I18nUtil.getMessage("customer.batch.tag.success"));
         } catch (Exception e) {
             return ApiResponse.error(e.getMessage());
         }
@@ -217,7 +218,7 @@ public class CustomerUserController {
     @GetMapping("/stats")
     public ApiResponse<?> getStats(@RequestParam Long projectId) {
         if (!hasProjectAccess(projectId)) {
-            return ApiResponse.error(403, "您没有权限访问该项目");
+            return ApiResponse.error(403, I18nUtil.getMessage("customer.no.project.permission"));
         }
 
         Map<String, Object> stats = customerUserService.getUserStats(projectId);

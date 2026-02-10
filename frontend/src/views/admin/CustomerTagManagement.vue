@@ -1,11 +1,11 @@
 <template>
   <div class="customer-tag-management">
     <div class="page-header">
-      <h2>标签管理</h2>
+      <h2>{{ $t('tagMgmt.title') }}</h2>
       <div class="header-actions">
         <el-select 
           v-model="selectedProjectId" 
-          placeholder="请选择项目" 
+          :placeholder="$t('tagMgmt.selectProject')" 
           style="width: 200px; margin-right: 16px;"
           @change="onProjectChange"
         >
@@ -18,7 +18,7 @@
         </el-select>
         <el-button type="primary" @click="showCreateDialog" :disabled="!selectedProjectId">
           <el-icon><Plus /></el-icon>
-          新建标签
+          {{ $t('tagMgmt.newTag') }}
         </el-button>
       </div>
     </div>
@@ -31,77 +31,77 @@
       v-loading="loading"
     >
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column label="标签名称" width="180">
+      <el-table-column :label="$t('tagMgmt.tagName')" width="180">
         <template #default="{ row }">
           <el-tag :color="row.color" style="color: #fff;">{{ row.name }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="颜色" width="120">
+      <el-table-column :label="$t('tagMgmt.color')" width="120">
         <template #default="{ row }">
           <div class="color-preview" :style="{ backgroundColor: row.color }"></div>
           <span style="margin-left: 8px;">{{ row.color }}</span>
         </template>
       </el-table-column>
-      <el-table-column prop="description" label="描述" min-width="200">
+      <el-table-column prop="description" :label="$t('common.description')" min-width="200">
         <template #default="{ row }">
           {{ row.description || '-' }}
         </template>
       </el-table-column>
-      <el-table-column prop="sortOrder" label="排序" width="80" />
-      <el-table-column label="用户数" width="100">
+      <el-table-column prop="sortOrder" :label="$t('tagMgmt.sort')" width="80" />
+      <el-table-column :label="$t('tagMgmt.userCount')" width="100">
         <template #default="{ row }">
           {{ row.userCount || 0 }}
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" width="180">
+      <el-table-column :label="$t('common.createdAt')" width="180">
         <template #default="{ row }">
           {{ formatTime(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column :label="$t('common.operation')" width="150" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="showEditDialog(row)">编辑</el-button>
-          <el-button link type="danger" @click="deleteTag(row)">删除</el-button>
+          <el-button link type="primary" @click="showEditDialog(row)">{{ $t('common.edit') }}</el-button>
+          <el-button link type="danger" @click="deleteTag(row)">{{ $t('common.delete') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <!-- 空状态 -->
-    <el-empty v-if="!selectedProjectId" description="请先选择项目" />
+    <el-empty v-if="!selectedProjectId" :description="$t('tagMgmt.selectProjectFirst')" />
 
     <!-- 创建/编辑标签对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '编辑标签' : '新建标签'"
+      :title="isEdit ? $t('tagMgmt.editTag') : $t('tagMgmt.newTag')"
       width="500px"
       :close-on-click-modal="false"
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
-        <el-form-item label="标签名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入标签名称" maxlength="50" />
+        <el-form-item :label="$t('tagMgmt.tagName')" prop="name">
+          <el-input v-model="form.name" :placeholder="$t('tagMgmt.tagNamePlaceholder')" maxlength="50" />
         </el-form-item>
-        <el-form-item label="颜色" prop="color">
+        <el-form-item :label="$t('tagMgmt.color')" prop="color">
           <el-color-picker v-model="form.color" />
           <span style="margin-left: 12px;">{{ form.color }}</span>
         </el-form-item>
-        <el-form-item label="描述">
+        <el-form-item :label="$t('common.description')">
           <el-input 
             v-model="form.description" 
             type="textarea" 
             :rows="3"
-            placeholder="请输入标签描述（可选）" 
+            :placeholder="$t('tagMgmt.descPlaceholder')" 
             maxlength="200"
           />
         </el-form-item>
-        <el-form-item label="排序">
+        <el-form-item :label="$t('tagMgmt.sort')">
           <el-input-number v-model="form.sortOrder" :min="0" :max="999" />
-          <span style="margin-left: 12px; color: #909399;">数值越小越靠前</span>
+          <span style="margin-left: 12px; color: #909399;">{{ $t('tagMgmt.sortTip') }}</span>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="dialogVisible = false">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitForm" :loading="submitting">
-          {{ isEdit ? '保存' : '创建' }}
+          {{ isEdit ? $t('common.save') : $t('common.create') }}
         </el-button>
       </template>
     </el-dialog>
@@ -110,9 +110,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import request from '@/api'
+
+const { t } = useI18n()
 
 interface Project {
   id: number
@@ -150,8 +153,8 @@ const form = reactive({
 
 const rules: FormRules = {
   name: [
-    { required: true, message: '请输入标签名称', trigger: 'blur' },
-    { min: 1, max: 50, message: '标签名称长度在 1 到 50 个字符', trigger: 'blur' }
+    { required: true, message: () => t('tagMgmt.tagNameRequired'), trigger: 'blur' },
+    { min: 1, max: 50, message: () => t('tagMgmt.tagNameLength'), trigger: 'blur' }
   ]
 }
 
@@ -191,10 +194,10 @@ const loadTags = async () => {
       // 加载每个标签的用户数
       await loadTagUserCounts()
     } else {
-      ElMessage.error(res.message || '加载失败')
+      ElMessage.error(res.message || t('common.loadFailed'))
     }
   } catch (error) {
-    ElMessage.error('加载标签列表失败')
+    ElMessage.error(t('tagMgmt.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -257,11 +260,11 @@ const submitForm = async () => {
         sortOrder: form.sortOrder
       }) as any
       if (res.code === 0) {
-        ElMessage.success('更新成功')
+        ElMessage.success(t('common.updateSuccess'))
         dialogVisible.value = false
         loadTags()
       } else {
-        ElMessage.error(res.message || '更新失败')
+        ElMessage.error(res.message || t('common.updateFailed'))
       }
     } else {
       // 创建
@@ -273,15 +276,15 @@ const submitForm = async () => {
         sortOrder: form.sortOrder
       }) as any
       if (res.code === 0) {
-        ElMessage.success('创建成功')
+        ElMessage.success(t('common.createSuccess'))
         dialogVisible.value = false
         loadTags()
       } else {
-        ElMessage.error(res.message || '创建失败')
+        ElMessage.error(res.message || t('common.createFailed'))
       }
     }
   } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('common.operateFailed'))
   } finally {
     submitting.value = false
   }
@@ -291,21 +294,21 @@ const submitForm = async () => {
 const deleteTag = async (tag: CustomerTag) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除标签 "${tag.name}" 吗？删除后，所有关联此标签的用户将失去该标签。`,
-      '确认删除',
+      t('tagMgmt.deleteConfirm', { name: tag.name }),
+      t('tagMgmt.confirmDeleteTitle'),
       { type: 'warning' }
     )
 
     const res = await request.delete(`/api/admin/customer-tags/${tag.id}`) as any
     if (res.code === 0) {
-      ElMessage.success('删除成功')
+      ElMessage.success(t('common.deleteSuccess'))
       loadTags()
     } else {
-      ElMessage.error(res.message || '删除失败')
+      ElMessage.error(res.message || t('common.deleteFailed'))
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error(t('common.deleteFailed'))
     }
   }
 }

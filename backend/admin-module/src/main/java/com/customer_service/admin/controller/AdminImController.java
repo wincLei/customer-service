@@ -2,6 +2,7 @@ package com.customer_service.admin.controller;
 
 import com.customer_service.shared.constant.DeviceType;
 import com.customer_service.shared.service.WuKongIMService;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -30,11 +31,11 @@ public class AdminImController {
 
         if (request.uid() == null || request.uid().isBlank()) {
             result.put("success", false);
-            result.put("error", "客服 UID 不能为空");
+            result.put("error", I18nUtil.getMessage("conversation.uid.required"));
             return ResponseEntity.badRequest().body(result);
         }
 
-        String name = request.name() != null ? request.name() : "客服";
+        String name = request.name() != null ? request.name() : I18nUtil.getMessage("agent.default.name");
         int deviceFlag = request.deviceFlag() != null ? request.deviceFlag() : DeviceType.WEB; // 默认 WEB
 
         WuKongIMService.ImTokenResult tokenResult = wuKongIMService.getToken(request.uid(), name, deviceFlag);
@@ -59,7 +60,7 @@ public class AdminImController {
 
         if (request.channelId() == null || request.channelId().isBlank()) {
             result.put("success", false);
-            result.put("error", "频道 ID 不能为空");
+            result.put("error", I18nUtil.getMessage("conversation.channel.required"));
             return ResponseEntity.badRequest().body(result);
         }
 
@@ -71,7 +72,7 @@ public class AdminImController {
 
         result.put("success", created);
         if (!created) {
-            result.put("error", "创建频道失败");
+            result.put("error", I18nUtil.getMessage("conversation.channel.create.error"));
         }
         return ResponseEntity.ok(result);
     }
@@ -112,7 +113,7 @@ public class AdminImController {
 
         if (request.loginUid() == null || request.channelId() == null) {
             result.put("code", 400);
-            result.put("message", "参数不完整");
+            result.put("message", I18nUtil.getMessage("common.params.incomplete"));
             return ResponseEntity.badRequest().body(result);
         }
 

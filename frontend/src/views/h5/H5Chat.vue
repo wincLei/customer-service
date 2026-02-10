@@ -7,7 +7,7 @@
     >
       <span class="status-dot"></span>
       <span class="status-text">{{
-        imConnected ? "已连接" : imConnecting ? "连接中..." : "未连接"
+        imConnected ? $t('h5chat.connected') : imConnecting ? $t('h5chat.connecting') : $t('h5chat.disconnected')
       }}</span>
     </div>
 
@@ -20,13 +20,13 @@
       <!-- 加载更多提示 -->
       <div v-if="loadingMoreMessages" class="loading-more">
         <span class="loading-spinner"></span>
-        加载中...
+        {{ $t('h5chat.loadMore') }}
       </div>
       <div
         v-else-if="!hasMoreMessages && messages.length > 0"
         class="no-more-messages"
       >
-        没有更多消息了
+        {{ $t('h5chat.noMoreMessages') }}
       </div>
 
       <!-- 日期分隔线 -->
@@ -43,7 +43,7 @@
         >
           <!-- 客服头像（左侧） -->
           <div v-if="msg.senderType === 'agent'" class="msg-avatar">
-            <img :src="agentAvatar" alt="客服" />
+            <img :src="agentAvatar" :alt="$t('h5chat.agentAvatar')" />
           </div>
 
           <!-- 消息内容 -->
@@ -77,7 +77,7 @@
 
           <!-- 用户头像（右侧） -->
           <div v-if="msg.senderType === 'user'" class="msg-avatar">
-            <img :src="userAvatar" alt="用户" />
+            <img :src="userAvatar" :alt="$t('h5chat.userAvatar')" />
           </div>
         </div>
       </template>
@@ -85,12 +85,12 @@
       <!-- 加载中提示 -->
       <div v-if="loading" class="loading-tip">
         <span class="loading-spinner"></span>
-        消息加载中...
+        {{ $t('h5chat.messageLoading') }}
       </div>
     </div>
 
     <!-- 底部 Logo 水印 -->
-    <div class="watermark">极简开源客服系统</div>
+    <div class="watermark">{{ $t('h5chat.brand') }}</div>
 
     <!-- 输入区域 -->
     <div class="input-section">
@@ -98,7 +98,7 @@
       <div class="input-toolbar">
         <button class="toolbar-btn" @click="triggerImageUpload">
           <span class="toolbar-icon">🖼️</span>
-          <span class="toolbar-text">图片</span>
+          <span class="toolbar-text">{{ $t('h5chat.imageTool') }}</span>
         </button>
         <input
           ref="imageInput"
@@ -110,18 +110,18 @@
         
         <button class="toolbar-btn" @click="submitTicket">
           <span class="toolbar-icon">📝</span>
-          <span class="toolbar-text">提交工单</span>
+          <span class="toolbar-text">{{ $t('h5chat.submitTicket') }}</span>
         </button>
         
         <button class="toolbar-btn" @click="openMyTickets">
           <span class="toolbar-icon">📋</span>
-          <span class="toolbar-text">我的工单</span>
+          <span class="toolbar-text">{{ $t('h5chat.myTickets') }}</span>
           <span v-if="hasUnreadTicketReply" class="unread-dot"></span>
         </button>
         
         <button class="toolbar-btn" @click.stop="toggleEmojiPicker">
           <span class="toolbar-icon">😊</span>
-          <span class="toolbar-text">表情</span>
+          <span class="toolbar-text">{{ $t('h5chat.emoji') }}</span>
         </button>
       </div>
       
@@ -133,7 +133,7 @@
         <input
           v-model="inputMessage"
           type="text"
-          placeholder="请输入内容"
+          :placeholder="$t('h5chat.inputPlaceholder')"
           :maxlength="MAX_CHARS_PER_MESSAGE"
           @keyup.enter="sendTextMessage"
           class="msg-input"
@@ -147,7 +147,7 @@
           :disabled="!inputMessage.trim()"
           @click="sendTextMessage"
         >
-          发送
+          {{ $t('h5chat.send') }}
         </button>
       </div>
     </div>
@@ -170,11 +170,11 @@
     <div v-if="showMorePanel" class="more-panel">
       <div class="more-item" @click="submitTicket">
         <span class="more-icon">📝</span>
-        <span>提交工单</span>
+        <span>{{ $t('h5chat.submitTicket') }}</span>
       </div>
       <div class="more-item" @click="viewFAQ">
         <span class="more-icon">❓</span>
-        <span>常见问题</span>
+        <span>{{ $t('h5chat.faq') }}</span>
       </div>
     </div>
 
@@ -186,36 +186,36 @@
     >
       <div class="ticket-dialog">
         <div class="ticket-header">
-          <h3>提交工单</h3>
+          <h3>{{ $t('h5chat.submitTicket') }}</h3>
           <button class="close-btn" @click="showTicketDialog = false">✕</button>
         </div>
         <div class="ticket-form">
           <div class="form-group">
-            <label>标题 <span class="required">*</span></label>
-            <input v-model="ticketForm.title" placeholder="请输入工单标题" />
+            <label>{{ $t('h5chat.ticketTitle') }} <span class="required">*</span></label>
+            <input v-model="ticketForm.title" :placeholder="$t('h5chat.ticketTitlePlaceholder')" />
           </div>
           <div class="form-group">
-            <label>问题描述 <span class="required">*</span></label>
+            <label>{{ $t('h5chat.ticketDescription') }} <span class="required">*</span></label>
             <textarea
               v-model="ticketForm.description"
-              placeholder="请详细描述您遇到的问题"
+              :placeholder="$t('h5chat.ticketDescriptionPlaceholder')"
               rows="4"
             ></textarea>
           </div>
           <div class="form-group">
-            <label>联系方式</label>
+            <label>{{ $t('h5chat.ticketContact') }}</label>
             <input
               v-model="ticketForm.contactInfo"
-              placeholder="手机号或邮箱（方便我们联系您）"
+              :placeholder="$t('h5chat.ticketContactPlaceholder')"
             />
           </div>
           <div class="form-group">
-            <label>优先级</label>
+            <label>{{ $t('h5chat.ticketPriority') }}</label>
             <select v-model="ticketForm.priority">
-              <option value="low">低</option>
-              <option value="medium">中</option>
-              <option value="high">高</option>
-              <option value="urgent">紧急</option>
+              <option value="low">{{ $t('ticket.priority.low') }}</option>
+              <option value="medium">{{ $t('ticket.priority.medium') }}</option>
+              <option value="high">{{ $t('ticket.priority.high') }}</option>
+              <option value="urgent">{{ $t('ticket.priority.urgent') }}</option>
             </select>
           </div>
           <button
@@ -223,7 +223,7 @@
             @click="handleSubmitTicket"
             :disabled="!ticketForm.title || !ticketForm.description"
           >
-            提交工单
+            {{ $t('h5chat.submitTicket') }}
           </button>
         </div>
       </div>
@@ -237,7 +237,7 @@
     >
       <div class="ticket-dialog ticket-list-dialog">
         <div class="ticket-header">
-          <h3>我的工单</h3>
+          <h3>{{ $t('h5chat.myTickets') }}</h3>
           <button class="close-btn" @click="showMyTickets = false">✕</button>
         </div>
         <div class="ticket-list-content" v-if="!loadingTickets">
@@ -250,7 +250,7 @@
             >
               <div class="ticket-item-header">
                 <span class="ticket-item-title">{{ ticket.title }}</span>
-                <span v-if="ticket.hasNewReply" class="new-reply-badge">有新回复</span>
+                <span v-if="ticket.hasNewReply" class="new-reply-badge">{{ $t('h5chat.newReply') }}</span>
               </div>
               <div class="ticket-item-tags">
                 <span class="ticket-tag" :class="'status-' + ticket.status">
@@ -267,12 +267,12 @@
           </div>
           <div v-else class="empty-tickets">
             <span class="empty-icon">📭</span>
-            <span>暂无工单记录</span>
+            <span>{{ $t('h5chat.noTickets') }}</span>
           </div>
         </div>
         <div v-else class="loading-tickets">
           <span class="loading-spinner"></span>
-          加载中...
+          {{ $t('h5chat.loadMore') }}
         </div>
       </div>
     </div>
@@ -285,8 +285,8 @@
     >
       <div class="ticket-dialog ticket-detail-dialog">
         <div class="ticket-header">
-          <button class="back-btn" @click="backToTicketList">← 返回</button>
-          <h3>工单详情</h3>
+          <button class="back-btn" @click="backToTicketList">← {{ $t('h5chat.back') }}</button>
+          <h3>{{ $t('h5chat.ticketDetail') }}</h3>
           <button class="close-btn" @click="showTicketDetail = false">✕</button>
         </div>
         <div class="ticket-detail-content" v-if="currentTicketDetail">
@@ -303,13 +303,13 @@
             </div>
             <div class="ticket-detail-desc">{{ currentTicketDetail.ticket.description }}</div>
             <div class="ticket-detail-time">
-              创建时间：{{ formatTicketTime(currentTicketDetail.ticket.createdAt) }}
+              {{ $t('h5chat.createdTime') }}{{ formatTicketTime(currentTicketDetail.ticket.createdAt) }}
             </div>
           </div>
           
           <!-- 回复记录 -->
           <div class="ticket-events">
-            <div class="events-title">处理记录</div>
+            <div class="events-title">{{ $t('h5chat.processHistory') }}</div>
             <div v-if="currentTicketDetail.events.length > 0" class="events-list">
               <div 
                 v-for="event in currentTicketDetail.events" 
@@ -318,20 +318,20 @@
                 :class="{ 'event-agent': event.operatorType === 'agent', 'event-user': event.operatorType === 'user' }"
               >
                 <div class="event-header">
-                  <span class="event-sender">{{ event.operatorType === 'agent' ? '客服' : '我' }}</span>
+                  <span class="event-sender">{{ event.operatorType === 'agent' ? $t('h5chat.agentLabel') : $t('h5chat.userLabel') }}</span>
                   <span class="event-time">{{ formatTicketTime(event.createdAt) }}</span>
                 </div>
                 <div class="event-content">{{ event.content }}</div>
               </div>
             </div>
-            <div v-else class="no-events">暂无处理记录</div>
+            <div v-else class="no-events">{{ $t('h5chat.noProcessHistory') }}</div>
           </div>
           
           <!-- 回复输入框 -->
           <div class="ticket-reply-section" v-if="currentTicketDetail.ticket.status !== 'closed'">
             <textarea 
               v-model="ticketReplyContent" 
-              placeholder="输入回复内容..."
+              :placeholder="$t('h5chat.replyPlaceholder')"
               rows="3"
             ></textarea>
             <button 
@@ -339,16 +339,16 @@
               @click="submitTicketReply"
               :disabled="!ticketReplyContent.trim() || submittingReply"
             >
-              {{ submittingReply ? '发送中...' : '发送回复' }}
+              {{ submittingReply ? $t('h5chat.sending') : $t('h5chat.sendReply') }}
             </button>
           </div>
           <div v-else class="ticket-closed-tip">
-            该工单已关闭，无法继续回复
+            {{ $t('h5chat.ticketClosedTip') }}
           </div>
         </div>
         <div v-else class="loading-tickets">
           <span class="loading-spinner"></span>
-          加载中...
+          {{ $t('h5chat.loadMore') }}
         </div>
       </div>
     </div>
@@ -367,12 +367,14 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { useI18n } from 'vue-i18n';
 import portalApi, { setPortalToken } from "@/api/portal";
 import { WKIM, WKIMEvent } from "easyjssdk";
-import { DeviceType, WKChannelType, StorageKeys, TicketStatusLabel, TicketPriorityLabel, IMPayloadType, IM_INITIAL_LOAD_LIMIT, IM_LOAD_MORE_LIMIT, MAX_CHARS_PER_MESSAGE, MAX_CHARS_PER_MINUTE, RATE_LIMIT_WINDOW, WELCOME_INTERVAL, ALLOWED_IMAGE_TYPES } from "@/constants";
+import { DeviceType, WKChannelType, StorageKeys, IMPayloadType, IM_INITIAL_LOAD_LIMIT, IM_LOAD_MORE_LIMIT, MAX_CHARS_PER_MESSAGE, MAX_CHARS_PER_MINUTE, RATE_LIMIT_WINDOW, WELCOME_INTERVAL, ALLOWED_IMAGE_TYPES } from "@/constants";
 
 const route = useRoute();
 const router = useRouter();
+const { t } = useI18n();
 
 // IM 实例
 let imInstance: ReturnType<typeof WKIM.init> | null = null;
@@ -438,10 +440,10 @@ const imUid = computed(() => {
 
 // 客服信息
 const agentAvatar = ref(
-  'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%231890ff"/><text x="50" y="60" text-anchor="middle" fill="white" font-size="40">客</text></svg>',
+  `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%231890ff"/><text x="50" y="60" text-anchor="middle" fill="white" font-size="40">${t('h5chat.agentAvatarChar')}</text></svg>`,
 );
 const userAvatar = ref(
-  'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2387ceeb"/><text x="50" y="60" text-anchor="middle" fill="white" font-size="40">我</text></svg>',
+  `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="%2387ceeb"/><text x="50" y="60" text-anchor="middle" fill="white" font-size="40">${t('h5chat.userAvatarChar')}</text></svg>`,
 );
 
 // 消息列表
@@ -573,7 +575,7 @@ const formatDate = (date: Date): string => {
   const day = date.getDate().toString();
   const h = date.getHours().toString().padStart(2, "0");
   const m = date.getMinutes().toString().padStart(2, "0");
-  return `${month}月${day}日 ${h}:${m}`;
+  return t('h5chat.dateFormat', { month, day, h, m });
 };
 
 const initUser = async () => {
@@ -686,7 +688,7 @@ const initConversation = async () => {
 
       if (shouldShowWelcome) {
         const welcomeMsg =
-          response.data.welcomeMessage || "您好，请问有什么需要帮助的？";
+          response.data.welcomeMessage || t('h5chat.defaultWelcome');
         addMessage({
           senderType: "agent",
           msgType: "text",
@@ -704,7 +706,7 @@ const initConversation = async () => {
     addMessage({
       senderType: "agent",
       msgType: "text",
-      content: "您好，请问有什么需要帮助的？",
+      content: t('h5chat.defaultWelcome'),
     });
   }
 };
@@ -1014,7 +1016,7 @@ const addMessage = (msg: Partial<Message>) => {
 const checkRateLimit = (text: string): boolean => {
   // 检查单条消息字数限制
   if (text.length > MAX_CHARS_PER_MESSAGE) {
-    rateLimitTip.value = `单条消息不能超过${MAX_CHARS_PER_MESSAGE}字，当前${text.length}字`;
+    rateLimitTip.value = t('h5chat.charLimitExceeded', { max: MAX_CHARS_PER_MESSAGE, current: text.length });
     setTimeout(() => { rateLimitTip.value = ''; }, 3000);
     return false;
   }
@@ -1031,7 +1033,7 @@ const checkRateLimit = (text: string): boolean => {
   );
 
   if (totalCharsInWindow + text.length > MAX_CHARS_PER_MINUTE) {
-    rateLimitTip.value = '发送过于频繁，请稍后再试';
+    rateLimitTip.value = t('h5chat.rateLimitExceeded');
     setTimeout(() => { rateLimitTip.value = ''; }, 3000);
     return false;
   }
@@ -1104,7 +1106,7 @@ const handleImageUpload = async (event: Event) => {
 
   // 验证文件类型，只允许上传图片
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-    alert('只支持上传图片文件（JPG、PNG、GIF、WEBP、BMP）');
+    alert(t('h5chat.imageOnlyTip'));
     input.value = '';
     return;
   }
@@ -1152,15 +1154,15 @@ const handleImageUpload = async (event: Event) => {
           uploadRes.status,
           await uploadRes.text(),
         );
-        alert("图片上传失败，请重试");
+        alert(t('h5chat.imageUploadFailed'));
       }
     } else {
       console.error("Failed to get OSS token:", tokenRes);
-      alert("获取上传凭证失败");
+      alert(t('h5chat.ossTokenFailed'));
     }
   } catch (error) {
     console.error("Failed to upload image:", error);
-    alert("图片上传失败，请重试");
+    alert(t('h5chat.imageUploadFailed'));
   }
 
   input.value = "";
@@ -1183,7 +1185,7 @@ const submitTicket = () => {
 
 const handleSubmitTicket = async () => {
   if (!ticketForm.value.title || !ticketForm.value.description) {
-    alert("请填写工单标题和描述");
+    alert(t('h5chat.ticketFormRequired'));
     return;
   }
 
@@ -1198,7 +1200,7 @@ const handleSubmitTicket = async () => {
     })) as any;
 
     if (response.code === 0) {
-      alert("工单提交成功！我们会尽快处理。");
+      alert(t('h5chat.ticketSubmitSuccess'));
       showTicketDialog.value = false;
 
       const title = ticketForm.value.title;
@@ -1217,7 +1219,7 @@ const handleSubmitTicket = async () => {
       addMessage({
         senderType: "system",
         msgType: "text",
-        content: `您已成功提交工单【${title}】，工单号：${newTicketId}`,
+        content: t('h5chat.ticketSubmitMessage', { title, id: newTicketId }),
       });
       
       // 刷新工单列表
@@ -1225,30 +1227,30 @@ const handleSubmitTicket = async () => {
     }
   } catch (error) {
     console.error("Failed to submit ticket:", error);
-    alert("工单提交失败，请重试");
+    alert(t('h5chat.ticketSubmitFailed'));
   }
 };
 
 // ========== 工单列表和详情相关方法 ==========
 // 获取状态标签
 const getStatusLabel = (status: string) => {
-  return TicketStatusLabel[status] || status;
+  return t(`ticket.status.${status}`);
 };
 
 // 获取优先级标签
 const getPriorityLabel = (priority: string) => {
-  return TicketPriorityLabel[priority] || priority;
+  return t(`ticket.priority.${priority}`);
 };
 
 // 格式化工单时间
 const formatTicketTime = (time: string) => {
   if (!time) return '-';
   const date = new Date(time);
-  const month = date.getMonth() + 1;
-  const day = date.getDate();
+  const month = (date.getMonth() + 1).toString();
+  const day = date.getDate().toString();
   const hours = date.getHours().toString().padStart(2, '0');
   const minutes = date.getMinutes().toString().padStart(2, '0');
-  return `${month}月${day}日 ${hours}:${minutes}`;
+  return t('h5chat.dateFormat', { month, day, h: hours, m: minutes });
 };
 
 // 获取工单最后已读时间
@@ -1324,7 +1326,7 @@ const openTicketDetail = async (ticket: any) => {
     }
   } catch (error) {
     console.error("Failed to fetch ticket detail:", error);
-    alert("获取工单详情失败");
+    alert(t('h5chat.ticketDetailFailed'));
   }
 };
 
@@ -1353,11 +1355,11 @@ const submitTicketReply = async () => {
       // 更新工单状态
       markTicketAsRead(currentTicketDetail.value.ticket.id);
     } else {
-      alert(response.message || "回复失败");
+      alert(response.message || t('h5chat.replyFailed'));
     }
   } catch (error) {
     console.error("Failed to reply ticket:", error);
-    alert("回复失败，请重试");
+    alert(t('h5chat.replyRetryFailed'));
   } finally {
     submittingReply.value = false;
   }

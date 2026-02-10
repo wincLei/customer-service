@@ -1,11 +1,11 @@
 <template>
   <div class="user-management">
     <div class="page-header">
-      <h2>用户管理</h2>
+      <h2>{{ $t('userMgmt.title') }}</h2>
       <div class="header-actions">
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索用户名或邮箱"
+          :placeholder="$t('userMgmt.searchPlaceholder')"
           style="width: 250px"
           clearable
           @keyup.enter="handleSearch"
@@ -15,10 +15,10 @@
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
+        <el-button type="primary" @click="handleSearch">{{ $t('common.search') }}</el-button>
         <el-button type="primary" @click="showCreateDialog">
           <el-icon><Plus /></el-icon>
-          新建用户
+          {{ $t('userMgmt.newUser') }}
         </el-button>
       </div>
     </div>
@@ -26,40 +26,40 @@
     <!-- 用户列表 -->
     <el-table :data="users" style="width: 100%" v-loading="loading">
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="username" label="用户名" width="120" />
-      <el-table-column prop="email" label="邮箱" min-width="180" />
-      <el-table-column prop="phone" label="手机号" width="130" />
-      <el-table-column label="角色" width="120">
+      <el-table-column prop="username" :label="$t('userMgmt.username')" width="120" />
+      <el-table-column prop="email" :label="$t('userMgmt.email')" min-width="180" />
+      <el-table-column prop="phone" :label="$t('userMgmt.phone')" width="130" />
+      <el-table-column :label="$t('userMgmt.role')" width="120">
         <template #default="{ row }">
           <el-tag v-if="row.role" :type="getRoleTagType(row.role.code)">
             {{ row.role.name }}
           </el-tag>
-          <span v-else class="text-gray">未分配</span>
+          <span v-else class="text-gray">{{ $t('userMgmt.unassigned') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="状态" width="100">
+      <el-table-column :label="$t('common.status')" width="100">
         <template #default="{ row }">
           <el-tag :type="row.status === 'active' ? 'success' : 'danger'">
-            {{ row.status === 'active' ? '正常' : '禁用' }}
+            {{ row.status === 'active' ? $t('userMgmt.active') : $t('userMgmt.disabled') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column label="最后登录" width="180">
+      <el-table-column :label="$t('userMgmt.lastLogin')" width="180">
         <template #default="{ row }">
-          {{ row.lastLoginAt ? formatDate(row.lastLoginAt) : '从未登录' }}
+          {{ row.lastLoginAt ? formatDate(row.lastLoginAt) : $t('userMgmt.neverLogin') }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="220" fixed="right">
+      <el-table-column :label="$t('common.operation')" width="220" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="showEditDialog(row)">编辑</el-button>
-          <el-button link type="warning" @click="showPasswordDialog(row)">改密</el-button>
+          <el-button link type="primary" @click="showEditDialog(row)">{{ $t('common.edit') }}</el-button>
+          <el-button link type="warning" @click="showPasswordDialog(row)">{{ $t('userMgmt.changePassword') }}</el-button>
           <el-button 
             link 
             :type="row.status === 'active' ? 'danger' : 'success'"
             @click="toggleStatus(row)"
             :disabled="row.username === 'admin'"
           >
-            {{ row.status === 'active' ? '禁用' : '启用' }}
+            {{ row.status === 'active' ? $t('userMgmt.disable') : $t('userMgmt.enable') }}
           </el-button>
           <el-button 
             link 
@@ -67,7 +67,7 @@
             @click="deleteUser(row)"
             :disabled="row.username === 'admin'"
           >
-            删除
+            {{ $t('common.delete') }}
           </el-button>
         </template>
       </el-table-column>
@@ -84,35 +84,35 @@
     <!-- 创建/编辑用户对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '编辑用户' : '新建用户'"
+      :title="isEdit ? $t('userMgmt.editUser') : $t('userMgmt.newUser')"
       width="500px"
       :close-on-click-modal="false"
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
-        <el-form-item label="用户名" prop="username">
+        <el-form-item :label="$t('userMgmt.username')" prop="username">
           <el-input 
             v-model="form.username" 
-            placeholder="请输入用户名" 
+            :placeholder="$t('userMgmt.usernamePlaceholder')" 
             :disabled="isEdit"
             maxlength="50" 
           />
         </el-form-item>
-        <el-form-item v-if="!isEdit" label="密码" prop="password">
+        <el-form-item v-if="!isEdit" :label="$t('auth.password')" prop="password">
           <el-input 
             v-model="form.password" 
             type="password" 
-            placeholder="请输入密码（至少6位）" 
+            :placeholder="$t('userMgmt.passwordPlaceholder')" 
             show-password
           />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="form.email" placeholder="请输入邮箱" />
+        <el-form-item :label="$t('userMgmt.email')" prop="email">
+          <el-input v-model="form.email" :placeholder="$t('userMgmt.emailPlaceholder')" />
         </el-form-item>
-        <el-form-item label="手机号" prop="phone">
-          <el-input v-model="form.phone" placeholder="请输入手机号" maxlength="20" />
+        <el-form-item :label="$t('userMgmt.phone')" prop="phone">
+          <el-input v-model="form.phone" :placeholder="$t('userMgmt.phonePlaceholder')" maxlength="20" />
         </el-form-item>
-        <el-form-item label="角色" prop="roleId">
-          <el-select v-model="form.roleId" placeholder="请选择角色" style="width: 100%">
+        <el-form-item :label="$t('userMgmt.role')" prop="roleId">
+          <el-select v-model="form.roleId" :placeholder="$t('userMgmt.selectRole')" style="width: 100%">
             <el-option
               v-for="role in roles"
               :key="role.id"
@@ -121,17 +121,17 @@
             />
           </el-select>
         </el-form-item>
-        <el-form-item v-if="isEdit" label="状态" prop="status">
-          <el-select v-model="form.status" placeholder="请选择状态" style="width: 100%">
-            <el-option label="正常" value="active" />
-            <el-option label="禁用" value="disabled" />
+        <el-form-item v-if="isEdit" :label="$t('common.status')" prop="status">
+          <el-select v-model="form.status" :placeholder="$t('userMgmt.selectStatus')" style="width: 100%">
+            <el-option :label="$t('userMgmt.active')" value="active" />
+            <el-option :label="$t('userMgmt.disabled')" value="disabled" />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="dialogVisible = false">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitForm" :loading="submitting">
-          {{ isEdit ? '保存' : '创建' }}
+          {{ isEdit ? $t('common.save') : $t('common.create') }}
         </el-button>
       </template>
     </el-dialog>
@@ -139,31 +139,31 @@
     <!-- 修改密码对话框 -->
     <el-dialog
       v-model="passwordDialogVisible"
-      title="修改密码"
+      :title="$t('userMgmt.changePasswordTitle')"
       width="400px"
       :close-on-click-modal="false"
     >
       <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="80px">
-        <el-form-item label="新密码" prop="newPassword">
+        <el-form-item :label="$t('userMgmt.newPassword')" prop="newPassword">
           <el-input 
             v-model="passwordForm.newPassword" 
             type="password" 
-            placeholder="请输入新密码（至少6位）"
+            :placeholder="$t('userMgmt.newPasswordPlaceholder')"
             show-password
           />
         </el-form-item>
-        <el-form-item label="确认密码" prop="confirmPassword">
+        <el-form-item :label="$t('userMgmt.confirmPassword')" prop="confirmPassword">
           <el-input 
             v-model="passwordForm.confirmPassword" 
             type="password" 
-            placeholder="请再次输入新密码"
+            :placeholder="$t('userMgmt.confirmPasswordPlaceholder')"
             show-password
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="passwordDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitPassword" :loading="submitting">确定</el-button>
+        <el-button @click="passwordDialogVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitPassword" :loading="submitting">{{ $t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -171,10 +171,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
 import request from '@/api'
 import Pagination from '@/components/Pagination.vue'
+
+const { t } = useI18n()
 
 interface Role {
   id: number
@@ -228,32 +231,32 @@ const passwordForm = reactive({
 
 const rules: FormRules = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 2, max: 50, message: '用户名长度在2-50个字符之间', trigger: 'blur' }
+    { required: true, message: () => t('userMgmt.usernameRequired'), trigger: 'blur' },
+    { min: 2, max: 50, message: () => t('userMgmt.usernameLength'), trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+    { required: true, message: () => t('userMgmt.passwordRequired'), trigger: 'blur' },
+    { min: 6, message: () => t('userMgmt.passwordMinLength'), trigger: 'blur' }
   ],
   email: [
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
+    { type: 'email', message: () => t('userMgmt.emailFormat'), trigger: 'blur' }
   ],
   roleId: [
-    { required: true, message: '请选择角色', trigger: 'change' }
+    { required: true, message: () => t('userMgmt.selectRole'), trigger: 'change' }
   ]
 }
 
 const passwordRules: FormRules = {
   newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+    { required: true, message: () => t('userMgmt.newPasswordRequired'), trigger: 'blur' },
+    { min: 6, message: () => t('userMgmt.passwordMinLength'), trigger: 'blur' }
   ],
   confirmPassword: [
-    { required: true, message: '请再次输入新密码', trigger: 'blur' },
+    { required: true, message: () => t('userMgmt.confirmPasswordRequired'), trigger: 'blur' },
     {
       validator: (_rule, value, callback) => {
         if (value !== passwordForm.newPassword) {
-          callback(new Error('两次输入的密码不一致'))
+          callback(new Error(t('userMgmt.passwordMismatch')))
         } else {
           callback()
         }
@@ -290,10 +293,10 @@ const loadUsers = async () => {
       users.value = res.data.list
       pagination.total = res.data.total
     } else {
-      ElMessage.error(res.message || '加载失败')
+      ElMessage.error(res.message || t('common.loadFailed'))
     }
   } catch (error) {
-    ElMessage.error('加载用户列表失败')
+    ElMessage.error(t('userMgmt.loadListFailed'))
   } finally {
     loading.value = false
   }
@@ -372,14 +375,14 @@ const submitForm = async () => {
       const res = await request[method](url, data) as any
       
       if (res.code === 0) {
-        ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
+        ElMessage.success(isEdit.value ? t('common.updateSuccess') : t('common.createSuccess'))
         dialogVisible.value = false
         loadUsers()
       } else {
-        ElMessage.error(res.message || '操作失败')
+        ElMessage.error(res.message || t('common.operateFailed'))
       }
     } catch (error) {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('common.operateFailed'))
     } finally {
       submitting.value = false
     }
@@ -400,13 +403,13 @@ const submitPassword = async () => {
       }) as any
       
       if (res.code === 0) {
-        ElMessage.success('密码修改成功')
+        ElMessage.success(t('userMgmt.passwordChangeSuccess'))
         passwordDialogVisible.value = false
       } else {
-        ElMessage.error(res.message || '修改失败')
+        ElMessage.error(res.message || t('userMgmt.passwordChangeFailed'))
       }
     } catch (error) {
-      ElMessage.error('修改失败')
+      ElMessage.error(t('userMgmt.passwordChangeFailed'))
     } finally {
       submitting.value = false
     }
@@ -415,20 +418,20 @@ const submitPassword = async () => {
 
 // 切换用户状态
 const toggleStatus = async (user: User) => {
-  const action = user.status === 'active' ? '禁用' : '启用'
+  const action = user.status === 'active' ? t('userMgmt.disable') : t('userMgmt.enable')
   try {
     await ElMessageBox.confirm(
-      `确定要${action}用户 "${user.username}" 吗？`,
-      `${action}确认`,
-      { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' }
+      t('userMgmt.disableConfirm', { action, username: user.username }),
+      t('userMgmt.actionConfirmTitle', { action }),
+      { confirmButtonText: t('common.confirm'), cancelButtonText: t('common.cancel'), type: 'warning' }
     )
     
     const res = await request.post(`/api/admin/users/${user.id}/toggle-status`) as any
     if (res.code === 0) {
-      ElMessage.success(`${action}成功`)
+      ElMessage.success(t('userMgmt.actionSuccess', { action }))
       loadUsers()
     } else {
-      ElMessage.error(res.message || `${action}失败`)
+      ElMessage.error(res.message || t('userMgmt.actionFailed', { action }))
     }
   } catch (error) {
     // 用户取消
@@ -439,17 +442,17 @@ const toggleStatus = async (user: User) => {
 const deleteUser = async (user: User) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除用户 "${user.username}" 吗？删除后无法恢复！`,
-      '删除确认',
-      { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }
+      t('userMgmt.deleteConfirm', { username: user.username }),
+      t('userMgmt.deleteConfirmTitle'),
+      { confirmButtonText: t('common.confirmDelete'), cancelButtonText: t('common.cancel'), type: 'warning' }
     )
     
     const res = await request.delete(`/api/admin/users/${user.id}`) as any
     if (res.code === 0) {
-      ElMessage.success('删除成功')
+      ElMessage.success(t('common.deleteSuccess'))
       loadUsers()
     } else {
-      ElMessage.error(res.message || '删除失败')
+      ElMessage.error(res.message || t('common.deleteFailed'))
     }
   } catch (error) {
     // 用户取消

@@ -4,6 +4,7 @@ import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.admin.service.SysMenuService;
 import com.customer_service.shared.entity.SysMenu;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -74,7 +75,7 @@ public class SysMenuController {
                 })
                 .orElseGet(() -> {
                     response.put("code", 404);
-                    response.put("message", "菜单不存在");
+                    response.put("message", I18nUtil.getMessage("menu.not.found"));
                     return ResponseEntity.ok(response);
                 });
     }
@@ -89,7 +90,7 @@ public class SysMenuController {
         try {
             SysMenu created = menuService.createMenu(menu);
             response.put("code", 0);
-            response.put("message", "创建成功");
+            response.put("message", I18nUtil.getMessage("menu.create.success"));
             response.put("data", created);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
@@ -109,7 +110,7 @@ public class SysMenuController {
         try {
             SysMenu updated = menuService.updateMenu(id, menu);
             response.put("code", 0);
-            response.put("message", "更新成功");
+            response.put("message", I18nUtil.getMessage("menu.update.success"));
             response.put("data", updated);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
@@ -129,7 +130,7 @@ public class SysMenuController {
         try {
             menuService.deleteMenu(id);
             response.put("code", 0);
-            response.put("message", "删除成功");
+            response.put("message", I18nUtil.getMessage("menu.delete.success"));
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {
             response.put("code", 400);
@@ -148,7 +149,8 @@ public class SysMenuController {
         try {
             SysMenu menu = menuService.toggleMenuStatus(id);
             response.put("code", 0);
-            response.put("message", menu.getIsEnabled() ? "已启用" : "已禁用");
+            response.put("message",
+                    menu.getIsEnabled() ? I18nUtil.getMessage("menu.enabled") : I18nUtil.getMessage("menu.disabled"));
             response.put("data", menu);
             return ResponseEntity.ok(response);
         } catch (RuntimeException e) {

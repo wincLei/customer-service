@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.customer_service.shared.util.I18nUtil;
+
 /**
  * 知识库分类服务
  */
@@ -88,7 +90,7 @@ public class KbCategoryService {
     public KbCategory createCategory(KbCategory category) {
         // 检查名称是否重复
         if (kbCategoryRepository.existsByProjectIdAndName(category.getProjectId(), category.getName())) {
-            throw new RuntimeException("分类名称已存在");
+            throw new RuntimeException(I18nUtil.getMessage("kb.category.name.exists"));
         }
 
         // 设置默认排序值
@@ -105,11 +107,11 @@ public class KbCategoryService {
     @Transactional
     public KbCategory updateCategory(Long id, KbCategory category) {
         KbCategory existing = kbCategoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("分类不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("kb.category.not.found")));
 
         // 检查名称是否重复（排除自己）
         if (kbCategoryRepository.existsByProjectIdAndNameAndIdNot(existing.getProjectId(), category.getName(), id)) {
-            throw new RuntimeException("分类名称已存在");
+            throw new RuntimeException(I18nUtil.getMessage("kb.category.name.exists"));
         }
 
         existing.setName(category.getName());
@@ -127,13 +129,13 @@ public class KbCategoryService {
         // 检查是否有子分类
         List<KbCategory> children = kbCategoryRepository.findByParentIdOrderBySortOrderAsc(id);
         if (!children.isEmpty()) {
-            throw new RuntimeException("该分类下存在子分类，无法删除");
+            throw new RuntimeException(I18nUtil.getMessage("kb.category.has.children"));
         }
 
         // 检查是否有文章
         long articleCount = kbCategoryRepository.countArticlesByCategory(id);
         if (articleCount > 0) {
-            throw new RuntimeException("该分类下存在文章，无法删除");
+            throw new RuntimeException(I18nUtil.getMessage("kb.category.has.articles"));
         }
 
         kbCategoryRepository.deleteById(id);

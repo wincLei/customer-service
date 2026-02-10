@@ -20,6 +20,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
+import com.customer_service.shared.util.I18nUtil;
+
 @Service
 @RequiredArgsConstructor
 public class AgentService {
@@ -76,11 +78,11 @@ public class AgentService {
             List<Long> projectIds) {
         // 检查用户是否存在
         SysUser user = sysUserRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("agent.user.not.found")));
 
         // 检查是否已有客服记录
         if (agentRepository.existsByUserId(userId)) {
-            throw new RuntimeException("该用户已有客服记录");
+            throw new RuntimeException(I18nUtil.getMessage("agent.already.exists"));
         }
 
         // 创建客服记录
@@ -112,7 +114,7 @@ public class AgentService {
             String welcomeMessage, Boolean autoReplyEnabled,
             List<Long> projectIds) {
         Agent agent = agentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("客服不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("agent.not.found")));
 
         if (nickname != null) {
             agent.setNickname(nickname);
@@ -143,7 +145,7 @@ public class AgentService {
     @Transactional
     public void deleteAgent(Long id) {
         Agent agent = agentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("客服不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("agent.not.found")));
 
         // 删除项目关联
         userProjectRepository.deleteByUserId(agent.getUserId());
@@ -158,7 +160,7 @@ public class AgentService {
     @Transactional
     public Agent updateWorkStatus(Long agentId, String workStatus) {
         Agent agent = agentRepository.findById(agentId)
-                .orElseThrow(() -> new RuntimeException("客服不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("agent.not.found")));
         agent.setWorkStatus(workStatus);
         return agentRepository.save(agent);
     }
@@ -182,7 +184,7 @@ public class AgentService {
      */
     public List<Long> getAgentProjectIds(Long agentId) {
         Agent agent = agentRepository.findById(agentId)
-                .orElseThrow(() -> new RuntimeException("客服不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("agent.not.found")));
         return userProjectRepository.findProjectIdsByUserId(agent.getUserId());
     }
 
@@ -195,12 +197,12 @@ public class AgentService {
 
         // 获取用户实体
         SysUser user = sysUserRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("agent.user.not.found")));
 
         // 保存新的关联
         for (Long projectId : projectIds) {
             Project project = projectRepository.findById(projectId)
-                    .orElseThrow(() -> new RuntimeException("项目不存在: " + projectId));
+                    .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("agent.project.not.found", projectId)));
             UserProject userProject = new UserProject(user, project);
             userProjectRepository.save(userProject);
         }

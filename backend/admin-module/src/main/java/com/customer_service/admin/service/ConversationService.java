@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.customer_service.shared.util.I18nUtil;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -83,10 +85,10 @@ public class ConversationService {
     @Transactional
     public Conversation acceptConversation(Long conversationId, Long agentId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("会话不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("conversation.not.found")));
 
         if (!ConversationStatus.QUEUED.equals(conversation.getStatus())) {
-            throw new RuntimeException("会话不在排队状态");
+            throw new RuntimeException(I18nUtil.getMessage("conversation.not.queued"));
         }
 
         conversation.setAgentId(agentId);
@@ -105,7 +107,7 @@ public class ConversationService {
     @Transactional
     public Conversation closeConversation(Long conversationId) {
         Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() -> new RuntimeException("会话不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("conversation.not.found")));
 
         conversation.setStatus(ConversationStatus.CLOSED);
         Conversation savedConversation = conversationRepository.save(conversation);

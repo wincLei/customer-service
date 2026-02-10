@@ -2,8 +2,8 @@
   <div class="ticket-management">
     <!-- 页面头部 -->
     <div class="page-header">
-      <h2>工单管理</h2>
-      <p class="subtitle">管理用户提交的工单和问题反馈</p>
+      <h2>{{ $t('ticketMgmt.ticketManagement') }}</h2>
+      <p class="subtitle">{{ $t('ticketMgmt.subtitle') }}</p>
     </div>
 
     <!-- 统计卡片 -->
@@ -14,7 +14,7 @@
         </div>
         <div class="stat-info">
           <div class="stat-value">{{ stats.total || 0 }}</div>
-          <div class="stat-label">全部工单</div>
+          <div class="stat-label">{{ $t('ticketMgmt.allTickets') }}</div>
         </div>
       </div>
       <div class="stat-card">
@@ -23,7 +23,7 @@
         </div>
         <div class="stat-info">
           <div class="stat-value">{{ stats.open || 0 }}</div>
-          <div class="stat-label">待处理</div>
+          <div class="stat-label">{{ $t('ticketMgmt.pending') }}</div>
         </div>
       </div>
       <div class="stat-card">
@@ -32,7 +32,7 @@
         </div>
         <div class="stat-info">
           <div class="stat-value">{{ stats.processing || 0 }}</div>
-          <div class="stat-label">处理中</div>
+          <div class="stat-label">{{ $t('ticketMgmt.processing') }}</div>
         </div>
       </div>
       <div class="stat-card">
@@ -41,7 +41,7 @@
         </div>
         <div class="stat-info">
           <div class="stat-value">{{ stats.resolved || 0 }}</div>
-          <div class="stat-label">已解决</div>
+          <div class="stat-label">{{ $t('ticketMgmt.resolved') }}</div>
         </div>
       </div>
     </div>
@@ -50,7 +50,7 @@
     <div class="search-bar">
       <el-input
         v-model="searchKeyword"
-        placeholder="搜索工单标题或内容..."
+        :placeholder="$t('ticketMgmt.searchPlaceholder')"
         clearable
         @keyup.enter="handleSearch"
         class="search-input"
@@ -59,64 +59,64 @@
           <el-icon><Search /></el-icon>
         </template>
       </el-input>
-      <el-select v-model="filterStatus" placeholder="状态" clearable @change="handleSearch">
-        <el-option label="待处理" :value="TicketStatus.OPEN" />
-        <el-option label="处理中" :value="TicketStatus.PROCESSING" />
-        <el-option label="已解决" :value="TicketStatus.RESOLVED" />
-        <el-option label="已关闭" :value="TicketStatus.CLOSED" />
+      <el-select v-model="filterStatus" :placeholder="$t('ticketMgmt.statusLabel')" clearable @change="handleSearch">
+        <el-option :label="$t('ticketMgmt.pending')" :value="TicketStatus.OPEN" />
+        <el-option :label="$t('ticketMgmt.processing')" :value="TicketStatus.PROCESSING" />
+        <el-option :label="$t('ticketMgmt.resolved')" :value="TicketStatus.RESOLVED" />
+        <el-option :label="$t('ticketMgmt.closed')" :value="TicketStatus.CLOSED" />
       </el-select>
-      <el-select v-model="filterPriority" placeholder="优先级" clearable @change="handleSearch">
-        <el-option label="紧急" :value="TicketPriority.URGENT" />
-        <el-option label="高" :value="TicketPriority.HIGH" />
-        <el-option label="中" :value="TicketPriority.MEDIUM" />
-        <el-option label="低" :value="TicketPriority.LOW" />
+      <el-select v-model="filterPriority" :placeholder="$t('ticketMgmt.priority')" clearable @change="handleSearch">
+        <el-option :label="$t('ticketMgmt.urgent')" :value="TicketPriority.URGENT" />
+        <el-option :label="$t('ticketMgmt.high')" :value="TicketPriority.HIGH" />
+        <el-option :label="$t('ticketMgmt.medium')" :value="TicketPriority.MEDIUM" />
+        <el-option :label="$t('ticketMgmt.low')" :value="TicketPriority.LOW" />
       </el-select>
       <el-button type="primary" @click="handleSearch">
         <el-icon><Search /></el-icon>
-        搜索
+        {{ $t('common.search') }}
       </el-button>
     </div>
 
     <!-- 工单列表 -->
     <div class="ticket-list">
       <el-table :data="tickets" v-loading="loading" stripe>
-        <el-table-column prop="id" label="工单号" width="100" />
-        <el-table-column prop="title" label="标题" min-width="200">
+        <el-table-column prop="id" :label="$t('ticketMgmt.ticketNo')" width="100" />
+        <el-table-column prop="title" :label="$t('ticketMgmt.title')" min-width="200">
           <template #default="{ row }">
             <el-link type="primary" @click="showTicketDetail(row)">
               {{ row.title }}
             </el-link>
           </template>
         </el-table-column>
-        <el-table-column prop="priority" label="优先级" width="100">
+        <el-table-column prop="priority" :label="$t('ticketMgmt.priority')" width="100">
           <template #default="{ row }">
             <el-tag :type="getPriorityType(row.priority)" size="small">
               {{ getPriorityLabel(row.priority) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column prop="status" :label="$t('ticketMgmt.statusLabel')" width="100">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)" size="small">
               {{ getStatusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" width="180">
+        <el-table-column prop="createdAt" :label="$t('ticketMgmt.createTime')" width="180">
           <template #default="{ row }">
             {{ formatTime(row.createdAt) }}
           </template>
         </el-table-column>
-        <el-table-column prop="updatedAt" label="更新时间" width="180">
+        <el-table-column prop="updatedAt" :label="$t('ticketMgmt.updateTime')" width="180">
           <template #default="{ row }">
             {{ formatTime(row.updatedAt) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column :label="$t('common.operation')" width="200" fixed="right">
           <template #default="{ row }">
             <el-button-group>
               <el-button size="small" @click="showTicketDetail(row)">
-                查看
+                {{ $t('ticketMgmt.view') }}
               </el-button>
               <el-button
                 size="small"
@@ -124,25 +124,25 @@
                 @click="openReplyDialog(row)"
                 :disabled="row.status === TicketStatus.CLOSED"
               >
-                回复
+                {{ $t('ticketMgmt.reply') }}
               </el-button>
               <el-dropdown trigger="click" @command="(cmd: string) => handleCommand(cmd, row)">
                 <el-button size="small">
-                  更多 <el-icon><ArrowDown /></el-icon>
+                  {{ $t('ticketMgmt.more') }} <el-icon><ArrowDown /></el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item :command="TicketStatus.PROCESSING" :disabled="row.status !== TicketStatus.OPEN">
-                      标记处理中
+                      {{ $t('ticketMgmt.markProcessing') }}
                     </el-dropdown-item>
                     <el-dropdown-item :command="TicketStatus.RESOLVED" :disabled="row.status === TicketStatus.CLOSED">
-                      标记已解决
+                      {{ $t('ticketMgmt.markResolved') }}
                     </el-dropdown-item>
                     <el-dropdown-item :command="TicketStatus.CLOSED" :disabled="row.status === TicketStatus.CLOSED">
-                      关闭工单
+                      {{ $t('ticketMgmt.closeTicket') }}
                     </el-dropdown-item>
                     <el-dropdown-item command="assign" divided>
-                      分配客服
+                      {{ $t('ticketMgmt.assignAgent') }}
                     </el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
@@ -169,7 +169,7 @@
     <!-- 工单详情抽屉 -->
     <el-drawer
       v-model="detailDrawerVisible"
-      title="工单详情"
+      :title="$t('ticketMgmt.ticketDetail')"
       size="600px"
       direction="rtl"
     >
@@ -197,13 +197,13 @@
 
         <!-- 工单描述 -->
         <div class="detail-content">
-          <h4>问题描述</h4>
+          <h4>{{ $t('ticketMgmt.problemDesc') }}</h4>
           <p>{{ currentTicket.ticket.description }}</p>
         </div>
 
         <!-- 事件时间线 -->
         <div class="detail-timeline">
-          <h4>处理记录</h4>
+          <h4>{{ $t('ticketMgmt.processRecords') }}</h4>
           <el-timeline>
             <el-timeline-item
               v-for="event in currentTicket.events"
@@ -221,19 +221,19 @@
 
         <!-- 快捷回复 -->
         <div class="detail-reply" v-if="currentTicket.ticket.status !== TicketStatus.CLOSED">
-          <h4>快捷回复</h4>
+          <h4>{{ $t('ticketMgmt.quickReply') }}</h4>
           <el-input
             v-model="quickReplyContent"
             type="textarea"
             :rows="3"
-            placeholder="输入回复内容..."
+            :placeholder="$t('ticketMgmt.inputReply')"
           />
           <div class="reply-actions">
             <el-button type="primary" @click="submitQuickReply" :loading="replyLoading">
-              发送回复
+              {{ $t('ticketMgmt.sendReply') }}
             </el-button>
             <el-button @click="updateTicketStatus(TicketStatus.RESOLVED)">
-              标记已解决
+              {{ $t('ticketMgmt.markResolved') }}
             </el-button>
           </div>
         </div>
@@ -241,33 +241,33 @@
     </el-drawer>
 
     <!-- 回复对话框 -->
-    <el-dialog v-model="replyDialogVisible" title="回复工单" width="500px">
+    <el-dialog v-model="replyDialogVisible" :title="$t('ticketMgmt.replyTicket')" width="500px">
       <el-form :model="replyForm" label-width="80px">
-        <el-form-item label="工单标题">
+        <el-form-item :label="$t('ticketMgmt.ticketTitle')">
           <span>{{ replyForm.title }}</span>
         </el-form-item>
-        <el-form-item label="回复内容">
+        <el-form-item :label="$t('ticketMgmt.replyContent')">
           <el-input
             v-model="replyForm.content"
             type="textarea"
             :rows="4"
-            placeholder="请输入回复内容..."
+            :placeholder="$t('ticketMgmt.inputReplyContent')"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="replyDialogVisible = false">取消</el-button>
+        <el-button @click="replyDialogVisible = false">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitReply" :loading="replyLoading">
-          发送
+          {{ $t('ticketMgmt.send') }}
         </el-button>
       </template>
     </el-dialog>
 
     <!-- 分配客服对话框 -->
-    <el-dialog v-model="assignDialogVisible" title="分配客服" width="400px">
+    <el-dialog v-model="assignDialogVisible" :title="$t('ticketMgmt.assignAgentTitle')" width="400px">
       <el-form :model="assignForm" label-width="80px">
-        <el-form-item label="选择客服">
-          <el-select v-model="assignForm.assigneeId" placeholder="请选择客服" style="width: 100%">
+        <el-form-item :label="$t('ticketMgmt.selectAgentLabel')">
+          <el-select v-model="assignForm.assigneeId" :placeholder="$t('ticketMgmt.selectAgentPlaceholder')" style="width: 100%">
             <el-option
               v-for="agent in agents"
               :key="agent.id"
@@ -278,9 +278,9 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="assignDialogVisible = false">取消</el-button>
+        <el-button @click="assignDialogVisible = false">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitAssign" :loading="assignLoading">
-          确定
+          {{ $t('common.confirm') }}
         </el-button>
       </template>
     </el-dialog>
@@ -289,6 +289,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import {
   Search,
@@ -302,6 +303,8 @@ import {
 } from '@element-plus/icons-vue'
 import request from '@/api'
 import { TicketStatus, TicketPriority, TicketStatusLabel, TicketPriorityLabel, TicketPriorityType, DEFAULT_PAGE_SIZE } from '@/constants'
+
+const { t } = useI18n()
 
 // 状态数据
 const stats = ref({
@@ -364,7 +367,7 @@ const fetchTickets = async () => {
     totalElements.value = res.data.totalElements || 0
   } catch (error) {
     console.error('获取工单列表失败', error)
-    ElMessage.error('获取工单列表失败')
+    ElMessage.error(t('ticketMgmt.fetchListFailed'))
   } finally {
     loading.value = false
   }
@@ -414,7 +417,7 @@ const showTicketDetail = async (row: any) => {
     currentTicket.value = res.data
     detailDrawerVisible.value = true
   } catch (error) {
-    ElMessage.error('获取工单详情失败')
+    ElMessage.error(t('ticketMgmt.fetchDetailFailed'))
   }
 }
 
@@ -431,7 +434,7 @@ const openReplyDialog = (row: any) => {
 // 提交回复
 const submitReply = async () => {
   if (!replyForm.value.content.trim()) {
-    ElMessage.warning('请输入回复内容')
+    ElMessage.warning(t('ticketMgmt.replyRequired'))
     return
   }
   
@@ -440,12 +443,12 @@ const submitReply = async () => {
     await request.post(`/api/admin/ticket/${replyForm.value.id}/reply`, {
       content: replyForm.value.content
     })
-    ElMessage.success('回复成功')
+    ElMessage.success(t('ticketMgmt.replySuccess'))
     replyDialogVisible.value = false
     fetchTickets()
     fetchStats()
   } catch (error) {
-    ElMessage.error('回复失败')
+    ElMessage.error(t('ticketMgmt.replyFailed'))
   } finally {
     replyLoading.value = false
   }
@@ -454,7 +457,7 @@ const submitReply = async () => {
 // 快捷回复
 const submitQuickReply = async () => {
   if (!quickReplyContent.value.trim()) {
-    ElMessage.warning('请输入回复内容')
+    ElMessage.warning(t('ticketMgmt.replyRequired'))
     return
   }
   
@@ -463,13 +466,13 @@ const submitQuickReply = async () => {
     await request.post(`/api/admin/ticket/${currentTicket.value.ticket.id}/reply`, {
       content: quickReplyContent.value
     })
-    ElMessage.success('回复成功')
+    ElMessage.success(t('ticketMgmt.replySuccess'))
     quickReplyContent.value = ''
     showTicketDetail({ id: currentTicket.value.ticket.id })
     fetchTickets()
     fetchStats()
   } catch (error) {
-    ElMessage.error('回复失败')
+    ElMessage.error(t('ticketMgmt.replyFailed'))
   } finally {
     replyLoading.value = false
   }
@@ -480,14 +483,14 @@ const updateTicketStatus = async (status: string) => {
   const ticketId = currentTicket.value?.ticket?.id || assignForm.value.ticketId
   try {
     await request.put(`/api/admin/ticket/${ticketId}/status`, { status })
-    ElMessage.success('状态更新成功')
+    ElMessage.success(t('ticketMgmt.statusUpdateSuccess'))
     if (detailDrawerVisible.value) {
       showTicketDetail({ id: ticketId })
     }
     fetchTickets()
     fetchStats()
   } catch (error) {
-    ElMessage.error('状态更新失败')
+    ElMessage.error(t('ticketMgmt.statusUpdateFailed'))
   }
 }
 
@@ -509,18 +512,18 @@ const handleCommand = (command: string, row: any) => {
 const updateTicketStatusById = async (id: number, status: string) => {
   try {
     await request.put(`/api/admin/ticket/${id}/status`, { status })
-    ElMessage.success('状态更新成功')
+    ElMessage.success(t('ticketMgmt.statusUpdateSuccess'))
     fetchTickets()
     fetchStats()
   } catch (error) {
-    ElMessage.error('状态更新失败')
+    ElMessage.error(t('ticketMgmt.statusUpdateFailed'))
   }
 }
 
 // 提交分配
 const submitAssign = async () => {
   if (!assignForm.value.assigneeId) {
-    ElMessage.warning('请选择客服')
+    ElMessage.warning(t('ticketMgmt.selectAgent'))
     return
   }
   
@@ -529,11 +532,11 @@ const submitAssign = async () => {
     await request.put(`/api/admin/ticket/${assignForm.value.ticketId}/assign`, {
       assigneeId: assignForm.value.assigneeId
     })
-    ElMessage.success('分配成功')
+    ElMessage.success(t('ticketMgmt.assignSuccess'))
     assignDialogVisible.value = false
     fetchTickets()
   } catch (error) {
-    ElMessage.error('分配失败')
+    ElMessage.error(t('ticketMgmt.assignFailed'))
   } finally {
     assignLoading.value = false
   }
@@ -556,7 +559,8 @@ const getStatusType = (status: string) => {
 }
 
 const getStatusLabel = (status: string) => {
-  return TicketStatusLabel[status] || status
+  const key = TicketStatusLabel[status]
+  return key ? t(key) : status
 }
 
 const getPriorityType = (priority: string) => {
@@ -564,7 +568,8 @@ const getPriorityType = (priority: string) => {
 }
 
 const getPriorityLabel = (priority: string) => {
-  return TicketPriorityLabel[priority] || priority
+  const key = TicketPriorityLabel[priority]
+  return key ? t(key) : priority
 }
 
 const getEventType = (action: string) => {
@@ -579,10 +584,10 @@ const getEventType = (action: string) => {
 
 const getEventLabel = (event: any) => {
   const labels: Record<string, string> = {
-    create: '创建工单',
-    reply: event.operatorType === 'user' ? '用户回复' : '客服回复',
-    status_change: '状态变更',
-    assign: '工单分配'
+    create: t('ticketMgmt.createTicket'),
+    reply: event.operatorType === 'user' ? t('ticketMgmt.userReply') : t('ticketMgmt.agentReply'),
+    status_change: t('ticketMgmt.statusChange'),
+    assign: t('ticketMgmt.ticketAssign')
   }
   return labels[event.action] || event.action
 }

@@ -16,6 +16,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
 
+import com.customer_service.shared.util.I18nUtil;
+
 @Service
 @RequiredArgsConstructor
 public class SysUserService {
@@ -50,7 +52,7 @@ public class SysUserService {
     @Transactional
     public SysUser createUser(String username, String password, String email, String phone, Long roleId) {
         if (sysUserRepository.existsByUsername(username)) {
-            throw new RuntimeException("用户名已存在");
+            throw new RuntimeException(I18nUtil.getMessage("user.username.exists"));
         }
 
         SysUser user = new SysUser();
@@ -62,7 +64,7 @@ public class SysUserService {
 
         if (roleId != null) {
             SysRole role = sysRoleRepository.findById(roleId)
-                    .orElseThrow(() -> new RuntimeException("角色不存在"));
+                    .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("user.role.not.found")));
             user.setRole(role);
         }
 
@@ -75,7 +77,7 @@ public class SysUserService {
     @Transactional
     public SysUser updateUser(Long id, String email, String phone, Long roleId, String status) {
         SysUser user = sysUserRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("user.not.found")));
 
         if (email != null) {
             user.setEmail(email);
@@ -88,7 +90,7 @@ public class SysUserService {
         }
         if (roleId != null) {
             SysRole role = sysRoleRepository.findById(roleId)
-                    .orElseThrow(() -> new RuntimeException("角色不存在"));
+                    .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("user.role.not.found")));
             user.setRole(role);
         }
 
@@ -101,7 +103,7 @@ public class SysUserService {
     @Transactional
     public void changePassword(Long id, String newPassword) {
         SysUser user = sysUserRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("user.not.found")));
         user.setPasswordHash(passwordEncoder.encode(newPassword));
         sysUserRepository.save(user);
     }
@@ -112,11 +114,11 @@ public class SysUserService {
     @Transactional
     public void deleteUser(Long id) {
         SysUser user = sysUserRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("user.not.found")));
 
         // 不允许删除 admin 用户
         if ("admin".equals(user.getUsername())) {
-            throw new RuntimeException("不能删除管理员账号");
+            throw new RuntimeException(I18nUtil.getMessage("user.cannot.delete.admin"));
         }
 
         sysUserRepository.deleteById(id);
@@ -128,10 +130,10 @@ public class SysUserService {
     @Transactional
     public SysUser toggleStatus(Long id) {
         SysUser user = sysUserRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("user.not.found")));
 
         if ("admin".equals(user.getUsername())) {
-            throw new RuntimeException("不能禁用管理员账号");
+            throw new RuntimeException(I18nUtil.getMessage("user.cannot.disable.admin"));
         }
 
         user.setStatus(UserStatus.ACTIVE.equals(user.getStatus()) ? UserStatus.DISABLED : UserStatus.ACTIVE);

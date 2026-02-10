@@ -5,6 +5,7 @@ import com.customer_service.shared.entity.User;
 import com.customer_service.shared.event.VisitorChannelCreateEvent;
 import com.customer_service.shared.repository.UserRepository;
 import com.customer_service.shared.service.WuKongIMService;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -240,7 +241,8 @@ public class PortalUserService {
         try {
             // WuKongIM UID 使用 projectId_userId 格式，保证全局唯一
             String imUid = projectId + "_" + user.getId();
-            String displayName = user.getNickname() != null ? user.getNickname() : "用户";
+            String displayName = user.getNickname() != null ? user.getNickname()
+                    : I18nUtil.getMessage("user.default.name");
             var tokenResult = wuKongIMService.getToken(imUid, displayName, deviceFlag);
             if (tokenResult.success()) {
                 log.info("IM token obtained for user: imUid={}, dbId={}", imUid, user.getId());

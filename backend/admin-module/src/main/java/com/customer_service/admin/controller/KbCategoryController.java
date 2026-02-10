@@ -5,6 +5,7 @@ import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.KbCategory;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -46,7 +47,7 @@ public class KbCategoryController {
     public ApiResponse<KbCategory> getCategory(@PathVariable Long id) {
         KbCategory category = kbCategoryService.getCategoryById(id);
         if (category == null) {
-            return ApiResponse.error(404, "分类不存在");
+            return ApiResponse.error(404, I18nUtil.getMessage("kb.category.not.found"));
         }
         return ApiResponse.success(category);
     }

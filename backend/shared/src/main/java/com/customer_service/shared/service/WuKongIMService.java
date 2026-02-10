@@ -1,6 +1,7 @@
 package com.customer_service.shared.service;
 
 import com.customer_service.shared.constant.DeviceType;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,7 +42,7 @@ public class WuKongIMService {
         }
         try {
             // 注册系统用户 token
-            getToken("system", "系统", 2); // deviceFlag=2 for WEB
+            getToken("system", I18nUtil.getMessage("im.system.name"), 2); // deviceFlag=2 for WEB
             systemUserInitialized = true;
             log.info("System user initialized for WuKongIM");
         } catch (Exception e) {
@@ -97,11 +98,11 @@ public class WuKongIMService {
                 return new ImTokenResult(true, userToken, null);
             } else {
                 log.error("Failed to get IM token: {}", response.getStatusCode());
-                return new ImTokenResult(false, null, "获取 IM Token 失败");
+                return new ImTokenResult(false, null, I18nUtil.getMessage("im.token.error"));
             }
         } catch (Exception e) {
             log.error("Error getting IM token for user: " + uid, e);
-            return new ImTokenResult(false, null, "IM 服务连接失败: " + e.getMessage());
+            return new ImTokenResult(false, null, I18nUtil.getMessage("im.connect.error", e.getMessage()));
         }
     }
 

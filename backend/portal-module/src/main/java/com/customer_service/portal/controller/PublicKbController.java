@@ -3,6 +3,7 @@ package com.customer_service.portal.controller;
 import com.customer_service.portal.repository.PortalKbArticleRepository;
 import com.customer_service.portal.repository.PortalKbCategoryRepository;
 import com.customer_service.shared.dto.ApiResponse;
+import com.customer_service.shared.util.I18nUtil;
 import com.customer_service.shared.entity.KbArticle;
 import com.customer_service.shared.entity.KbCategory;
 import lombok.RequiredArgsConstructor;
@@ -78,7 +79,7 @@ public class PublicKbController {
         if (!uncategorized.isEmpty()) {
             Map<String, Object> group = new LinkedHashMap<>();
             group.put("id", 0);
-            group.put("name", "其他");
+            group.put("name", I18nUtil.getMessage("kb.category.default"));
             group.put("articles", uncategorized.stream()
                     .map(this::toArticleSummary)
                     .collect(Collectors.toList()));
@@ -114,7 +115,7 @@ public class PublicKbController {
                     detail.put("createdAt", article.getCreatedAt());
                     return ApiResponse.success(detail);
                 })
-                .orElse(ApiResponse.fail(404, "文章不存在或未发布"));
+                .orElse(ApiResponse.fail(404, I18nUtil.getMessage("kb.article.not.published")));
     }
 
     /**

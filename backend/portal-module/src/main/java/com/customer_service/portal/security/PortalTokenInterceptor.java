@@ -2,6 +2,7 @@ package com.customer_service.portal.security;
 
 import com.customer_service.shared.constant.AppDefaults;
 import com.customer_service.shared.dto.ApiResponse;
+import com.customer_service.shared.util.I18nUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -39,13 +40,13 @@ public class PortalTokenInterceptor implements HandlerInterceptor {
 
         if (!StringUtils.hasText(token)) {
             log.warn("Missing authorization token for request: {} {}", request.getMethod(), request.getRequestURI());
-            sendUnauthorizedResponse(response, "缺少访问令牌");
+            sendUnauthorizedResponse(response, I18nUtil.getMessage("portal.auth.token.missing"));
             return false;
         }
 
         if (!tokenProvider.validateToken(token)) {
             log.warn("Invalid authorization token for request: {} {}", request.getMethod(), request.getRequestURI());
-            sendUnauthorizedResponse(response, "无效的访问令牌");
+            sendUnauthorizedResponse(response, I18nUtil.getMessage("portal.auth.token.invalid"));
             return false;
         }
 

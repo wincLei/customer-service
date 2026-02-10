@@ -1,11 +1,11 @@
 <template>
   <div class="customer-management">
     <div class="page-header">
-      <h2>用户管理</h2>
+      <h2>{{ $t('customerMgmt.title') }}</h2>
       <div class="header-actions">
         <el-select 
           v-model="selectedProjectId" 
-          placeholder="请选择项目" 
+          :placeholder="$t('customerMgmt.selectProject')" 
           style="width: 200px; margin-right: 16px;"
           @change="onProjectChange"
         >
@@ -22,14 +22,14 @@
     <!-- 搜索和筛选 -->
     <div class="filter-bar" v-if="selectedProjectId">
       <el-tabs v-model="activeTab" @tab-change="onTabChange">
-        <el-tab-pane label="全部" name="all" />
-        <el-tab-pane label="游客" name="guest" />
-        <el-tab-pane label="用户" name="registered" />
+        <el-tab-pane :label="$t('customerMgmt.all')" name="all" />
+        <el-tab-pane :label="$t('customerMgmt.guest')" name="guest" />
+        <el-tab-pane :label="$t('customerMgmt.registered')" name="registered" />
       </el-tabs>
       <div class="search-box">
         <el-input
           v-model="keyword"
-          placeholder="搜索昵称、手机号、UID"
+          :placeholder="$t('customerMgmt.searchPlaceholder')"
           clearable
           style="width: 240px; margin-right: 12px;"
           @keyup.enter="loadCustomers"
@@ -40,23 +40,23 @@
         </el-input>
         <el-button type="primary" @click="loadCustomers">
           <el-icon><Search /></el-icon>
-          搜索
+          {{ $t('common.search') }}
         </el-button>
-        <el-button @click="resetSearch">重置</el-button>
+        <el-button @click="resetSearch">{{ $t('common.reset') }}</el-button>
       </div>
     </div>
 
     <!-- 统计信息 -->
     <div class="stats-bar" v-if="selectedProjectId && stats">
-      <el-tag type="info">总用户: {{ stats.total }}</el-tag>
-      <el-tag type="warning" style="margin-left: 8px;">游客: {{ stats.guests }}</el-tag>
-      <el-tag type="success" style="margin-left: 8px;">注册用户: {{ stats.registered }}</el-tag>
+      <el-tag type="info">{{ $t('customerMgmt.totalUsers') }}: {{ stats.total }}</el-tag>
+      <el-tag type="warning" style="margin-left: 8px;">{{ $t('customerMgmt.guest') }}: {{ stats.guests }}</el-tag>
+      <el-tag type="success" style="margin-left: 8px;">{{ $t('customerMgmt.registeredUsers') }}: {{ stats.registered }}</el-tag>
     </div>
 
     <!-- 批量操作 -->
     <div class="batch-actions" v-if="selectedUsers.length > 0">
-      <span class="selected-count">已选择 {{ selectedUsers.length }} 项</span>
-      <el-button size="small" @click="showBatchTagDialog">批量设置标签</el-button>
+      <span class="selected-count">{{ $t('customerMgmt.selectedCount', { count: selectedUsers.length }) }}</span>
+      <el-button size="small" @click="showBatchTagDialog">{{ $t('customerMgmt.batchSetTags') }}</el-button>
     </div>
 
     <!-- 用户列表 -->
@@ -69,37 +69,37 @@
     >
       <el-table-column type="selection" width="50" />
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column label="头像" width="70">
+      <el-table-column :label="$t('customerMgmt.avatar')" width="70">
         <template #default="{ row }">
           <el-avatar :size="36" :src="row.avatar">
             <el-icon><User /></el-icon>
           </el-avatar>
         </template>
       </el-table-column>
-      <el-table-column prop="nickname" label="昵称" min-width="120">
+      <el-table-column prop="nickname" :label="$t('customerMgmt.nickname')" min-width="120">
         <template #default="{ row }">
           <span>{{ row.nickname || row.uid }}</span>
-          <el-tag v-if="row.isGuest" size="small" type="warning" style="margin-left: 4px;">游客</el-tag>
+          <el-tag v-if="row.isGuest" size="small" type="warning" style="margin-left: 4px;">{{ $t('customerMgmt.guest') }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="phone" label="手机号" width="130">
+      <el-table-column prop="phone" :label="$t('customerMgmt.phone')" width="130">
         <template #default="{ row }">
           {{ row.phone || '-' }}
         </template>
       </el-table-column>
-      <el-table-column prop="deviceType" label="设备" width="80">
+      <el-table-column prop="deviceType" :label="$t('customerMgmt.device')" width="80">
         <template #default="{ row }">
           <el-tag size="small" :type="getDeviceTagType(row.deviceType)">
             {{ row.deviceType || 'Unknown' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="city" label="城市" width="100">
+      <el-table-column prop="city" :label="$t('customerMgmt.city')" width="100">
         <template #default="{ row }">
           {{ row.city || '-' }}
         </template>
       </el-table-column>
-      <el-table-column label="标签" min-width="180">
+      <el-table-column :label="$t('customerMgmt.tags')" min-width="180">
         <template #default="{ row }">
           <div class="tag-list" v-if="row.tags && row.tags.length > 0">
             <el-tag 
@@ -118,21 +118,21 @@
           <span v-else class="text-gray">-</span>
         </template>
       </el-table-column>
-      <el-table-column label="最后活跃" width="160">
+      <el-table-column :label="$t('customerMgmt.lastActive')" width="160">
         <template #default="{ row }">
           {{ formatTime(row.lastActiveAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column :label="$t('common.operation')" width="150" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="showEditDialog(row)">编辑</el-button>
-          <el-button link type="primary" @click="showTagDialog(row)">标签</el-button>
+          <el-button link type="primary" @click="showEditDialog(row)">{{ $t('common.edit') }}</el-button>
+          <el-button link type="primary" @click="showTagDialog(row)">{{ $t('customerMgmt.tags') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <!-- 空状态 -->
-    <el-empty v-if="!selectedProjectId" description="请先选择项目" />
+    <el-empty v-if="!selectedProjectId" :description="$t('customerMgmt.selectProjectFirst')" />
 
     <!-- 分页 -->
     <div class="pagination-container" v-if="selectedProjectId && total > 0">
@@ -150,39 +150,39 @@
     <!-- 编辑用户对话框 -->
     <el-dialog
       v-model="editDialogVisible"
-      title="编辑用户"
+      :title="$t('customerMgmt.editCustomer')"
       width="500px"
       :close-on-click-modal="false"
     >
       <el-form :model="editForm" label-width="80px">
-        <el-form-item label="UID">
+        <el-form-item :label="$t('customerMgmt.uid')">
           <el-input :value="editingCustomer?.uid" disabled />
         </el-form-item>
-        <el-form-item label="昵称">
-          <el-input v-model="editForm.nickname" placeholder="请输入昵称" />
+        <el-form-item :label="$t('customerMgmt.nickname')">
+          <el-input v-model="editForm.nickname" :placeholder="$t('customerMgmt.nicknamePlaceholder')" />
         </el-form-item>
-        <el-form-item label="手机号">
-          <el-input v-model="editForm.phone" placeholder="请输入手机号" />
+        <el-form-item :label="$t('customerMgmt.phone')">
+          <el-input v-model="editForm.phone" :placeholder="$t('customerMgmt.phonePlaceholder')" />
         </el-form-item>
-        <el-form-item label="邮箱">
-          <el-input v-model="editForm.email" placeholder="请输入邮箱" />
+        <el-form-item :label="$t('customerMgmt.email')">
+          <el-input v-model="editForm.email" :placeholder="$t('customerMgmt.emailPlaceholder')" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="editDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitEdit" :loading="submitting">保存</el-button>
+        <el-button @click="editDialogVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitEdit" :loading="submitting">{{ $t('common.save') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 设置标签对话框 -->
     <el-dialog
       v-model="tagDialogVisible"
-      title="设置标签"
+      :title="$t('customerMgmt.setTags')"
       width="500px"
       :close-on-click-modal="false"
     >
       <div class="tag-dialog-content">
-        <p class="dialog-tip">为用户 "{{ editingCustomer?.nickname || editingCustomer?.uid }}" 设置标签</p>
+        <p class="dialog-tip">{{ $t('customerMgmt.forUserTags', { name: editingCustomer?.nickname || editingCustomer?.uid }) }}</p>
         <el-checkbox-group v-model="selectedTagIds">
           <div v-for="tag in projectTags" :key="tag.id" class="tag-checkbox-item">
             <el-checkbox :label="tag.id" :value="tag.id">
@@ -190,24 +190,24 @@
             </el-checkbox>
           </div>
         </el-checkbox-group>
-        <el-empty v-if="projectTags.length === 0" description="暂无标签，请先在标签管理中创建" />
+        <el-empty v-if="projectTags.length === 0" :description="$t('customerMgmt.noTagsHint')" />
       </div>
       <template #footer>
-        <el-button @click="tagDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitTags" :loading="submitting">保存</el-button>
+        <el-button @click="tagDialogVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitTags" :loading="submitting">{{ $t('common.save') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 批量设置标签对话框 -->
     <el-dialog
       v-model="batchTagDialogVisible"
-      title="批量设置标签"
+      :title="$t('customerMgmt.batchSetTagsTitle')"
       width="500px"
       :close-on-click-modal="false"
     >
       <div class="tag-dialog-content">
-        <p class="dialog-tip">为 {{ selectedUsers.length }} 个用户添加标签</p>
-        <el-select v-model="batchTagId" placeholder="请选择要添加的标签" style="width: 100%;">
+        <p class="dialog-tip">{{ $t('customerMgmt.forBatchUsers', { count: selectedUsers.length }) }}</p>
+        <el-select v-model="batchTagId" :placeholder="$t('customerMgmt.selectTagPlaceholder')" style="width: 100%;">
           <el-option
             v-for="tag in projectTags"
             :key="tag.id"
@@ -219,8 +219,8 @@
         </el-select>
       </div>
       <template #footer>
-        <el-button @click="batchTagDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitBatchTag" :loading="submitting">添加</el-button>
+        <el-button @click="batchTagDialogVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitBatchTag" :loading="submitting">{{ $t('customerMgmt.addLabel') }}</el-button>
       </template>
     </el-dialog>
   </div>
@@ -228,10 +228,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { Search, User } from '@element-plus/icons-vue'
 import request from '@/api'
 import { DEFAULT_PAGE_SIZE } from '@/constants'
+
+const { t } = useI18n()
 
 interface Project {
   id: number
@@ -351,10 +354,10 @@ const loadCustomers = async () => {
       // 加载每个用户的标签
       await loadUsersTags()
     } else {
-      ElMessage.error(res.message || '加载失败')
+      ElMessage.error(res.message || t('common.loadFailed'))
     }
   } catch (error) {
-    ElMessage.error('加载用户列表失败')
+    ElMessage.error(t('customerMgmt.loadListFailed'))
   } finally {
     loading.value = false
   }
@@ -436,14 +439,14 @@ const submitEdit = async () => {
   try {
     const res = await request.put(`/api/admin/customers/${editingCustomer.value.id}`, editForm) as any
     if (res.code === 0) {
-      ElMessage.success('保存成功')
+      ElMessage.success(t('common.saveSuccess'))
       editDialogVisible.value = false
       loadCustomers()
     } else {
-      ElMessage.error(res.message || '保存失败')
+      ElMessage.error(res.message || t('common.saveFailed'))
     }
   } catch (error) {
-    ElMessage.error('保存失败')
+    ElMessage.error(t('common.saveFailed'))
   } finally {
     submitting.value = false
   }
@@ -476,14 +479,14 @@ const submitTags = async () => {
       tagIds: selectedTagIds.value
     }) as any
     if (res.code === 0) {
-      ElMessage.success('标签设置成功')
+      ElMessage.success(t('customerMgmt.tagSetSuccess'))
       tagDialogVisible.value = false
       loadCustomers()
     } else {
-      ElMessage.error(res.message || '设置失败')
+      ElMessage.error(res.message || t('customerMgmt.tagSetFailed'))
     }
   } catch (error) {
-    ElMessage.error('设置失败')
+    ElMessage.error(t('customerMgmt.tagSetFailed'))
   } finally {
     submitting.value = false
   }
@@ -498,7 +501,7 @@ const showBatchTagDialog = () => {
 // 提交批量标签
 const submitBatchTag = async () => {
   if (!batchTagId.value) {
-    ElMessage.warning('请选择标签')
+    ElMessage.warning(t('customerMgmt.selectTag'))
     return
   }
 
@@ -509,15 +512,15 @@ const submitBatchTag = async () => {
       tagId: batchTagId.value
     }) as any
     if (res.code === 0) {
-      ElMessage.success('批量添加成功')
+      ElMessage.success(t('customerMgmt.batchAddSuccess'))
       batchTagDialogVisible.value = false
       selectedUsers.value = []
       loadCustomers()
     } else {
-      ElMessage.error(res.message || '操作失败')
+      ElMessage.error(res.message || t('common.operateFailed'))
     }
   } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('common.operateFailed'))
   } finally {
     submitting.value = false
   }

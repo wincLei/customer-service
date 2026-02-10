@@ -5,6 +5,7 @@ import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.SysUser;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -57,7 +58,7 @@ public class SysUserController {
     public ApiResponse<?> getUser(@PathVariable Long id) {
         return sysUserService.getUserById(id)
                 .map(user -> ApiResponse.success(toUserVO(user)))
-                .orElse(ApiResponse.error("用户不存在"));
+                .orElse(ApiResponse.error(I18nUtil.getMessage("user.not.found")));
     }
 
     /**
@@ -66,10 +67,10 @@ public class SysUserController {
     @PostMapping
     public ApiResponse<?> createUser(@RequestBody CreateUserRequest request) {
         if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
-            return ApiResponse.error("用户名不能为空");
+            return ApiResponse.error(I18nUtil.getMessage("user.username.required"));
         }
         if (request.getPassword() == null || request.getPassword().length() < 6) {
-            return ApiResponse.error("密码长度不能少于6位");
+            return ApiResponse.error(I18nUtil.getMessage("user.password.min.length"));
         }
 
         try {
@@ -111,13 +112,13 @@ public class SysUserController {
     @PostMapping("/{id}/password")
     public ApiResponse<?> changePassword(@PathVariable Long id, @RequestBody ChangePasswordRequest request) {
         if (request.getNewPassword() == null || request.getNewPassword().length() < 6) {
-            return ApiResponse.error("密码长度不能少于6位");
+            return ApiResponse.error(I18nUtil.getMessage("user.password.min.length"));
         }
 
         try {
             sysUserService.changePassword(id, request.getNewPassword());
             log.info("修改用户密码成功: ID={}", id);
-            return ApiResponse.success("密码修改成功");
+            return ApiResponse.success(I18nUtil.getMessage("auth.password.success"));
         } catch (RuntimeException e) {
             return ApiResponse.error(e.getMessage());
         }
@@ -131,7 +132,7 @@ public class SysUserController {
         try {
             sysUserService.deleteUser(id);
             log.info("删除用户成功: ID={}", id);
-            return ApiResponse.success("删除成功");
+            return ApiResponse.success(I18nUtil.getMessage("common.delete.success"));
         } catch (RuntimeException e) {
             return ApiResponse.error(e.getMessage());
         }

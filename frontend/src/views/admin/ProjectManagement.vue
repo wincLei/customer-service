@@ -1,11 +1,11 @@
 <template>
   <div class="project-management">
     <div class="page-header">
-      <h2>项目管理</h2>
+      <h2>{{ $t('projectMgmt.title') }}</h2>
       <div class="header-actions">
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索项目名称或AppKey"
+          :placeholder="$t('projectMgmt.searchPlaceholder')"
           style="width: 280px"
           clearable
           @keyup.enter="handleSearch"
@@ -15,10 +15,10 @@
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
-        <el-button type="primary" @click="handleSearch">搜索</el-button>
+        <el-button type="primary" @click="handleSearch">{{ $t('common.search') }}</el-button>
         <el-button type="primary" @click="showCreateDialog">
           <el-icon><Plus /></el-icon>
-          新建项目
+          {{ $t('projectMgmt.newProject') }}
         </el-button>
       </div>
     </div>
@@ -26,8 +26,8 @@
     <!-- 项目列表 -->
     <el-table :data="projects" style="width: 100%" v-loading="loading">
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="name" label="项目名称" min-width="150" />
-      <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
+      <el-table-column prop="name" :label="$t('projectMgmt.projectName')" min-width="150" />
+      <el-table-column prop="description" :label="$t('common.description')" min-width="200" show-overflow-tooltip />
       <el-table-column label="AppKey" min-width="280">
         <template #default="{ row }">
           <div class="key-cell">
@@ -52,16 +52,16 @@
           </div>
         </template>
       </el-table-column>
-      <el-table-column prop="createdAt" label="创建时间" width="180">
+      <el-table-column prop="createdAt" :label="$t('common.createdAt')" width="180">
         <template #default="{ row }">
           {{ formatDate(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column :label="$t('common.operation')" width="200" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="showEditDialog(row)">编辑</el-button>
-          <el-button link type="warning" @click="regenerateSecret(row)">重置密钥</el-button>
-          <el-button link type="danger" @click="deleteProject(row)">删除</el-button>
+          <el-button link type="primary" @click="showEditDialog(row)">{{ $t('common.edit') }}</el-button>
+          <el-button link type="warning" @click="regenerateSecret(row)">{{ $t('projectMgmt.resetSecret') }}</el-button>
+          <el-button link type="danger" @click="deleteProject(row)">{{ $t('common.delete') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -77,39 +77,39 @@
     <!-- 创建/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '编辑项目' : '新建项目'"
+      :title="isEdit ? $t('projectMgmt.editProject') : $t('projectMgmt.newProject')"
       width="550px"
       :close-on-click-modal="false"
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
-        <el-form-item label="项目名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入项目名称" maxlength="100" />
+        <el-form-item :label="$t('projectMgmt.projectName')" prop="name">
+          <el-input v-model="form.name" :placeholder="$t('projectMgmt.namePlaceholder')" maxlength="100" />
         </el-form-item>
-        <el-form-item label="描述" prop="description">
+        <el-form-item :label="$t('common.description')" prop="description">
           <el-input
             v-model="form.description"
             type="textarea"
             :rows="2"
-            placeholder="请输入项目描述"
+            :placeholder="$t('projectMgmt.descPlaceholder')"
             maxlength="500"
           />
         </el-form-item>
-        <el-form-item label="欢迎语" prop="welcomeMessage">
+        <el-form-item :label="$t('projectMgmt.welcomeMessage')" prop="welcomeMessage">
           <el-input
             v-model="form.welcomeMessage"
             type="textarea"
             :rows="3"
-            placeholder="用户进入聊天时显示的欢迎消息"
+            :placeholder="$t('projectMgmt.welcomeMsgPlaceholder')"
             maxlength="500"
             show-word-limit
           />
-          <div class="form-tip">用户打开客服聊天窗口时，系统自动发送的欢迎消息</div>
+          <div class="form-tip">{{ $t('projectMgmt.welcomeMsgTip') }}</div>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="dialogVisible = false">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitForm" :loading="submitting">
-          {{ isEdit ? '保存' : '创建' }}
+          {{ isEdit ? $t('common.save') : $t('common.create') }}
         </el-button>
       </template>
     </el-dialog>
@@ -118,10 +118,13 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, CopyDocument, View, Hide, Search } from '@element-plus/icons-vue'
 import request from '@/api'
 import Pagination from '@/components/Pagination.vue'
+
+const { t } = useI18n()
 
 interface Project {
   id: number
@@ -159,8 +162,8 @@ const form = reactive({
 
 const rules: FormRules = {
   name: [
-    { required: true, message: '请输入项目名称', trigger: 'blur' },
-    { min: 2, max: 100, message: '项目名称长度在2-100个字符之间', trigger: 'blur' }
+    { required: true, message: () => t('projectMgmt.nameRequired'), trigger: 'blur' },
+    { min: 2, max: 100, message: () => t('projectMgmt.nameLength'), trigger: 'blur' }
   ]
 }
 
@@ -179,10 +182,10 @@ const loadProjects = async () => {
       projects.value = res.data.list
       pagination.total = res.data.total
     } else {
-      ElMessage.error(res.message || '加载失败')
+      ElMessage.error(res.message || t('common.loadFailed'))
     }
   } catch (error) {
-    ElMessage.error('加载项目列表失败')
+    ElMessage.error(t('projectMgmt.loadListFailed'))
   } finally {
     loading.value = false
   }
@@ -194,7 +197,7 @@ const showCreateDialog = () => {
   editingId.value = null
   form.name = ''
   form.description = ''
-  form.welcomeMessage = '欢迎咨询，我们随时准备为您服务'
+  form.welcomeMessage = t('projectMgmt.defaultWelcome')
   dialogVisible.value = true
 }
 
@@ -227,14 +230,14 @@ const submitForm = async () => {
       }) as any
       
       if (res.code === 0) {
-        ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
+        ElMessage.success(isEdit.value ? t('projectMgmt.updateSuccess') : t('projectMgmt.createSuccess'))
         dialogVisible.value = false
         loadProjects()
       } else {
-        ElMessage.error(res.message || '操作失败')
+        ElMessage.error(res.message || t('common.operateFailed'))
       }
     } catch (error) {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('common.operateFailed'))
     } finally {
       submitting.value = false
     }
@@ -245,21 +248,21 @@ const submitForm = async () => {
 const deleteProject = async (project: Project) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除项目 "${project.name}" 吗？删除后无法恢复！`,
-      '删除确认',
+      t('projectMgmt.deleteConfirm', { name: project.name }),
+      t('projectMgmt.deleteConfirmTitle'),
       {
-        confirmButtonText: '确定删除',
-        cancelButtonText: '取消',
+        confirmButtonText: t('projectMgmt.confirmDelete'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
     )
     
     const res = await request.delete(`/api/admin/projects/${project.id}`) as any
     if (res.code === 0) {
-      ElMessage.success('删除成功')
+      ElMessage.success(t('projectMgmt.deleteSuccess'))
       loadProjects()
     } else {
-      ElMessage.error(res.message || '删除失败')
+      ElMessage.error(res.message || t('projectMgmt.deleteFailed'))
     }
   } catch (error) {
     // 用户取消删除
@@ -270,21 +273,21 @@ const deleteProject = async (project: Project) => {
 const regenerateSecret = async (project: Project) => {
   try {
     await ElMessageBox.confirm(
-      `确定要重新生成项目 "${project.name}" 的AppSecret吗？旧密钥将立即失效！`,
-      '重置密钥确认',
+      t('projectMgmt.secretConfirm', { name: project.name }),
+      t('projectMgmt.secretConfirmTitle'),
       {
-        confirmButtonText: '确定重置',
-        cancelButtonText: '取消',
+        confirmButtonText: t('projectMgmt.confirmReset'),
+        cancelButtonText: t('common.cancel'),
         type: 'warning'
       }
     )
     
     const res = await request.post(`/api/admin/projects/${project.id}/regenerate-secret`) as any
     if (res.code === 0) {
-      ElMessage.success('密钥已重新生成')
+      ElMessage.success(t('projectMgmt.secretRegenSuccess'))
       loadProjects()
     } else {
-      ElMessage.error(res.message || '重置失败')
+      ElMessage.error(res.message || t('projectMgmt.resetFailed'))
     }
   } catch (error) {
     // 用户取消
@@ -295,9 +298,9 @@ const regenerateSecret = async (project: Project) => {
 const copyToClipboard = async (text: string) => {
   try {
     await navigator.clipboard.writeText(text)
-    ElMessage.success('已复制到剪贴板')
+    ElMessage.success(t('projectMgmt.copied'))
   } catch (error) {
-    ElMessage.error('复制失败')
+    ElMessage.error(t('projectMgmt.copyFailed'))
   }
 }
 

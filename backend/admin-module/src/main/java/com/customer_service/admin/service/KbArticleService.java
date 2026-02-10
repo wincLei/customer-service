@@ -13,6 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.customer_service.shared.util.I18nUtil;
+
 @Service
 @RequiredArgsConstructor
 public class KbArticleService {
@@ -98,7 +100,7 @@ public class KbArticleService {
     @Transactional
     public KbArticle updateArticle(Long articleId, KbArticle updates) {
         KbArticle article = kbArticleRepository.findById(articleId)
-                .orElseThrow(() -> new RuntimeException("文章不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("kb.article.not.found")));
 
         article.setTitle(updates.getTitle());
         article.setContent(updates.getContent());
@@ -115,7 +117,7 @@ public class KbArticleService {
     @Transactional
     public void deleteArticle(Long articleId) {
         if (!kbArticleRepository.existsById(articleId)) {
-            throw new RuntimeException("文章不存在");
+            throw new RuntimeException(I18nUtil.getMessage("kb.article.not.found"));
         }
         kbArticleRepository.deleteById(articleId);
     }
@@ -126,7 +128,7 @@ public class KbArticleService {
     @Transactional
     public KbArticle togglePublish(Long articleId) {
         KbArticle article = kbArticleRepository.findById(articleId)
-                .orElseThrow(() -> new RuntimeException("文章不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("kb.article.not.found")));
         article.setIsPublished(!article.getIsPublished());
         article.setUpdatedAt(LocalDateTime.now());
         return kbArticleRepository.save(article);

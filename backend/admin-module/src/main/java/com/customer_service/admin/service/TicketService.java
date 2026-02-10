@@ -24,6 +24,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.HashMap;
 
+import com.customer_service.shared.util.I18nUtil;
+
 /**
  * 工单管理服务（Admin端）
  */
@@ -86,10 +88,11 @@ public class TicketService {
         List<TicketEvent> events = ticketEventRepository.findByTicketIdOrderByCreatedAtAsc(ticketId);
 
         // 获取用户信息
-        String userName = "未知用户";
+        String userName = I18nUtil.getMessage("ticket.unknown.user");
         if (ticket.getUserId() != null) {
             Optional<User> user = userRepository.findById(ticket.getUserId());
-            userName = user.map(User::getNickname).orElse("用户 " + ticket.getUserId());
+            userName = user.map(User::getNickname)
+                    .orElse(I18nUtil.getMessage("ticket.user.prefix") + ticket.getUserId());
         }
 
         return Optional.of(new TicketDetailDTO(ticket, events, userName));
@@ -121,7 +124,7 @@ public class TicketService {
     @Transactional
     public Ticket replyTicket(Long ticketId, Long operatorId, String content) {
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("工单不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("ticket.not.found")));
 
         // 创建回复事件
         TicketEvent event = new TicketEvent();
@@ -148,7 +151,7 @@ public class TicketService {
     @Transactional
     public Ticket updateStatus(Long ticketId, Long operatorId, String status) {
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("工单不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("ticket.not.found")));
 
         String oldStatus = ticket.getStatus();
         ticket.setStatus(status);
@@ -164,7 +167,7 @@ public class TicketService {
         event.setOperatorId(operatorId);
         event.setOperatorType(OperatorType.AGENT);
         event.setAction(TicketAction.STATUS_CHANGE);
-        event.setContent(String.format("状态从 %s 变更为 %s", oldStatus, status));
+        event.setContent(I18nUtil.getMessage("ticket.status.change", oldStatus, status));
         event.setCreatedAt(LocalDateTime.now());
         ticketEventRepository.save(event);
 
@@ -177,7 +180,7 @@ public class TicketService {
     @Transactional
     public Ticket assignTicket(Long ticketId, Long operatorId, Long assigneeId) {
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new RuntimeException("工单不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("ticket.not.found")));
 
         ticket.setAssigneeId(assigneeId);
         ticket.setUpdatedAt(LocalDateTime.now());
@@ -188,7 +191,7 @@ public class TicketService {
         event.setOperatorId(operatorId);
         event.setOperatorType(OperatorType.AGENT);
         event.setAction(TicketAction.ASSIGN);
-        event.setContent("分配给客服 ID: " + assigneeId);
+        event.setContent(I18nUtil.getMessage("ticket.assign.agent", assigneeId));
         event.setCreatedAt(LocalDateTime.now());
         ticketEventRepository.save(event);
 

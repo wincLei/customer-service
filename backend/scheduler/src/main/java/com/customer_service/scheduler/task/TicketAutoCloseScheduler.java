@@ -4,6 +4,7 @@ import com.customer_service.shared.constant.AppDefaults;
 import com.customer_service.shared.constant.OperatorType;
 import com.customer_service.shared.constant.TicketAction;
 import com.customer_service.shared.constant.TicketStatus;
+import com.customer_service.shared.util.I18nUtil;
 import com.customer_service.shared.entity.Ticket;
 import com.customer_service.shared.entity.TicketEvent;
 import com.customer_service.shared.repository.TicketEventRepository;
@@ -71,8 +72,7 @@ public class TicketAutoCloseScheduler {
                             .ticketId(ticket.getId())
                             .operatorType(OperatorType.SYSTEM)
                             .action(TicketAction.AUTO_CLOSE)
-                            .content(String.format(
-                                    "系统自动关闭：客服回复后用户超过%d小时未回复，工单状态从 %s 变更为 resolved",
+                            .content(I18nUtil.getMessage("ticket.auto.close",
                                     AppDefaults.AUTO_CLOSE_TIMEOUT_HOURS, oldStatus))
                             .createdAt(LocalDateTime.now())
                             .build();

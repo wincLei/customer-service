@@ -1,15 +1,15 @@
 <template>
   <div class="menu-management">
     <div class="page-header">
-      <h2>菜单管理</h2>
+      <h2>{{ $t('menuMgmt.title') }}</h2>
       <div class="header-actions">
         <el-button type="primary" @click="showCreateDialog(null)">
           <el-icon><Plus /></el-icon>
-          新建菜单
+          {{ $t('menuMgmt.newMenu') }}
         </el-button>
         <el-button @click="loadMenuTree">
           <el-icon><Refresh /></el-icon>
-          刷新
+          {{ $t('common.refresh') }}
         </el-button>
       </div>
     </div>
@@ -23,7 +23,7 @@
       v-loading="loading"
       default-expand-all
     >
-      <el-table-column prop="name" label="菜单名称" min-width="180">
+      <el-table-column prop="name" :label="$t('menuMgmt.menuName')" min-width="180">
         <template #default="{ row }">
           <span>
             <el-icon v-if="row.icon" style="margin-right: 5px">
@@ -33,17 +33,17 @@
           </span>
         </template>
       </el-table-column>
-      <el-table-column prop="code" label="菜单编码" width="150" />
-      <el-table-column prop="type" label="类型" width="100">
+      <el-table-column prop="code" :label="$t('menuMgmt.menuCode')" width="150" />
+      <el-table-column prop="type" :label="$t('menuMgmt.type')" width="100">
         <template #default="{ row }">
           <el-tag :type="row.type === 'menu' ? 'primary' : 'success'" size="small">
-            {{ row.type === 'menu' ? '菜单' : '按钮' }}
+            {{ row.type === 'menu' ? $t('menuMgmt.menu') : $t('menuMgmt.button') }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="path" label="路径" width="150" />
-      <el-table-column prop="sortOrder" label="排序" width="80" align="center" />
-      <el-table-column label="状态" width="100" align="center">
+      <el-table-column prop="path" :label="$t('menuMgmt.path')" width="150" />
+      <el-table-column prop="sortOrder" :label="$t('menuMgmt.sort')" width="80" align="center" />
+      <el-table-column :label="$t('common.status')" width="100" align="center">
         <template #default="{ row }">
           <el-switch
             v-model="row.isEnabled"
@@ -51,16 +51,16 @@
           />
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column :label="$t('common.operation')" width="200" fixed="right">
         <template #default="{ row }">
           <el-button link type="primary" size="small" @click="showCreateDialog(row.id)">
-            添加子级
+            {{ $t('menuMgmt.addChild') }}
           </el-button>
           <el-button link type="primary" size="small" @click="showEditDialog(row)">
-            编辑
+            {{ $t('common.edit') }}
           </el-button>
           <el-button link type="danger" size="small" @click="deleteMenu(row)">
-            删除
+            {{ $t('common.delete') }}
           </el-button>
         </template>
       </el-table-column>
@@ -69,66 +69,66 @@
     <!-- 创建/编辑菜单对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '编辑菜单' : '新建菜单'"
+      :title="isEdit ? $t('menuMgmt.editMenu') : $t('menuMgmt.newMenu')"
       width="550px"
       :close-on-click-modal="false"
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="100px">
-        <el-form-item label="父级菜单">
+        <el-form-item :label="$t('menuMgmt.parentMenu')">
           <el-tree-select
             v-model="form.parentId"
             :data="parentMenuOptions"
             :props="{ label: 'name', value: 'id', children: 'children' }"
-            placeholder="无（顶级菜单）"
+            :placeholder="$t('menuMgmt.noParent')"
             clearable
             check-strictly
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="菜单类型" prop="type">
+        <el-form-item :label="$t('menuMgmt.menuType')" prop="type">
           <el-radio-group v-model="form.type">
-            <el-radio value="menu">菜单</el-radio>
-            <el-radio value="button">按钮/操作</el-radio>
+            <el-radio value="menu">{{ $t('menuMgmt.menu') }}</el-radio>
+            <el-radio value="button">{{ $t('menuMgmt.buttonAction') }}</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="菜单编码" prop="code">
+        <el-form-item :label="$t('menuMgmt.menuCode')" prop="code">
           <el-input 
             v-model="form.code" 
-            placeholder="如：dashboard、user:manage"
+            :placeholder="$t('menuMgmt.codePlaceholder')"
             maxlength="50"
           />
-          <div class="form-tip">唯一标识，用于权限判断</div>
+          <div class="form-tip">{{ $t('menuMgmt.codeTip') }}</div>
         </el-form-item>
-        <el-form-item label="菜单名称" prop="name">
-          <el-input v-model="form.name" placeholder="请输入菜单名称" maxlength="100" />
+        <el-form-item :label="$t('menuMgmt.menuName')" prop="name">
+          <el-input v-model="form.name" :placeholder="$t('menuMgmt.namePlaceholder')" maxlength="100" />
         </el-form-item>
-        <el-form-item label="路由路径" v-if="form.type === 'menu'">
-          <el-input v-model="form.path" placeholder="如：/admin/dashboard" maxlength="200" />
+        <el-form-item :label="$t('menuMgmt.routePath')" v-if="form.type === 'menu'">
+          <el-input v-model="form.path" :placeholder="$t('menuMgmt.pathPlaceholder')" maxlength="200" />
         </el-form-item>
-        <el-form-item label="图标" v-if="form.type === 'menu'">
-          <el-input v-model="form.icon" placeholder="Element Plus 图标名称" maxlength="100" />
+        <el-form-item :label="$t('menuMgmt.icon')" v-if="form.type === 'menu'">
+          <el-input v-model="form.icon" :placeholder="$t('menuMgmt.iconPlaceholder')" maxlength="100" />
         </el-form-item>
-        <el-form-item label="排序号" prop="sortOrder">
+        <el-form-item :label="$t('menuMgmt.sortOrder')" prop="sortOrder">
           <el-input-number v-model="form.sortOrder" :min="0" :max="999" />
-          <span class="form-tip" style="margin-left: 10px">数值越小越靠前</span>
+          <span class="form-tip" style="margin-left: 10px">{{ $t('menuMgmt.sortTip') }}</span>
         </el-form-item>
-        <el-form-item label="是否启用">
+        <el-form-item :label="$t('menuMgmt.enabled')">
           <el-switch v-model="form.isEnabled" />
         </el-form-item>
-        <el-form-item label="描述">
+        <el-form-item :label="$t('common.description')">
           <el-input 
             v-model="form.description" 
             type="textarea" 
             :rows="2"
-            placeholder="菜单功能描述" 
+            :placeholder="$t('menuMgmt.descPlaceholder')" 
             maxlength="255" 
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="dialogVisible = false">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitForm" :loading="submitting">
-          {{ isEdit ? '保存' : '创建' }}
+          {{ isEdit ? $t('common.save') : $t('common.create') }}
         </el-button>
       </template>
     </el-dialog>
@@ -137,9 +137,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Refresh } from '@element-plus/icons-vue'
 import request from '@/api'
+
+const { t } = useI18n()
 
 interface MenuItem {
   id: number
@@ -177,16 +180,16 @@ const form = reactive({
 
 const rules: FormRules = {
   code: [
-    { required: true, message: '请输入菜单编码', trigger: 'blur' },
-    { min: 2, max: 50, message: '编码长度在2-50个字符之间', trigger: 'blur' },
-    { pattern: /^[a-zA-Z][a-zA-Z0-9_:]*$/, message: '编码只能包含字母、数字、下划线和冒号，且以字母开头', trigger: 'blur' }
+    { required: true, message: () => t('menuMgmt.codeRequired'), trigger: 'blur' },
+    { min: 2, max: 50, message: () => t('menuMgmt.codeLength'), trigger: 'blur' },
+    { pattern: /^[a-zA-Z][a-zA-Z0-9_:]*$/, message: () => t('menuMgmt.codePattern'), trigger: 'blur' }
   ],
   name: [
-    { required: true, message: '请输入菜单名称', trigger: 'blur' },
-    { min: 1, max: 100, message: '名称长度在1-100个字符之间', trigger: 'blur' }
+    { required: true, message: () => t('menuMgmt.nameRequired'), trigger: 'blur' },
+    { min: 1, max: 100, message: () => t('menuMgmt.nameLength'), trigger: 'blur' }
   ],
   type: [
-    { required: true, message: '请选择菜单类型', trigger: 'change' }
+    { required: true, message: () => t('menuMgmt.typeRequired'), trigger: 'change' }
   ]
 }
 
@@ -214,10 +217,10 @@ const loadMenuTree = async () => {
     if (res.code === 0) {
       menuTree.value = res.data
     } else {
-      ElMessage.error(res.message || '加载失败')
+      ElMessage.error(res.message || t('common.loadFailed'))
     }
   } catch (error) {
-    ElMessage.error('加载菜单列表失败')
+    ElMessage.error(t('menuMgmt.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -282,14 +285,14 @@ const submitForm = async () => {
       const res = await request[method](url, data) as any
       
       if (res.code === 0) {
-        ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
+        ElMessage.success(isEdit.value ? t('common.updateSuccess') : t('common.createSuccess'))
         dialogVisible.value = false
         loadMenuTree()
       } else {
-        ElMessage.error(res.message || '操作失败')
+        ElMessage.error(res.message || t('common.operateFailed'))
       }
     } catch (error) {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('common.operateFailed'))
     } finally {
       submitting.value = false
     }
@@ -305,11 +308,11 @@ const toggleStatus = async (menu: MenuItem) => {
     } else {
       // 恢复状态
       menu.isEnabled = !menu.isEnabled
-      ElMessage.error(res.message || '操作失败')
+      ElMessage.error(res.message || t('common.operateFailed'))
     }
   } catch (error) {
     menu.isEnabled = !menu.isEnabled
-    ElMessage.error('操作失败')
+    ElMessage.error(t('common.operateFailed'))
   }
 }
 
@@ -317,17 +320,17 @@ const toggleStatus = async (menu: MenuItem) => {
 const deleteMenu = async (menu: MenuItem) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除菜单 "${menu.name}" 吗？`,
-      '删除确认',
-      { confirmButtonText: '确定删除', cancelButtonText: '取消', type: 'warning' }
+      t('menuMgmt.deleteConfirm', { name: menu.name }),
+      t('menuMgmt.deleteConfirmTitle'),
+      { confirmButtonText: t('common.confirmDelete'), cancelButtonText: t('common.cancel'), type: 'warning' }
     )
     
     const res = await request.delete(`/api/admin/menus/${menu.id}`) as any
     if (res.code === 0) {
-      ElMessage.success('删除成功')
+      ElMessage.success(t('common.deleteSuccess'))
       loadMenuTree()
     } else {
-      ElMessage.error(res.message || '删除失败')
+      ElMessage.error(res.message || t('common.deleteFailed'))
     }
   } catch (error) {
     // 用户取消

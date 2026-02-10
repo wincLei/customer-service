@@ -5,6 +5,7 @@ import com.customer_service.shared.annotation.RequirePermission;
 import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.QuickReply;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -60,7 +61,7 @@ public class QuickReplyController {
                     existing.setCategory(quickReply.getCategory());
                     return ApiResponse.success(quickReplyRepository.save(existing));
                 })
-                .orElse(ApiResponse.error("快捷回复不存在"));
+                .orElse(ApiResponse.error(I18nUtil.getMessage("quick.reply.not.found")));
     }
 
     /**
@@ -73,6 +74,6 @@ public class QuickReplyController {
             quickReplyRepository.deleteById(id);
             return ApiResponse.success(null);
         }
-        return ApiResponse.error("快捷回复不存在");
+        return ApiResponse.error(I18nUtil.getMessage("quick.reply.not.found"));
     }
 }

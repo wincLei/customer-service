@@ -2,6 +2,7 @@ package com.customer_service.admin.interceptor;
 
 import com.customer_service.shared.annotation.Public;
 import com.customer_service.shared.annotation.RequirePermission;
+import com.customer_service.shared.util.I18nUtil;
 import com.customer_service.shared.constant.AppDefaults;
 import com.customer_service.shared.context.UserContextHolder;
 import com.customer_service.shared.dto.ApiResponse;
@@ -65,14 +66,14 @@ public class AuthInterceptor implements HandlerInterceptor {
         // 获取token
         String token = extractToken(request);
         if (token == null || token.isEmpty()) {
-            sendUnauthorized(response, "未登录或登录已过期");
+            sendUnauthorized(response, I18nUtil.getMessage("auth.not.logged.in"));
             return false;
         }
 
         // 从Redis获取用户信息
         String userInfoJson = redisTemplate.opsForValue().get(AppDefaults.REDIS_TOKEN_PREFIX + token);
         if (userInfoJson == null) {
-            sendUnauthorized(response, "登录已过期，请重新登录");
+            sendUnauthorized(response, I18nUtil.getMessage("auth.token.expired"));
             return false;
         }
 
@@ -113,7 +114,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             RequirePermission requirePermission = getRequirePermission(handlerMethod);
             if (requirePermission != null) {
                 if (!checkPermission(context, requirePermission)) {
-                    sendForbidden(response, "无权访问此资源");
+                    sendForbidden(response, I18nUtil.getMessage("auth.no.permission"));
                     return false;
                 }
             }
@@ -122,7 +123,7 @@ public class AuthInterceptor implements HandlerInterceptor {
 
         } catch (Exception e) {
             log.error("解析用户信息失败", e);
-            sendUnauthorized(response, "登录信息无效");
+            sendUnauthorized(response, I18nUtil.getMessage("auth.info.invalid"));
             return false;
         }
     }

@@ -9,6 +9,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.customer_service.shared.util.I18nUtil;
+
 @Service
 @RequiredArgsConstructor
 public class SysMenuService {
@@ -88,13 +90,13 @@ public class SysMenuService {
     @Transactional
     public SysMenu createMenu(SysMenu menu) {
         if (menuRepository.existsByCode(menu.getCode())) {
-            throw new RuntimeException("菜单编码已存在");
+            throw new RuntimeException(I18nUtil.getMessage("menu.code.exists"));
         }
 
         // 验证父级菜单
         if (menu.getParentId() != null) {
             menuRepository.findById(menu.getParentId())
-                    .orElseThrow(() -> new RuntimeException("父级菜单不存在"));
+                    .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("menu.parent.not.found")));
         }
 
         return menuRepository.save(menu);
@@ -106,24 +108,24 @@ public class SysMenuService {
     @Transactional
     public SysMenu updateMenu(Long id, SysMenu menuData) {
         SysMenu menu = menuRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("菜单不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("menu.not.found")));
 
         // 检查编码是否被其他菜单使用
         if (!menu.getCode().equals(menuData.getCode()) && menuRepository.existsByCode(menuData.getCode())) {
-            throw new RuntimeException("菜单编码已被其他菜单使用");
+            throw new RuntimeException(I18nUtil.getMessage("menu.code.used"));
         }
 
         // 验证父级菜单（不能将自己设置为自己的父级）
         if (menuData.getParentId() != null) {
             if (menuData.getParentId().equals(id)) {
-                throw new RuntimeException("不能将菜单设置为自己的子菜单");
+                throw new RuntimeException(I18nUtil.getMessage("menu.cannot.set.self.parent"));
             }
             // 检查是否形成循环
             if (isDescendant(id, menuData.getParentId())) {
-                throw new RuntimeException("不能将菜单设置为其子菜单的子菜单");
+                throw new RuntimeException(I18nUtil.getMessage("menu.cannot.set.descendant.parent"));
             }
             menuRepository.findById(menuData.getParentId())
-                    .orElseThrow(() -> new RuntimeException("父级菜单不存在"));
+                    .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("menu.parent.not.found")));
         }
 
         menu.setCode(menuData.getCode());
@@ -161,12 +163,12 @@ public class SysMenuService {
     @Transactional
     public void deleteMenu(Long id) {
         SysMenu menu = menuRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("菜单不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("menu.not.found")));
 
         // 检查是否有子菜单
         List<SysMenu> children = menuRepository.findByParentIdOrderBySortOrderAsc(id);
         if (!children.isEmpty()) {
-            throw new RuntimeException("请先删除子菜单");
+            throw new RuntimeException(I18nUtil.getMessage("menu.delete.children.first"));
         }
 
         menuRepository.delete(menu);
@@ -178,7 +180,7 @@ public class SysMenuService {
     @Transactional
     public SysMenu toggleMenuStatus(Long id) {
         SysMenu menu = menuRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("菜单不存在"));
+                .orElseThrow(() -> new RuntimeException(I18nUtil.getMessage("menu.not.found")));
         menu.setIsEnabled(!menu.getIsEnabled());
         return menuRepository.save(menu);
     }

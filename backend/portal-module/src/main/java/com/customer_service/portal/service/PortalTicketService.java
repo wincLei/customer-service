@@ -4,6 +4,7 @@ import com.customer_service.shared.constant.OperatorType;
 import com.customer_service.shared.constant.TicketAction;
 import com.customer_service.shared.constant.TicketPriority;
 import com.customer_service.shared.constant.TicketStatus;
+import com.customer_service.shared.util.I18nUtil;
 import com.customer_service.shared.entity.Ticket;
 import com.customer_service.shared.entity.TicketEvent;
 import com.customer_service.shared.repository.TicketEventRepository;
@@ -51,7 +52,7 @@ public class PortalTicketService {
                 .operatorType(OperatorType.USER)
                 .operatorId(userId)
                 .action(TicketAction.CREATE)
-                .content("用户创建工单")
+                .content(I18nUtil.getMessage("ticket.user.create"))
                 .build();
 
         ticketEventRepository.save(event);
@@ -88,10 +89,10 @@ public class PortalTicketService {
     @Transactional
     public TicketEvent replyTicket(Long ticketId, Long userId, String content) {
         Ticket ticket = ticketRepository.findById(ticketId)
-                .orElseThrow(() -> new IllegalArgumentException("工单不存在"));
+                .orElseThrow(() -> new IllegalArgumentException(I18nUtil.getMessage("ticket.not.found")));
 
         if (!ticket.getUserId().equals(userId)) {
-            throw new IllegalArgumentException("无权操作此工单");
+            throw new IllegalArgumentException(I18nUtil.getMessage("ticket.no.permission"));
         }
 
         TicketEvent event = TicketEvent.builder()

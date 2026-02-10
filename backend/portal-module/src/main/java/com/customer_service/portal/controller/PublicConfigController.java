@@ -3,6 +3,7 @@ package com.customer_service.portal.controller;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.Project;
 import com.customer_service.shared.repository.ProjectRepository;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -25,13 +26,13 @@ public class PublicConfigController {
         Optional<Project> projectOpt = projectRepository.findById(projectId);
 
         if (projectOpt.isEmpty()) {
-            return ApiResponse.fail(404, "项目不存在");
+            return ApiResponse.fail(404, I18nUtil.getMessage("portal.project.not.found"));
         }
 
         Project project = projectOpt.get();
 
         // 解析配置
-        String welcomeMessage = "欢迎咨询，我们随时准备为您服务";
+        String welcomeMessage = I18nUtil.getMessage("portal.welcome.message");
         String themeColor = "#1890FF";
         String workingHours = "09:00-18:00";
 

@@ -23,11 +23,11 @@ export const TicketPriority = {
  * 工单状态标签映射
  */
 export const TicketStatusLabel: Record<string, string> = {
-  [TicketStatus.OPEN]: '待处理',
-  [TicketStatus.PENDING]: '待处理',
-  [TicketStatus.PROCESSING]: '处理中',
-  [TicketStatus.RESOLVED]: '已解决',
-  [TicketStatus.CLOSED]: '已关闭',
+  [TicketStatus.OPEN]: 'ticket.status.open',
+  [TicketStatus.PENDING]: 'ticket.status.pending',
+  [TicketStatus.PROCESSING]: 'ticket.status.processing',
+  [TicketStatus.RESOLVED]: 'ticket.status.resolved',
+  [TicketStatus.CLOSED]: 'ticket.status.closed',
 }
 
 /**
@@ -45,10 +45,10 @@ export const TicketStatusType: Record<string, string> = {
  * 工单优先级标签映射
  */
 export const TicketPriorityLabel: Record<string, string> = {
-  [TicketPriority.LOW]: '低',
-  [TicketPriority.MEDIUM]: '中',
-  [TicketPriority.HIGH]: '高',
-  [TicketPriority.URGENT]: '紧急',
+  [TicketPriority.LOW]: 'ticket.priority.low',
+  [TicketPriority.MEDIUM]: 'ticket.priority.medium',
+  [TicketPriority.HIGH]: 'ticket.priority.high',
+  [TicketPriority.URGENT]: 'ticket.priority.urgent',
 }
 
 /**

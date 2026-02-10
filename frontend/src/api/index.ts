@@ -1,6 +1,9 @@
 import axios, { AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 import { StorageKeys, API_TIMEOUT } from '@/constants'
+import i18n from '@/locales'
+
+const { t } = i18n.global
 
 export interface ApiResponse<T = any> {
   code: number
@@ -33,11 +36,11 @@ api.interceptors.response.use(
       // 未登录或token过期
       localStorage.removeItem(StorageKeys.AUTH_TOKEN)
       localStorage.removeItem(StorageKeys.USER_INFO)
-      ElMessage.error('登录已过期，请重新登录')
+      ElMessage.error(t('auth.loginExpired'))
       window.location.href = '/login'
     } else if (error.response?.status === 403) {
       // 无权限
-      ElMessage.error('您没有权限访问此资源')
+      ElMessage.error(t('auth.noPermission'))
     }
     
     // 返回错误响应
@@ -47,7 +50,7 @@ api.interceptors.response.use(
     
     return Promise.reject({
       code: error.response?.status || 500,
-      message: error.message || '请求失败',
+      message: error.message || t('auth.requestFailed'),
       data: null,
     })
   }

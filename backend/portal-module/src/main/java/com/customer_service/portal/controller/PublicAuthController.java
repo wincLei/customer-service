@@ -3,6 +3,7 @@ package com.customer_service.portal.controller;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.dto.LoginRequest;
 import com.customer_service.shared.dto.LoginResponse;
+import com.customer_service.shared.util.I18nUtil;
 import com.customer_service.shared.entity.SysUser;
 import com.customer_service.shared.util.JwtTokenProvider;
 import com.customer_service.portal.service.PortalAgentService;
@@ -24,17 +25,17 @@ public class PublicAuthController {
     @PostMapping("/login")
     public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request) {
         if (request.getUsername() == null || request.getUsername().isEmpty()) {
-            return ApiResponse.fail(400, "用户名不能为空");
+            return ApiResponse.fail(400, I18nUtil.getMessage("portal.auth.username.required"));
         }
 
         if (request.getPassword() == null || request.getPassword().isEmpty()) {
-            return ApiResponse.fail(400, "密码不能为空");
+            return ApiResponse.fail(400, I18nUtil.getMessage("portal.auth.password.required"));
         }
 
         Optional<SysUser> userOptional = agentService.authenticate(request.getUsername(), request.getPassword());
 
         if (userOptional.isEmpty()) {
-            return ApiResponse.fail(401, "用户名或密码错误");
+            return ApiResponse.fail(401, I18nUtil.getMessage("portal.auth.login.failed"));
         }
 
         SysUser user = userOptional.get();
@@ -66,20 +67,20 @@ public class PublicAuthController {
     @PostMapping("/refresh")
     public ApiResponse<LoginResponse> refreshToken(@RequestHeader("Authorization") String authHeader) {
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ApiResponse.fail(401, "无效的令牌");
+            return ApiResponse.fail(401, I18nUtil.getMessage("auth.token.invalid"));
         }
 
         String token = authHeader.substring(7);
 
         if (!jwtTokenProvider.validateToken(token)) {
-            return ApiResponse.fail(401, "令牌已过期");
+            return ApiResponse.fail(401, I18nUtil.getMessage("auth.token.expired.portal"));
         }
 
         String username = jwtTokenProvider.getUsernameFromToken(token);
         Optional<SysUser> userOptional = agentService.findByUsername(username);
 
         if (userOptional.isEmpty()) {
-            return ApiResponse.fail(401, "用户不存在");
+            return ApiResponse.fail(401, I18nUtil.getMessage("auth.user.not.found"));
         }
 
         SysUser user = userOptional.get();

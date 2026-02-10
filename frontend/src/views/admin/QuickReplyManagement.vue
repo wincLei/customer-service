@@ -1,11 +1,11 @@
 <template>
   <div class="quick-reply-management">
     <div class="page-header">
-      <h2>快捷回复管理</h2>
+      <h2>{{ $t('quickReplyMgmt.title') }}</h2>
       <div class="header-actions">
         <el-select 
           v-model="selectedProjectId" 
-          placeholder="请选择项目" 
+          :placeholder="$t('quickReplyMgmt.selectProject')"
           style="width: 200px; margin-right: 16px;"
           @change="onProjectChange"
         >
@@ -18,7 +18,7 @@
         </el-select>
         <el-button type="primary" @click="showCreateDialog" :disabled="!selectedProjectId">
           <el-icon><Plus /></el-icon>
-          新建快捷回复
+          {{ $t('quickReplyMgmt.newReply') }}
         </el-button>
       </div>
     </div>
@@ -26,7 +26,7 @@
     <!-- 分类筛选 -->
     <div class="filter-bar" v-if="selectedProjectId">
       <el-radio-group v-model="selectedCategory" @change="filterByCategory">
-        <el-radio-button label="">全部</el-radio-button>
+        <el-radio-button label="">{{ $t('quickReplyMgmt.all') }}</el-radio-button>
         <el-radio-button 
           v-for="cat in categories" 
           :key="cat" 
@@ -45,63 +45,63 @@
       v-loading="loading"
     >
       <el-table-column prop="id" label="ID" width="80" />
-      <el-table-column prop="title" label="标题" width="200">
+      <el-table-column prop="title" :label="$t('quickReplyMgmt.replyTitle')" width="200">
         <template #default="{ row }">
           {{ row.title || '-' }}
         </template>
       </el-table-column>
-      <el-table-column prop="content" label="内容" min-width="300">
+      <el-table-column prop="content" :label="$t('quickReplyMgmt.content')" min-width="300">
         <template #default="{ row }">
           <div class="content-preview">{{ row.content }}</div>
         </template>
       </el-table-column>
-      <el-table-column prop="category" label="分类" width="120">
+      <el-table-column prop="category" :label="$t('quickReplyMgmt.category')" width="120">
         <template #default="{ row }">
           <el-tag v-if="row.category" size="small">{{ row.category }}</el-tag>
-          <span v-else class="text-muted">未分类</span>
+          <span v-else class="text-muted">{{ $t('quickReplyMgmt.uncategorized') }}</span>
         </template>
       </el-table-column>
-      <el-table-column label="创建时间" width="180">
+      <el-table-column :label="$t('common.createdAt')" width="180">
         <template #default="{ row }">
           {{ formatTime(row.createdAt) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" width="150" fixed="right">
+      <el-table-column :label="$t('common.operation')" width="150" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" @click="showEditDialog(row)">编辑</el-button>
-          <el-button link type="danger" @click="deleteReply(row)">删除</el-button>
+          <el-button link type="primary" @click="showEditDialog(row)">{{ $t('common.edit') }}</el-button>
+          <el-button link type="danger" @click="deleteReply(row)">{{ $t('common.delete') }}</el-button>
         </template>
       </el-table-column>
     </el-table>
 
     <!-- 空状态 -->
-    <el-empty v-if="!selectedProjectId" description="请先选择项目" />
+    <el-empty v-if="!selectedProjectId" :description="$t('quickReplyMgmt.selectProjectFirst')" />
 
     <!-- 创建/编辑快捷回复对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="isEdit ? '编辑快捷回复' : '新建快捷回复'"
+      :title="isEdit ? $t('quickReplyMgmt.editReply') : $t('quickReplyMgmt.newReply')"
       width="600px"
       :close-on-click-modal="false"
     >
       <el-form :model="form" :rules="rules" ref="formRef" label-width="80px">
-        <el-form-item label="标题">
-          <el-input v-model="form.title" placeholder="请输入标题（可选）" maxlength="100" />
+        <el-form-item :label="$t('quickReplyMgmt.replyTitle')">
+          <el-input v-model="form.title" :placeholder="$t('quickReplyMgmt.titlePlaceholder')" maxlength="100" />
         </el-form-item>
-        <el-form-item label="内容" prop="content">
+        <el-form-item :label="$t('quickReplyMgmt.content')" prop="content">
           <el-input 
             v-model="form.content" 
             type="textarea" 
             :rows="6"
-            placeholder="请输入快捷回复内容" 
+            :placeholder="$t('quickReplyMgmt.contentPlaceholder')" 
             maxlength="1000"
             show-word-limit
           />
         </el-form-item>
-        <el-form-item label="分类">
+        <el-form-item :label="$t('quickReplyMgmt.category')">
           <el-select 
             v-model="form.category" 
-            placeholder="选择或输入分类"
+            :placeholder="$t('quickReplyMgmt.categoryPlaceholder')"
             filterable
             allow-create
             clearable
@@ -117,9 +117,9 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button @click="dialogVisible = false">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitForm" :loading="submitting">
-          {{ isEdit ? '保存' : '创建' }}
+          {{ isEdit ? $t('common.save') : $t('common.create') }}
         </el-button>
       </template>
     </el-dialog>
@@ -128,9 +128,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import request from '@/api'
+
+const { t } = useI18n()
 
 interface Project {
   id: number
@@ -166,8 +169,8 @@ const form = reactive({
 
 const rules: FormRules = {
   content: [
-    { required: true, message: '请输入快捷回复内容', trigger: 'blur' },
-    { min: 1, max: 1000, message: '内容长度在 1 到 1000 个字符', trigger: 'blur' }
+    { required: true, message: () => t('quickReplyMgmt.contentRequired'), trigger: 'blur' },
+    { min: 1, max: 1000, message: () => t('quickReplyMgmt.contentLength'), trigger: 'blur' }
   ]
 }
 
@@ -228,10 +231,10 @@ const loadReplies = async () => {
     if (res.code === 0) {
       replies.value = res.data
     } else {
-      ElMessage.error(res.message || '加载失败')
+      ElMessage.error(res.message || t('common.loadFailed'))
     }
   } catch (error) {
-    ElMessage.error('加载快捷回复列表失败')
+    ElMessage.error(t('quickReplyMgmt.loadFailed'))
   } finally {
     loading.value = false
   }
@@ -277,11 +280,11 @@ const submitForm = async () => {
         category: form.category
       }) as any
       if (res.code === 0) {
-        ElMessage.success('更新成功')
+        ElMessage.success(t('common.updateSuccess'))
         dialogVisible.value = false
         loadReplies()
       } else {
-        ElMessage.error(res.message || '更新失败')
+        ElMessage.error(res.message || t('common.updateFailed'))
       }
     } else {
       // 创建
@@ -292,15 +295,15 @@ const submitForm = async () => {
         category: form.category
       }) as any
       if (res.code === 0) {
-        ElMessage.success('创建成功')
+        ElMessage.success(t('common.createSuccess'))
         dialogVisible.value = false
         loadReplies()
       } else {
-        ElMessage.error(res.message || '创建失败')
+        ElMessage.error(res.message || t('common.createFailed'))
       }
     }
   } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.error(t('common.operateFailed'))
   } finally {
     submitting.value = false
   }
@@ -310,21 +313,21 @@ const submitForm = async () => {
 const deleteReply = async (reply: QuickReply) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除快捷回复 "${reply.title || reply.content.substring(0, 20)}..." 吗？`,
-      '确认删除',
+      t('quickReplyMgmt.deleteConfirm', { name: reply.title || reply.content.substring(0, 20) }),
+      t('quickReplyMgmt.confirmDeleteTitle'),
       { type: 'warning' }
     )
 
     const res = await request.delete(`/api/admin/quick-replies/${reply.id}`) as any
     if (res.code === 0) {
-      ElMessage.success('删除成功')
+      ElMessage.success(t('common.deleteSuccess'))
       loadReplies()
     } else {
-      ElMessage.error(res.message || '删除失败')
+      ElMessage.error(res.message || t('common.deleteFailed'))
     }
   } catch (error) {
     if (error !== 'cancel') {
-      ElMessage.error('删除失败')
+      ElMessage.error(t('common.deleteFailed'))
     }
   }
 }

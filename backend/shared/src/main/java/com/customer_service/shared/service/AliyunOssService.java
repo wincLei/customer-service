@@ -1,6 +1,7 @@
 package com.customer_service.shared.service;
 
 import com.aliyun.oss.common.utils.BinaryUtil;
+import com.customer_service.shared.util.I18nUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
@@ -75,7 +76,7 @@ public class AliyunOssService {
             log.warn("OSS configuration is incomplete: accessKeyId={}, bucket={}",
                     accessKeyId.isBlank() ? "missing" : "ok",
                     bucket.isBlank() ? "missing" : "ok");
-            result.put("error", "OSS 配置不完整");
+            result.put("error", I18nUtil.getMessage("oss.config.incomplete"));
             return result;
         }
 
@@ -160,7 +161,7 @@ public class AliyunOssService {
             return result;
         } catch (Exception e) {
             log.error("Failed to generate OSS upload token", e);
-            result.put("error", "生成上传凭证失败: " + e.getMessage());
+            result.put("error", I18nUtil.getMessage("oss.upload.credential.error", e.getMessage()));
             return result;
         }
     }

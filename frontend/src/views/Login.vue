@@ -1,7 +1,7 @@
 <template>
   <div class="login-container">
     <div class="login-box">
-      <h2 class="login-title">极简客服系统</h2>
+      <h2 class="login-title">{{ $t('auth.title') }}</h2>
       
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="form-item">
@@ -15,12 +15,12 @@
             <input
               v-model="form.username"
               type="text"
-              placeholder="账号"
+              :placeholder="$t('auth.username')"
               class="form-input"
               :disabled="loading"
               required
             />
-            <span class="input-badge">账号</span>
+            <span class="input-badge">{{ $t('auth.username') }}</span>
           </div>
         </div>
 
@@ -35,12 +35,12 @@
             <input
               v-model="form.password"
               :type="showPassword ? 'text' : 'password'"
-              placeholder="密码"
+              :placeholder="$t('auth.password')"
               class="form-input"
               :disabled="loading"
               required
             />
-            <span class="input-badge">密码</span>
+            <span class="input-badge">{{ $t('auth.password') }}</span>
           </div>
         </div>
 
@@ -55,7 +55,7 @@
               <input
                 v-model="form.captcha"
                 type="text"
-                placeholder="请计算并输入结果"
+                :placeholder="$t('auth.captchaInputPlaceholder')"
                 class="form-input"
                 :disabled="loading"
                 required
@@ -63,14 +63,14 @@
             </div>
             <div class="captcha-display" @click="refreshCaptcha">
               <span v-if="captchaQuestion" class="captcha-question">{{ captchaQuestion }}</span>
-              <span v-else class="captcha-placeholder">点击获取</span>
+              <span v-else class="captcha-placeholder">{{ $t('auth.captchaPlaceholder') }}</span>
             </div>
             <button 
               type="button" 
               class="refresh-button" 
               @click="refreshCaptcha"
               :disabled="loading"
-              title="刷新验证码"
+              :title="$t('auth.refreshCaptcha')"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"></path>
@@ -86,7 +86,7 @@
               type="checkbox"
               :disabled="loading"
             />
-            <span>记住我</span>
+            <span>{{ $t('auth.rememberMe') }}</span>
           </label>
         </div>
 
@@ -99,12 +99,12 @@
           class="login-button"
           :disabled="loading"
         >
-          <span v-if="!loading">登 录</span>
-          <span v-else>登录中...</span>
+          <span v-if="!loading">{{ $t('auth.login') }}</span>
+          <span v-else>{{ $t('auth.loggingIn') }}</span>
         </button>
 
         <div class="login-footer">
-          还没有注册账号？<a href="javascript:;" @click="handleRegister">立即注册</a>
+          {{ $t('auth.noAccount') }}<a href="javascript:;" @click="handleRegister">{{ $t('auth.register') }}</a>
         </div>
       </form>
     </div>
@@ -119,11 +119,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { authService } from '@/api/auth'
 import api from '@/api/index'
 import { getPermissionStore } from '@/stores/permission'
 import { StorageKeys } from '@/constants'
 
+const { t } = useI18n()
 const router = useRouter()
 const permissionStore = getPermissionStore()
 const loading = ref(false)
@@ -159,12 +161,12 @@ const refreshCaptcha = async () => {
 // 登录处理
 const handleLogin = async () => {
   if (!form.value.username || !form.value.password) {
-    errorMessage.value = '请输入用户名和密码'
+    errorMessage.value = t('auth.enterCredentials')
     return
   }
 
   if (!form.value.captcha) {
-    errorMessage.value = '请输入验证码答案'
+    errorMessage.value = t('auth.enterCaptcha')
     return
   }
 
@@ -229,13 +231,13 @@ const handleLogin = async () => {
         }
       }, 100)
     } else {
-      errorMessage.value = '登录失败'
+      errorMessage.value = t('auth.loginFailed')
       refreshCaptcha()
       form.value.captcha = ''
     }
   } catch (error: any) {
     console.error('登录错误:', error)
-    const message = error?.message || error?.data?.message || '登录失败，请重试'
+    const message = error?.message || error?.data?.message || t('auth.loginFailedRetry')
     errorMessage.value = message
     refreshCaptcha()
     form.value.captcha = ''
@@ -246,7 +248,7 @@ const handleLogin = async () => {
 
 // 注册
 const handleRegister = () => {
-  errorMessage.value = '注册功能开发中'
+  errorMessage.value = t('auth.registerInDev')
 }
 
 onMounted(() => {

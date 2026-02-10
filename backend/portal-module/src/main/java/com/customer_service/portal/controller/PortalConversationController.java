@@ -3,6 +3,7 @@ package com.customer_service.portal.controller;
 import com.customer_service.portal.service.PortalConversationService;
 import com.customer_service.portal.service.PortalMessageService;
 import com.customer_service.shared.dto.ApiResponse;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -38,7 +39,7 @@ public class PortalConversationController {
     @PostMapping("/conversation/init")
     public ApiResponse<Map<String, Object>> initConversation(@RequestBody ConversationInitRequest request) {
         if (request.getProjectId() == null || request.getUserId() == null) {
-            return ApiResponse.fail(400, "项目ID和用户ID不能为空");
+            return ApiResponse.fail(400, I18nUtil.getMessage("conversation.project.required"));
         }
 
         var result = conversationService.initOrGetConversation(request.getProjectId(), request.getUserId());
@@ -111,10 +112,10 @@ public class PortalConversationController {
     @PostMapping("/message/send")
     public ApiResponse<SendMessageResponse> sendMessage(@RequestBody SendMessageRequest request) {
         if (request.getConversationId() == null || request.getUserId() == null) {
-            return ApiResponse.fail(400, "会话ID和用户ID不能为空");
+            return ApiResponse.fail(400, I18nUtil.getMessage("conversation.id.required"));
         }
         if (request.getContent() == null || request.getContent().isBlank()) {
-            return ApiResponse.fail(400, "消息内容不能为空");
+            return ApiResponse.fail(400, I18nUtil.getMessage("conversation.message.required"));
         }
 
         String msgType = request.getMsgType();

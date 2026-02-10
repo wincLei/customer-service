@@ -3,7 +3,7 @@
     <!-- 加载中 -->
     <div v-if="loading" class="loading-section">
       <div class="loading-spinner"></div>
-      <span>加载中...</span>
+      <span>{{ $t('common.loading') }}</span>
     </div>
 
     <template v-else>
@@ -11,7 +11,7 @@
       <div class="search-section">
         <el-input
           v-model="searchQuery"
-          placeholder="搜索常见问题..."
+          :placeholder="$t('faq.searchPlaceholder')"
           clearable
           @input="handleSearch"
           @clear="handleClearSearch"
@@ -24,7 +24,7 @@
 
       <!-- 搜索结果 -->
       <div v-if="isSearchMode" class="search-results-section">
-        <h3>搜索结果 <span v-if="searchResults.length > 0" class="result-count">({{ searchResults.length }}条)</span></h3>
+        <h3>{{ $t('faq.searchResults') }} <span v-if="searchResults.length > 0" class="result-count">{{ $t('faq.resultCount', { count: searchResults.length }) }}</span></h3>
         <div class="faq-list" v-if="searchResults.length > 0">
           <div
             v-for="article in searchResults"
@@ -37,15 +37,15 @@
           </div>
         </div>
         <div v-else class="empty-results">
-          <p>😔 没有找到相关问题</p>
-          <p class="empty-hint">换个关键词试试</p>
+          <p>{{ $t('faq.noResults') }}</p>
+          <p class="empty-hint">{{ $t('faq.tryOtherKeywords') }}</p>
         </div>
       </div>
 
       <template v-else>
         <!-- 热门问题 -->
         <div class="hot-section" v-if="hotFAQs.length > 0">
-          <h3>🔥 热门问题</h3>
+          <h3>{{ $t('faq.hotQuestions') }}</h3>
           <div class="faq-grid">
             <div
               v-for="faq in hotFAQs"
@@ -54,14 +54,14 @@
               @click="viewFAQ(faq)"
             >
               <div class="faq-title">{{ faq.title }}</div>
-              <div class="faq-views">{{ faq.viewCount || 0 }}次查看</div>
+              <div class="faq-views">{{ $t('faq.viewCount', { count: faq.viewCount || 0 }) }}</div>
             </div>
           </div>
         </div>
 
         <!-- FAQ分类 -->
         <div class="category-section" v-if="categories.length > 0">
-          <h3>📂 问题分类</h3>
+          <h3>{{ $t('faq.categories') }}</h3>
           <el-collapse>
             <el-collapse-item
               v-for="category in categories"
@@ -86,7 +86,7 @@
 
         <!-- 无数据 -->
         <div v-if="hotFAQs.length === 0 && categories.length === 0" class="empty-section">
-          <p>📭 暂无常见问题</p>
+          <p>{{ $t('faq.noFaq') }}</p>
         </div>
       </template>
     </template>
@@ -96,7 +96,7 @@
       <div class="faq-detail-content markdown-body" v-html="renderedContent"></div>
       <div v-if="selectedFAQ && !selectedFAQ.content" class="loading-detail">
         <div class="loading-spinner"></div>
-        <span>加载中...</span>
+        <span>{{ $t('common.loading') }}</span>
       </div>
     </el-dialog>
   </div>
@@ -104,6 +104,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { marked } from 'marked'
 import portalApi from '@/api/portal'
@@ -122,6 +123,7 @@ interface CategoryGroup {
   articles: FAQ[]
 }
 
+const { t } = useI18n()
 const route = useRoute()
 const loading = ref(true)
 const searchQuery = ref('')
@@ -221,7 +223,7 @@ const viewFAQ = async (faq: FAQ) => {
     }
   } catch (error) {
     console.error('Failed to fetch article detail:', error)
-    selectedFAQ.value = { ...faq, content: '<p>加载失败，请重试</p>' }
+    selectedFAQ.value = { ...faq, content: `<p>${t('faq.loadFailed')}</p>` }
   }
 }
 

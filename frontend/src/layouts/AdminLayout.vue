@@ -6,25 +6,25 @@
         <!-- 数据概览 - 需要dashboard菜单权限 -->
         <div v-if="hasMenu('dashboard')" class="nav-icon" @click="navigateTo('dashboard')" :class="{ active: currentView === 'dashboard' }">
           <i class="el-icon-data-analysis"></i>
-          <div class="nav-label">数据</div>
+          <div class="nav-label">{{ $t('nav.dashboard') }}</div>
         </div>
         
         <!-- 工作台 - 需要workbench菜单权限 -->
         <div v-if="hasMenu('workbench')" class="nav-icon" @click="navigateTo('workbench')" :class="{ active: currentView === 'workbench' }">
           <i class="el-icon-chat-line-square"></i>
-          <div class="nav-label">工作台</div>
+          <div class="nav-label">{{ $t('nav.workbench') }}</div>
         </div>
 
         <!-- 项目管理 - 需要projects菜单权限 -->
         <div v-if="hasMenu('projects')" class="nav-icon" @click="navigateTo('projects')" :class="{ active: currentView === 'projects' }">
           <i class="el-icon-folder"></i>
-          <div class="nav-label">项目</div>
+          <div class="nav-label">{{ $t('nav.project') }}</div>
         </div>
 
         <!-- 知识库 - 需要knowledge菜单权限 -->
         <div v-if="hasMenu('knowledge')" class="nav-icon" @click="navigateTo('knowledge')" :class="{ active: currentView === 'knowledge' }">
           <i class="el-icon-document"></i>
-          <div class="nav-label">知识库</div>
+          <div class="nav-label">{{ $t('nav.knowledgeBase') }}</div>
         </div>
 
         <!-- 客户端 - 包含客户管理、标签管理、快捷回复子菜单 -->
@@ -39,7 +39,7 @@
           <template #reference>
             <div class="nav-icon" :class="{ active: isClientMenuActive }">
               <i class="el-icon-user-filled"></i>
-              <div class="nav-label">客户端</div>
+              <div class="nav-label">{{ $t('nav.client') }}</div>
             </div>
           </template>
           <div class="submenu-list">
@@ -50,7 +50,7 @@
               @click="navigateTo('customers')"
             >
               <i class="el-icon-user"></i>
-              <span>用户管理</span>
+              <span>{{ $t('nav.customerManagement') }}</span>
             </div>
             <div 
               v-if="hasMenu('customer-tags')" 
@@ -59,7 +59,7 @@
               @click="navigateTo('customer-tags')"
             >
               <i class="el-icon-price-tag"></i>
-              <span>标签管理</span>
+              <span>{{ $t('nav.tagManagement') }}</span>
             </div>
             <div 
               v-if="hasMenu('quick-replies')" 
@@ -68,7 +68,7 @@
               @click="navigateTo('quick-replies')"
             >
               <i class="el-icon-chat-line-round"></i>
-              <span>快捷回复</span>
+              <span>{{ $t('nav.quickReply') }}</span>
             </div>
           </div>
         </el-popover>
@@ -76,7 +76,7 @@
         <!-- 工单管理 - 需要tickets菜单权限 -->
         <div v-if="hasMenu('tickets')" class="nav-icon" @click="navigateTo('tickets')" :class="{ active: currentView === 'tickets' }">
           <i class="el-icon-tickets"></i>
-          <div class="nav-label">工单</div>
+          <div class="nav-label">{{ $t('nav.ticket') }}</div>
         </div>
 
         <!-- 系统管理 - 包含用户、角色、菜单、客服子菜单 -->
@@ -91,7 +91,7 @@
           <template #reference>
             <div class="nav-icon" :class="{ active: isSystemMenuActive }">
               <i class="el-icon-setting"></i>
-              <div class="nav-label">系统</div>
+              <div class="nav-label">{{ $t('nav.system') }}</div>
             </div>
           </template>
           <div class="submenu-list">
@@ -102,7 +102,7 @@
               @click="navigateTo('users')"
             >
               <i class="el-icon-user"></i>
-              <span>用户管理</span>
+              <span>{{ $t('nav.userManagement') }}</span>
             </div>
             <div 
               v-if="hasMenu('agents')" 
@@ -111,7 +111,7 @@
               @click="navigateTo('agents')"
             >
               <i class="el-icon-headset"></i>
-              <span>客服管理</span>
+              <span>{{ $t('nav.agentManagement') }}</span>
             </div>
             <div 
               v-if="hasMenu('roles')" 
@@ -120,7 +120,7 @@
               @click="navigateTo('roles')"
             >
               <i class="el-icon-key"></i>
-              <span>角色管理</span>
+              <span>{{ $t('nav.roleManagement') }}</span>
             </div>
             <div 
               v-if="hasMenu('menus')" 
@@ -129,7 +129,7 @@
               @click="navigateTo('menus')"
             >
               <i class="el-icon-menu"></i>
-              <span>菜单管理</span>
+              <span>{{ $t('nav.menuManagement') }}</span>
             </div>
           </div>
         </el-popover>
@@ -137,7 +137,7 @@
         <!-- 设置 - 需要settings菜单权限 -->
         <div v-if="hasMenu('settings')" class="nav-icon" @click="navigateTo('settings')" :class="{ active: currentView === 'settings' }">
           <i class="el-icon-tools"></i>
-          <div class="nav-label">设置</div>
+          <div class="nav-label">{{ $t('nav.settings') }}</div>
         </div>
       </el-aside>
 
@@ -146,11 +146,11 @@
         <!-- 顶部栏 -->
         <el-header height="50px" class="header">
           <div class="header-left">
-            <span v-if="isAgent" class="system-title">客服工作台</span>
+            <span v-if="isAgent" class="system-title">{{ $t('nav.agentWorkbench') }}</span>
           </div>
           <div class="header-right">
             <span class="user-info">{{ username }}</span>
-            <el-button type="text" size="small" @click="logout">退出</el-button>
+            <el-button type="text" size="small" @click="logout">{{ $t('nav.logout') }}</el-button>
           </div>
         </el-header>
 
@@ -166,14 +166,16 @@
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import { getPermissionStore } from '@/stores/permission'
 
 const router = useRouter()
 const route = useRoute()
+const { t } = useI18n()
 const permissionStore = getPermissionStore()
 
 const currentView = ref('workbench')
-const username = computed(() => permissionStore.getUser.value?.username || '用户')
+const username = computed(() => permissionStore.getUser.value?.username || t('nav.defaultUser'))
 
 // 判断是否是客服角色
 const isAgent = computed(() => {

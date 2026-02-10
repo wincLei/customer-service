@@ -1,11 +1,11 @@
 <template>
   <div class="knowledge-base">
     <div class="page-header">
-      <h2>知识库管理</h2>
+      <h2>{{ $t('kbMgmt.title') }}</h2>
       <div class="header-actions">
         <el-select
           v-model="selectedProjectId"
-          placeholder="选择项目"
+          :placeholder="$t('kbMgmt.selectProject')"
           style="width: 200px; margin-right: 12px"
           @change="handleProjectChange"
         >
@@ -23,9 +23,9 @@
       <!-- 左侧分类树 -->
       <div class="category-panel">
         <div class="panel-header">
-          <span>分类目录</span>
+          <span>{{ $t('kbMgmt.categoryDir') }}</span>
           <el-button type="primary" link @click="showCreateCategoryDialog(null)" :disabled="!selectedProjectId">
-            <el-icon><Plus /></el-icon> 添加
+            <el-icon><Plus /></el-icon> {{ $t('common.add') }}
           </el-button>
         </div>
         <div class="category-tree" v-loading="categoryLoading">
@@ -50,7 +50,7 @@
               </div>
             </template>
           </el-tree>
-          <el-empty v-if="!categoryLoading && categoryTree.length === 0" description="暂无分类" />
+          <el-empty v-if="!categoryLoading && categoryTree.length === 0" :description="$t('kbMgmt.noCategories')" />
         </div>
       </div>
 
@@ -58,10 +58,10 @@
       <div class="article-panel">
         <div class="panel-header">
           <div class="left">
-            <span>{{ currentCategoryName || '全部文章' }}</span>
+            <span>{{ currentCategoryName || $t('kbMgmt.allArticles') }}</span>
             <el-input
               v-model="searchKeyword"
-              placeholder="搜索文章标题"
+              :placeholder="$t('kbMgmt.searchPlaceholder')"
               style="width: 200px; margin-left: 16px"
               clearable
               @keyup.enter="loadArticles"
@@ -73,46 +73,46 @@
             </el-input>
           </div>
           <el-button type="primary" @click="showCreateArticleDialog" :disabled="!selectedProjectId">
-            <el-icon><Plus /></el-icon> 新建文章
+            <el-icon><Plus /></el-icon> {{ $t('kbMgmt.newArticle') }}
           </el-button>
         </div>
 
         <el-table :data="articles" style="width: 100%" v-loading="articleLoading">
-          <el-table-column prop="title" label="文章标题" min-width="200">
+          <el-table-column prop="title" :label="$t('kbMgmt.articleTitle')" min-width="200">
             <template #default="{ row }">
               <el-link type="primary" @click="showArticleDetail(row)">{{ row.title }}</el-link>
             </template>
           </el-table-column>
-          <el-table-column label="分类" width="120">
+          <el-table-column :label="$t('kbMgmt.category')" width="120">
             <template #default="{ row }">
               {{ getCategoryName(row.categoryId) }}
             </template>
           </el-table-column>
-          <el-table-column prop="viewCount" label="浏览量" width="80" />
-          <el-table-column prop="hitCount" label="命中次数" width="90" />
-          <el-table-column label="状态" width="80">
+          <el-table-column prop="viewCount" :label="$t('kbMgmt.viewCount')" width="80" />
+          <el-table-column prop="hitCount" :label="$t('kbMgmt.hitCount')" width="90" />
+          <el-table-column :label="$t('common.status')" width="80">
             <template #default="{ row }">
               <el-tag :type="row.isPublished ? 'success' : 'info'" size="small">
-                {{ row.isPublished ? '已发布' : '草稿' }}
+                {{ row.isPublished ? $t('kbMgmt.published') : $t('kbMgmt.draft') }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="更新时间" width="160">
+          <el-table-column :label="$t('common.updatedAt')" width="160">
             <template #default="{ row }">
               {{ formatDate(row.updatedAt || row.createdAt) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="180" fixed="right">
+          <el-table-column :label="$t('common.operation')" width="180" fixed="right">
             <template #default="{ row }">
-              <el-button link type="primary" @click="showEditArticleDialog(row)">编辑</el-button>
+              <el-button link type="primary" @click="showEditArticleDialog(row)">{{ $t('common.edit') }}</el-button>
               <el-button 
                 link 
                 :type="row.isPublished ? 'warning' : 'success'"
                 @click="togglePublish(row)"
               >
-                {{ row.isPublished ? '下架' : '发布' }}
+                {{ row.isPublished ? $t('kbMgmt.unpublish') : $t('kbMgmt.publish') }}
               </el-button>
-              <el-button link type="danger" @click="deleteArticle(row)">删除</el-button>
+              <el-button link type="danger" @click="deleteArticle(row)">{{ $t('common.delete') }}</el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -130,23 +130,23 @@
     <!-- 分类编辑对话框 -->
     <el-dialog
       v-model="categoryDialogVisible"
-      :title="isCategoryEdit ? '编辑分类' : '新建分类'"
+      :title="isCategoryEdit ? $t('kbMgmt.editCategory') : $t('kbMgmt.newCategory')"
       width="400px"
       :close-on-click-modal="false"
     >
       <el-form :model="categoryForm" :rules="categoryRules" ref="categoryFormRef" label-width="80px">
-        <el-form-item label="分类名称" prop="name">
-          <el-input v-model="categoryForm.name" placeholder="请输入分类名称" maxlength="50" />
+        <el-form-item :label="$t('kbMgmt.categoryName')" prop="name">
+          <el-input v-model="categoryForm.name" :placeholder="$t('kbMgmt.categoryNamePlaceholder')" maxlength="50" />
         </el-form-item>
-        <el-form-item label="排序" prop="sortOrder">
+        <el-form-item :label="$t('kbMgmt.sort')" prop="sortOrder">
           <el-input-number v-model="categoryForm.sortOrder" :min="0" :max="999" />
         </el-form-item>
-        <el-form-item label="父级分类">
+        <el-form-item :label="$t('kbMgmt.parentCategory')">
           <el-tree-select
             v-model="categoryForm.parentId"
             :data="categoryTree"
             :props="treeSelectProps"
-            placeholder="请选择父级分类（可选）"
+            :placeholder="$t('kbMgmt.parentCategoryPlaceholder')"
             clearable
             check-strictly
             style="width: 100%"
@@ -154,49 +154,49 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="categoryDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitCategory" :loading="submitting">确定</el-button>
+        <el-button @click="categoryDialogVisible = false">{{ $t('common.cancel') }}</el-button>
+        <el-button type="primary" @click="submitCategory" :loading="submitting">{{ $t('common.confirm') }}</el-button>
       </template>
     </el-dialog>
 
     <!-- 文章编辑对话框 -->
     <el-dialog
       v-model="articleDialogVisible"
-      :title="isArticleEdit ? '编辑文章' : '新建文章'"
+      :title="isArticleEdit ? $t('kbMgmt.editArticle') : $t('kbMgmt.newArticle')"
       width="800px"
       :close-on-click-modal="false"
       destroy-on-close
     >
       <el-form :model="articleForm" :rules="articleRules" ref="articleFormRef" label-width="80px">
-        <el-form-item label="文章标题" prop="title">
-          <el-input v-model="articleForm.title" placeholder="请输入文章标题" maxlength="200" />
+        <el-form-item :label="$t('kbMgmt.articleTitle')" prop="title">
+          <el-input v-model="articleForm.title" :placeholder="$t('kbMgmt.titlePlaceholder')" maxlength="200" />
         </el-form-item>
-        <el-form-item label="所属分类" prop="categoryId">
+        <el-form-item :label="$t('kbMgmt.belongCategory')" prop="categoryId">
           <el-tree-select
             v-model="articleForm.categoryId"
             :data="categoryTree"
             :props="treeSelectProps"
-            placeholder="请选择分类"
+            :placeholder="$t('kbMgmt.selectCategory')"
             check-strictly
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="文章内容" prop="content">
+        <el-form-item :label="$t('kbMgmt.articleContent')" prop="content">
           <el-input 
             v-model="articleForm.content" 
             type="textarea" 
             :rows="12" 
-            placeholder="请输入文章内容（支持Markdown格式）"
+            :placeholder="$t('kbMgmt.contentPlaceholder')"
           />
         </el-form-item>
-        <el-form-item label="立即发布">
+        <el-form-item :label="$t('kbMgmt.publishNow')">
           <el-switch v-model="articleForm.isPublished" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="articleDialogVisible = false">取消</el-button>
+        <el-button @click="articleDialogVisible = false">{{ $t('common.cancel') }}</el-button>
         <el-button type="primary" @click="submitArticle" :loading="submitting">
-          {{ isArticleEdit ? '保存' : '创建' }}
+          {{ isArticleEdit ? $t('common.save') : $t('common.create') }}
         </el-button>
       </template>
     </el-dialog>
@@ -210,11 +210,11 @@
       <div class="article-detail">
         <div class="article-meta">
           <el-tag :type="currentArticle?.isPublished ? 'success' : 'info'" size="small">
-            {{ currentArticle?.isPublished ? '已发布' : '草稿' }}
+            {{ currentArticle?.isPublished ? $t('kbMgmt.published') : $t('kbMgmt.draft') }}
           </el-tag>
-          <span>分类：{{ getCategoryName(currentArticle?.categoryId) }}</span>
-          <span>浏览：{{ currentArticle?.viewCount || 0 }}</span>
-          <span>命中：{{ currentArticle?.hitCount || 0 }}</span>
+          <span>{{ $t('kbMgmt.category') }}{{ $t('common.colon') }}{{ getCategoryName(currentArticle?.categoryId) }}</span>
+          <span>{{ $t('kbMgmt.views') }}{{ $t('common.colon') }}{{ currentArticle?.viewCount || 0 }}</span>
+          <span>{{ $t('kbMgmt.hits') }}{{ $t('common.colon') }}{{ currentArticle?.hitCount || 0 }}</span>
         </div>
         <div class="article-content" v-html="renderedContent"></div>
       </div>
@@ -224,11 +224,14 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus, Edit, Delete, Search } from '@element-plus/icons-vue'
 import request from '@/api'
 import Pagination from '@/components/Pagination.vue'
 import { marked } from 'marked'
+
+const { t } = useI18n()
 
 interface Project {
   id: number
@@ -316,21 +319,21 @@ const articleForm = reactive({
 
 const categoryRules: FormRules = {
   name: [
-    { required: true, message: '请输入分类名称', trigger: 'blur' },
-    { max: 50, message: '分类名称不能超过50个字符', trigger: 'blur' }
+    { required: true, message: () => t('kbMgmt.categoryNameRequired'), trigger: 'blur' },
+    { max: 50, message: () => t('kbMgmt.categoryNameMaxLength'), trigger: 'blur' }
   ]
 }
 
 const articleRules: FormRules = {
   title: [
-    { required: true, message: '请输入文章标题', trigger: 'blur' },
-    { max: 200, message: '标题不能超过200个字符', trigger: 'blur' }
+    { required: true, message: () => t('kbMgmt.titleRequired'), trigger: 'blur' },
+    { max: 200, message: () => t('kbMgmt.titleMaxLength'), trigger: 'blur' }
   ],
   categoryId: [
-    { required: true, message: '请选择分类', trigger: 'change' }
+    { required: true, message: () => t('kbMgmt.selectCategoryRequired'), trigger: 'change' }
   ],
   content: [
-    { required: true, message: '请输入文章内容', trigger: 'blur' }
+    { required: true, message: () => t('kbMgmt.contentRequired'), trigger: 'blur' }
   ]
 }
 
@@ -355,9 +358,9 @@ const formatDate = (dateStr: string) => {
 
 // 获取分类名称
 const getCategoryName = (categoryId: number | undefined | null) => {
-  if (!categoryId) return '未分类'
+  if (!categoryId) return t('kbMgmt.uncategorized')
   const category = flatCategories.value.find(c => c.id === categoryId)
-  return category?.name || '未知分类'
+  return category?.name || t('kbMgmt.unknownCategory')
 }
 
 // 将树形结构扁平化
@@ -455,7 +458,7 @@ const handleCategoryClick = (data: Category) => {
 // 显示创建分类对话框
 const showCreateCategoryDialog = (parentCategory: Category | null) => {
   if (!selectedProjectId.value) {
-    ElMessage.warning('请先选择项目')
+    ElMessage.warning(t('kbMgmt.selectProjectFirst'))
     return
   }
   isCategoryEdit.value = false
@@ -480,7 +483,7 @@ const showEditCategoryDialog = (category: Category) => {
 const submitCategory = async () => {
   if (!categoryFormRef.value) return
   if (!selectedProjectId.value) {
-    ElMessage.warning('请先选择项目')
+    ElMessage.warning(t('kbMgmt.selectProjectFirst'))
     return
   }
   await categoryFormRef.value.validate(async (valid) => {
@@ -497,24 +500,24 @@ const submitCategory = async () => {
       if (isCategoryEdit.value) {
         const res = await request.put(`/api/admin/kb/categories/${editingCategoryId.value}`, data) as any
         if (res.code === 0) {
-          ElMessage.success('分类更新成功')
+          ElMessage.success(t('kbMgmt.categoryUpdateSuccess'))
           categoryDialogVisible.value = false
           loadCategories()
         } else {
-          ElMessage.error(res.message || '更新失败')
+          ElMessage.error(res.message || t('common.updateFailed'))
         }
       } else {
         const res = await request.post('/api/admin/kb/categories', data) as any
         if (res.code === 0) {
-          ElMessage.success('分类创建成功')
+          ElMessage.success(t('kbMgmt.categoryCreateSuccess'))
           categoryDialogVisible.value = false
           loadCategories()
         } else {
-          ElMessage.error(res.message || '创建失败')
+          ElMessage.error(res.message || t('common.createFailed'))
         }
       }
     } catch (error) {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('common.operateFailed'))
     } finally {
       submitting.value = false
     }
@@ -525,17 +528,17 @@ const submitCategory = async () => {
 const deleteCategory = async (category: Category) => {
   try {
     await ElMessageBox.confirm(
-      `确定要删除分类"${category.name}"吗？删除后该分类下的文章将变为未分类状态。`,
-      '确认删除',
+      t('kbMgmt.deleteCategoryConfirm', { name: category.name }),
+      t('kbMgmt.confirmDelete'),
       { type: 'warning' }
     )
     const res = await request.delete(`/api/admin/kb/categories/${category.id}`) as any
     if (res.code === 0) {
-      ElMessage.success('删除成功')
+      ElMessage.success(t('common.deleteSuccess'))
       loadCategories()
       loadArticles()
     } else {
-      ElMessage.error(res.message || '删除失败')
+      ElMessage.error(res.message || t('common.deleteFailed'))
     }
   } catch {
     // 用户取消
@@ -594,26 +597,26 @@ const submitArticle = async () => {
       if (isArticleEdit.value) {
         const res = await request.put(`/api/admin/kb/articles/${editingArticleId.value}`, data) as any
         if (res.code === 0) {
-          ElMessage.success('文章更新成功')
+          ElMessage.success(t('kbMgmt.articleUpdateSuccess'))
           articleDialogVisible.value = false
           loadArticles()
-          loadCategories() // 刷新分类统计
+          loadCategories()
         } else {
-          ElMessage.error(res.message || '更新失败')
+          ElMessage.error(res.message || t('common.updateFailed'))
         }
       } else {
         const res = await request.post('/api/admin/kb/articles', data) as any
         if (res.code === 0) {
-          ElMessage.success('文章创建成功')
+          ElMessage.success(t('kbMgmt.articleCreateSuccess'))
           articleDialogVisible.value = false
           loadArticles()
-          loadCategories() // 刷新分类统计
+          loadCategories()
         } else {
-          ElMessage.error(res.message || '创建失败')
+          ElMessage.error(res.message || t('common.createFailed'))
         }
       }
     } catch (error) {
-      ElMessage.error('操作失败')
+      ElMessage.error(t('common.operateFailed'))
     } finally {
       submitting.value = false
     }
@@ -623,14 +626,14 @@ const submitArticle = async () => {
 // 切换发布状态
 const togglePublish = async (article: Article) => {
   try {
-    const action = article.isPublished ? '下架' : '发布'
-    await ElMessageBox.confirm(`确定要${action}文章"${article.title}"吗？`, `确认${action}`)
+    const action = article.isPublished ? t('kbMgmt.unpublish') : t('kbMgmt.publish')
+    await ElMessageBox.confirm(t('kbMgmt.togglePublishConfirm', { action, title: article.title }), t('kbMgmt.confirmAction', { action }))
     const res = await request.post(`/api/admin/kb/articles/${article.id}/toggle-publish`) as any
     if (res.code === 0) {
-      ElMessage.success(`${action}成功`)
+      ElMessage.success(t('kbMgmt.actionSuccess', { action }))
       loadArticles()
     } else {
-      ElMessage.error(res.message || '操作失败')
+      ElMessage.error(res.message || t('common.operateFailed'))
     }
   } catch {
     // 用户取消
@@ -640,14 +643,14 @@ const togglePublish = async (article: Article) => {
 // 删除文章
 const deleteArticle = async (article: Article) => {
   try {
-    await ElMessageBox.confirm(`确定要删除文章"${article.title}"吗？`, '确认删除', { type: 'warning' })
+    await ElMessageBox.confirm(t('kbMgmt.deleteArticleConfirm', { title: article.title }), t('kbMgmt.confirmDelete'), { type: 'warning' })
     const res = await request.delete(`/api/admin/kb/articles/${article.id}`) as any
     if (res.code === 0) {
-      ElMessage.success('删除成功')
+      ElMessage.success(t('common.deleteSuccess'))
       loadArticles()
-      loadCategories() // 刷新分类统计
+      loadCategories()
     } else {
-      ElMessage.error(res.message || '删除失败')
+      ElMessage.error(res.message || t('common.deleteFailed'))
     }
   } catch {
     // 用户取消

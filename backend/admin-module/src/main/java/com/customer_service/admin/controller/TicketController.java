@@ -5,6 +5,7 @@ import com.customer_service.shared.context.UserContextHolder;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.dto.UserContext;
 import com.customer_service.shared.entity.Ticket;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
@@ -80,7 +81,7 @@ public class TicketController {
 
         return ticketService.getTicketDetail(id, projectIds)
                 .map(ApiResponse::success)
-                .orElse(ApiResponse.fail(404, "工单不存在"));
+                .orElse(ApiResponse.fail(404, I18nUtil.getMessage("ticket.not.found")));
     }
 
     /**

@@ -2,6 +2,7 @@ package com.customer_service.portal.controller;
 
 import com.customer_service.shared.constant.DeviceType;
 import com.customer_service.shared.service.WuKongIMService;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,7 +30,7 @@ public class PortalImController {
 
         if (request.loginUid() == null || request.channelId() == null) {
             result.put("code", 400);
-            result.put("message", "参数不完整");
+            result.put("message", I18nUtil.getMessage("common.params.incomplete"));
             return ResponseEntity.badRequest().body(result);
         }
 

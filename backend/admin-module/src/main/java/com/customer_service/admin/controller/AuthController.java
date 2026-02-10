@@ -10,6 +10,7 @@ import com.customer_service.shared.entity.SysUser;
 import com.customer_service.shared.repository.SysRoleRepository;
 import com.customer_service.shared.repository.SysUserRepository;
 import com.customer_service.shared.repository.UserProjectRepository;
+import com.customer_service.shared.util.I18nUtil;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
@@ -43,27 +44,27 @@ public class AuthController {
 
         // 强制验证验证码
         if (request.getCaptchaKey() == null || request.getCaptchaKey().isEmpty()) {
-            return ApiResponse.error("请先获取验证码");
+            return ApiResponse.error(I18nUtil.getMessage("auth.captcha.required"));
         }
 
         if (request.getCaptcha() == null || request.getCaptcha().isEmpty()) {
-            return ApiResponse.error("请输入验证码答案");
+            return ApiResponse.error(I18nUtil.getMessage("auth.captcha.answer.required"));
         }
 
         try {
             String savedAnswer = redisTemplate.opsForValue()
                     .get(AppDefaults.REDIS_CAPTCHA_PREFIX + request.getCaptchaKey());
             if (savedAnswer == null) {
-                return ApiResponse.error("验证码已过期，请刷新后重试");
+                return ApiResponse.error(I18nUtil.getMessage("auth.captcha.expired"));
             }
             if (!savedAnswer.equals(request.getCaptcha())) {
-                return ApiResponse.error("验证码错误");
+                return ApiResponse.error(I18nUtil.getMessage("auth.captcha.error"));
             }
             // 验证成功后删除验证码
             redisTemplate.delete(AppDefaults.REDIS_CAPTCHA_PREFIX + request.getCaptchaKey());
         } catch (Exception e) {
             log.error("Redis验证码验证失败: {}", e.getMessage(), e);
-            return ApiResponse.error("Redis服务异常，请稍后重试");
+            return ApiResponse.error(I18nUtil.getMessage("auth.redis.error"));
         }
 
         // 验证用户名和密码 - 从sys_users表查询
@@ -71,7 +72,7 @@ public class AuthController {
 
         if (userOptional.isEmpty()) {
             log.warn("用户不存在: {}", request.getUsername());
-            return ApiResponse.error("用户名或密码错误");
+            return ApiResponse.error(I18nUtil.getMessage("auth.login.failed"));
         }
 
         SysUser sysUser = userOptional.get();
@@ -79,13 +80,13 @@ public class AuthController {
         // 检查账号状态
         if (!UserStatus.ACTIVE.equals(sysUser.getStatus())) {
             log.warn("账号已禁用: {}", request.getUsername());
-            return ApiResponse.error("账号已被禁用，请联系管理员");
+            return ApiResponse.error(I18nUtil.getMessage("auth.account.disabled"));
         }
 
         // 验证密码（使用BCrypt）
         if (!passwordEncoder.matches(request.getPassword(), sysUser.getPasswordHash())) {
             log.warn("密码错误: {}", request.getUsername());
-            return ApiResponse.error("用户名或密码错误");
+            return ApiResponse.error(I18nUtil.getMessage("auth.login.failed"));
         }
 
         // 更新最后登录时间
@@ -176,12 +177,12 @@ public class AuthController {
     public ApiResponse<?> getCurrentUser() {
         var context = UserContextHolder.getContext();
         if (context == null) {
-            return ApiResponse.error(401, "未登录");
+            return ApiResponse.error(401, I18nUtil.getMessage("auth.not.logged.in"));
         }
 
         Optional<SysUser> userOpt = sysUserRepository.findById(context.getUserId());
         if (userOpt.isEmpty()) {
-            return ApiResponse.error(404, "用户不存在");
+            return ApiResponse.error(404, I18nUtil.getMessage("auth.user.not.found"));
         }
 
         SysUser sysUser = userOpt.get();
@@ -277,7 +278,7 @@ public class AuthController {
             return ApiResponse.success(data);
         } catch (Exception e) {
             log.error("生成验证码失败: {}", e.getMessage(), e);
-            return ApiResponse.error("Redis服务异常，无法生成验证码，请稍后重试");
+            return ApiResponse.error(I18nUtil.getMessage("auth.captcha.redis.error"));
         }
     }
 

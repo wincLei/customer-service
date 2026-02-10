@@ -1,5 +1,7 @@
 package com.customer_service.shared.constant;
 
+import com.customer_service.shared.util.I18nUtil;
+
 /**
  * WuKongIM 频道类型常量
  * 用于 IM 通信时区分不同的频道类型
@@ -65,14 +67,14 @@ public final class WKChannelType {
      */
     public static String getName(int channelType) {
         return switch (channelType) {
-            case PERSONAL -> "个人频道";
-            case GROUP -> "群组频道";
-            case CUSTOMER_SERVICE -> "客服频道(已废弃)";
-            case COMMUNITY_TOPIC -> "社区话题频道";
-            case COMMUNITY -> "社区频道";
-            case DATA -> "数据频道";
-            case VISITOR -> "访客频道";
-            default -> "未知频道";
+            case PERSONAL -> I18nUtil.getMessage("channel.personal");
+            case GROUP -> I18nUtil.getMessage("channel.group");
+            case CUSTOMER_SERVICE -> I18nUtil.getMessage("channel.service");
+            case COMMUNITY_TOPIC -> I18nUtil.getMessage("channel.community.topic");
+            case COMMUNITY -> I18nUtil.getMessage("channel.community");
+            case DATA -> I18nUtil.getMessage("channel.data");
+            case VISITOR -> I18nUtil.getMessage("channel.visitor");
+            default -> I18nUtil.getMessage("channel.unknown");
         };
     }
 }

@@ -6,6 +6,7 @@ import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.Agent;
 import com.customer_service.shared.entity.SysUser;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -60,7 +61,7 @@ public class AgentController {
     public ApiResponse<?> getAgent(@PathVariable Long id) {
         return agentService.getAgentInfo(id)
                 .map(agent -> ApiResponse.success(toAgentVO(agent)))
-                .orElse(ApiResponse.error("客服不存在"));
+                .orElse(ApiResponse.error(I18nUtil.getMessage("agent.not.found")));
     }
 
     /**
@@ -69,7 +70,7 @@ public class AgentController {
     @PostMapping
     public ApiResponse<?> createAgent(@RequestBody CreateAgentRequest request) {
         if (request.getUserId() == null) {
-            return ApiResponse.error("请选择用户");
+            return ApiResponse.error(I18nUtil.getMessage("agent.user.select.required"));
         }
 
         try {
@@ -115,7 +116,7 @@ public class AgentController {
         try {
             agentService.deleteAgent(id);
             log.info("删除客服成功: ID={}", id);
-            return ApiResponse.success("删除成功");
+            return ApiResponse.success(I18nUtil.getMessage("common.delete.success"));
         } catch (RuntimeException e) {
             return ApiResponse.error(e.getMessage());
         }

@@ -4,6 +4,7 @@ import com.customer_service.admin.dto.UserConversationDTO;
 import com.customer_service.shared.entity.User;
 import com.customer_service.shared.entity.UserConversation;
 import com.customer_service.shared.repository.UserConversationRepository;
+import com.customer_service.shared.util.I18nUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -163,7 +164,7 @@ public class UserConversationService {
 
         String deviceType = user != null && user.getDeviceType() != null
                 ? formatDeviceType(user.getDeviceType())
-                : "PC端";
+                : I18nUtil.getMessage("device.pc");
 
         // userUid 使用 {projectId}_{userId} 格式，与 WuKongIM 的 channelId 保持一致
         String userUid = conv.getProjectId() + "_" + conv.getUserId();
@@ -191,16 +192,16 @@ public class UserConversationService {
      */
     private String formatDeviceType(String deviceType) {
         if (deviceType == null)
-            return "PC端";
+            return I18nUtil.getMessage("device.pc");
         switch (deviceType.toLowerCase()) {
             case "mobile":
             case "h5":
                 return "H5";
             case "pc":
             case "web":
-                return "PC端";
+                return I18nUtil.getMessage("device.pc");
             case "tablet":
-                return "平板";
+                return I18nUtil.getMessage("device.tablet");
             default:
                 return deviceType;
         }
