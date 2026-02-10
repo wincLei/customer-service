@@ -224,8 +224,9 @@
               v-model="inputMessage"
               type="textarea"
               :rows="3"
-              placeholder="输入消息，Enter发送，Shift+Enter换行"
+              placeholder="输入消息，Enter发送，Shift+Enter换行，可粘贴图片"
               @keydown.enter.exact.prevent="sendMessage"
+              @paste="handlePaste"
             />
             <el-button type="primary" @click="sendMessage" :disabled="!inputMessage.trim()">
               发送
@@ -1489,17 +1490,18 @@ const goToTicketManagement = () => {
   }
 }
 
-// 处理图片上传
-const handleImageUpload = async (event: Event) => {
-  const input = event.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-
-  // 验证文件类型，只允许上传图片
+// 核心图片上传并发送方法（供文件选择和粘贴共用）
+const uploadAndSendImage = async (file: File) => {
+  // 验证文件类型
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp']
   if (!allowedTypes.includes(file.type)) {
     ElMessage.warning('只支持上传图片文件（JPG、PNG、GIF、WEBP、BMP）')
-    input.value = ''
+    return
+  }
+
+  // 限制文件大小（10MB）
+  if (file.size > 10 * 1024 * 1024) {
+    ElMessage.warning('图片大小不能超过 10MB')
     return
   }
 
@@ -1528,8 +1530,10 @@ const handleImageUpload = async (event: Event) => {
     if (tokenData.code === 0 && tokenData.data) {
       const { policy, signature, x_oss_credential, x_oss_date, host, dir, domain } = tokenData.data
       
+      // 生成文件名：粘贴的图片可能没有有意义的文件名，统一用时间戳
+      const ext = file.name && file.name !== 'image.png' ? file.name : `paste_${Date.now()}.${file.type.split('/')[1] || 'png'}`
       const formData = new FormData()
-      const key = `${dir}${Date.now()}_${file.name}`
+      const key = `${dir}${Date.now()}_${ext}`
       
       // V4 签名方式的表单字段
       formData.append('key', key)
@@ -1596,8 +1600,35 @@ const handleImageUpload = async (event: Event) => {
     ElMessage.error('图片上传失败，请重试')
   } finally {
     uploadingImage.value = false
-    input.value = ''
   }
+}
+
+// 处理文件选择上传
+const handleImageUpload = async (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  if (!file) return
+  await uploadAndSendImage(file)
+  input.value = ''
+}
+
+// 处理粘贴图片
+const handlePaste = async (event: ClipboardEvent) => {
+  const items = event.clipboardData?.items
+  if (!items) return
+
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i]
+    if (item.type.startsWith('image/')) {
+      event.preventDefault() // 阻止默认粘贴行为（避免在输入框中出现乱码）
+      const file = item.getAsFile()
+      if (file) {
+        await uploadAndSendImage(file)
+      }
+      return // 只处理第一张图片
+    }
+  }
+  // 如果不是图片，不阻止默认行为（允许正常粘贴文本）
 }
 
 // 插入知识库内容
