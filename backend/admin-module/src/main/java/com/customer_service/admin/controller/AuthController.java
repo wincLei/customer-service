@@ -1,6 +1,8 @@
 package com.customer_service.admin.controller;
 
 import com.customer_service.shared.annotation.Public;
+import com.customer_service.shared.constant.AppDefaults;
+import com.customer_service.shared.constant.UserStatus;
 import com.customer_service.shared.context.UserContextHolder;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.SysRole;
@@ -49,7 +51,8 @@ public class AuthController {
         }
 
         try {
-            String savedAnswer = redisTemplate.opsForValue().get("captcha:" + request.getCaptchaKey());
+            String savedAnswer = redisTemplate.opsForValue()
+                    .get(AppDefaults.REDIS_CAPTCHA_PREFIX + request.getCaptchaKey());
             if (savedAnswer == null) {
                 return ApiResponse.error("验证码已过期，请刷新后重试");
             }
@@ -57,7 +60,7 @@ public class AuthController {
                 return ApiResponse.error("验证码错误");
             }
             // 验证成功后删除验证码
-            redisTemplate.delete("captcha:" + request.getCaptchaKey());
+            redisTemplate.delete(AppDefaults.REDIS_CAPTCHA_PREFIX + request.getCaptchaKey());
         } catch (Exception e) {
             log.error("Redis验证码验证失败: {}", e.getMessage(), e);
             return ApiResponse.error("Redis服务异常，请稍后重试");
@@ -74,7 +77,7 @@ public class AuthController {
         SysUser sysUser = userOptional.get();
 
         // 检查账号状态
-        if (!"active".equals(sysUser.getStatus())) {
+        if (!UserStatus.ACTIVE.equals(sysUser.getStatus())) {
             log.warn("账号已禁用: {}", request.getUsername());
             return ApiResponse.error("账号已被禁用，请联系管理员");
         }
@@ -131,7 +134,8 @@ public class AuthController {
         tokenData.put("projectIds", projectIds);
         try {
             String tokenJson = objectMapper.writeValueAsString(tokenData);
-            redisTemplate.opsForValue().set("token:" + token, tokenJson, 24, TimeUnit.HOURS);
+            redisTemplate.opsForValue().set(AppDefaults.REDIS_TOKEN_PREFIX + token, tokenJson,
+                    AppDefaults.TOKEN_EXPIRE_HOURS, TimeUnit.HOURS);
         } catch (Exception e) {
             log.error("存储token失败", e);
         }
@@ -157,9 +161,9 @@ public class AuthController {
     @GetMapping("/logout")
     public ApiResponse<?> logout(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         // 从Redis删除token
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            redisTemplate.delete("token:" + token);
+        if (authHeader != null && authHeader.startsWith(AppDefaults.BEARER_PREFIX)) {
+            String token = authHeader.substring(AppDefaults.BEARER_PREFIX.length());
+            redisTemplate.delete(AppDefaults.REDIS_TOKEN_PREFIX + token);
             log.info("用户登出，token已删除");
         }
         return ApiResponse.success("Logout successful");
@@ -262,7 +266,8 @@ public class AuthController {
             String key = UUID.randomUUID().toString().replace("-", "");
 
             // 保存答案到Redis，5分钟过期
-            redisTemplate.opsForValue().set("captcha:" + key, String.valueOf(answer), 5, TimeUnit.MINUTES);
+            redisTemplate.opsForValue().set(AppDefaults.REDIS_CAPTCHA_PREFIX + key, String.valueOf(answer),
+                    AppDefaults.CAPTCHA_EXPIRE_MINUTES, TimeUnit.MINUTES);
             log.info("验证码生成成功: key={}, question={}", key, question);
 
             Map<String, Object> data = new HashMap<>();

@@ -369,7 +369,7 @@ import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import portalApi, { setPortalToken } from "@/api/portal";
 import { WKIM, WKIMEvent } from "easyjssdk";
-import { DeviceType, WKChannelType } from "@/constants";
+import { DeviceType, WKChannelType, StorageKeys, TicketStatusLabel, TicketPriorityLabel, IMPayloadType, IM_INITIAL_LOAD_LIMIT, IM_LOAD_MORE_LIMIT, MAX_CHARS_PER_MESSAGE, MAX_CHARS_PER_MINUTE, RATE_LIMIT_WINDOW, WELCOME_INTERVAL, ALLOWED_IMAGE_TYPES } from "@/constants";
 
 const route = useRoute();
 const router = useRouter();
@@ -399,17 +399,14 @@ const currentTicketDetail = ref<any>(null);
 const ticketReplyContent = ref("");
 const submittingReply = ref(false);
 const hasUnreadTicketReply = ref(false);  // 是否有未读工单回复
-const TICKET_READ_KEY = "mini_cs_ticket_read_";  // 工单已读状态本地存储 key
+const TICKET_READ_KEY = StorageKeys.TICKET_READ_PREFIX;  // 工单已读状态本地存储 key
 
 // 分页加载相关状态
 const loadingMoreMessages = ref(false);
 const hasMoreMessages = ref(true);
 const oldestMessageSeq = ref<number>(0); // 当前最早消息的序号
 
-// 消息发送频率限制
-const MAX_CHARS_PER_MESSAGE = 200; // 单条消息最大字数
-const MAX_CHARS_PER_MINUTE = 1000; // 每分钟最大总字数
-const RATE_LIMIT_WINDOW = 60 * 1000; // 频率限制时间窗口（1分钟）
+// 消息发送频率限制（常量来自 @/constants/appConfig）
 const recentSentChars = ref<{ timestamp: number; count: number }[]>([]); // 最近发送的字数记录
 const rateLimitTip = ref(''); // 频率限制提示信息
 
@@ -547,7 +544,7 @@ const ticketForm = ref({
 });
 
 // 游客 UID 存储 Key
-const GUEST_UID_KEY = "mini_cs_guest_uid";
+const GUEST_UID_KEY = StorageKeys.GUEST_UID_PREFIX;
 
 const generateGuestUid = (): string => {
   return (
@@ -679,8 +676,7 @@ const initConversation = async () => {
       await loadHistory();
 
       // 判断是否需要展示欢迎语：新会话 或 距离上次访问超过5分钟
-      const WELCOME_INTERVAL = 5 * 60 * 1000; // 5分钟（毫秒）
-      const storageKey = `h5chat_last_visit_${projectId.value}_${currentUser.value?.id}`;
+      const storageKey = `${StorageKeys.H5_LAST_VISIT_PREFIX}${projectId.value}_${currentUser.value?.id}`;
       const lastVisit = localStorage.getItem(storageKey);
       const now = Date.now();
       const shouldShowWelcome =
@@ -725,7 +721,7 @@ const parseHistoryMessage = (msg: any): Message & { messageSeq?: number } => {
     id: msg.message_id || msg.messageId || msg.client_msg_no || msg.clientMsgNo,
     senderType,
     msgType:
-      payload.type === 2 ? "image" : payload.type === 3 ? "file" : "text",
+      payload.type === IMPayloadType.IMAGE ? "image" : payload.type === IMPayloadType.FILE ? "file" : "text",
     content: payload.content || payload.url || "",
     fileName: payload.fileName || payload.file_name,
     time: formatTime(msgDate),
@@ -755,7 +751,7 @@ const loadHistory = async () => {
       loginUid: imUid.value,
       channelId: imUid.value, // 访客频道 ID = {projectId}_{userId}
       channelType: WKChannelType.VISITOR,
-      limit: 50,
+      limit: IM_INITIAL_LOAD_LIMIT,
     })) as any;
 
     if (response.code === 0 && response.data) {
@@ -770,7 +766,7 @@ const loadHistory = async () => {
         if (seqs.length > 0) {
           oldestMessageSeq.value = Math.min(...seqs);
         }
-        hasMoreMessages.value = parsedMessages.length >= 50;
+        hasMoreMessages.value = parsedMessages.length >= IM_INITIAL_LOAD_LIMIT;
       } else {
         hasMoreMessages.value = false;
       }
@@ -804,7 +800,7 @@ const loadMoreMessages = async () => {
       channelId: imUid.value,
       channelType: WKChannelType.VISITOR,
       startMessageSeq: oldestMessageSeq.value,
-      limit: 30,
+      limit: IM_LOAD_MORE_LIMIT,
       pullMode: 0, // 向上拉取更旧消息
     })) as any;
 
@@ -919,7 +915,7 @@ const handleIMMessage = (message: any) => {
     id: messageId || Date.now(),
     senderType: senderType,
     msgType:
-      payload.type === 2 ? "image" : payload.type === 3 ? "file" : "text",
+      payload.type === IMPayloadType.IMAGE ? "image" : payload.type === IMPayloadType.FILE ? "file" : "text",
     content: payload.content || payload.url || "",
     fileName: payload.fileName,
     time: formatTime(now),
@@ -1107,8 +1103,7 @@ const handleImageUpload = async (event: Event) => {
   if (!file) return;
 
   // 验证文件类型，只允许上传图片
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp'];
-  if (!allowedTypes.includes(file.type)) {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     alert('只支持上传图片文件（JPG、PNG、GIF、WEBP、BMP）');
     input.value = '';
     return;
@@ -1237,25 +1232,12 @@ const handleSubmitTicket = async () => {
 // ========== 工单列表和详情相关方法 ==========
 // 获取状态标签
 const getStatusLabel = (status: string) => {
-  const statusMap: Record<string, string> = {
-    'open': '待处理',
-    'pending': '待处理',
-    'processing': '处理中',
-    'resolved': '已解决',
-    'closed': '已关闭'
-  };
-  return statusMap[status] || status;
+  return TicketStatusLabel[status] || status;
 };
 
 // 获取优先级标签
 const getPriorityLabel = (priority: string) => {
-  const priorityMap: Record<string, string> = {
-    'low': '低',
-    'medium': '中',
-    'high': '高',
-    'urgent': '紧急'
-  };
-  return priorityMap[priority] || priority;
+  return TicketPriorityLabel[priority] || priority;
 };
 
 // 格式化工单时间

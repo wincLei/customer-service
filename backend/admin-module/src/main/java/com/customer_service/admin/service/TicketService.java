@@ -1,5 +1,8 @@
 package com.customer_service.admin.service;
 
+import com.customer_service.shared.constant.OperatorType;
+import com.customer_service.shared.constant.TicketAction;
+import com.customer_service.shared.constant.TicketStatus;
 import com.customer_service.shared.entity.Ticket;
 import com.customer_service.shared.entity.TicketEvent;
 import com.customer_service.shared.entity.User;
@@ -124,15 +127,15 @@ public class TicketService {
         TicketEvent event = new TicketEvent();
         event.setTicketId(ticketId);
         event.setOperatorId(operatorId);
-        event.setOperatorType("agent");
-        event.setAction("reply");
+        event.setOperatorType(OperatorType.AGENT);
+        event.setAction(TicketAction.REPLY);
         event.setContent(content);
         event.setCreatedAt(LocalDateTime.now());
         ticketEventRepository.save(event);
 
         // 更新工单状态
-        if ("open".equals(ticket.getStatus())) {
-            ticket.setStatus("processing");
+        if (TicketStatus.OPEN.equals(ticket.getStatus())) {
+            ticket.setStatus(TicketStatus.PROCESSING);
         }
         ticket.setUpdatedAt(LocalDateTime.now());
 
@@ -151,7 +154,7 @@ public class TicketService {
         ticket.setStatus(status);
         ticket.setUpdatedAt(LocalDateTime.now());
 
-        if ("resolved".equals(status) || "closed".equals(status)) {
+        if (TicketStatus.RESOLVED.equals(status) || TicketStatus.CLOSED.equals(status)) {
             ticket.setResolvedAt(LocalDateTime.now());
         }
 
@@ -159,8 +162,8 @@ public class TicketService {
         TicketEvent event = new TicketEvent();
         event.setTicketId(ticketId);
         event.setOperatorId(operatorId);
-        event.setOperatorType("agent");
-        event.setAction("status_change");
+        event.setOperatorType(OperatorType.AGENT);
+        event.setAction(TicketAction.STATUS_CHANGE);
         event.setContent(String.format("状态从 %s 变更为 %s", oldStatus, status));
         event.setCreatedAt(LocalDateTime.now());
         ticketEventRepository.save(event);
@@ -183,8 +186,8 @@ public class TicketService {
         TicketEvent event = new TicketEvent();
         event.setTicketId(ticketId);
         event.setOperatorId(operatorId);
-        event.setOperatorType("agent");
-        event.setAction("assign");
+        event.setOperatorType(OperatorType.AGENT);
+        event.setAction(TicketAction.ASSIGN);
         event.setContent("分配给客服 ID: " + assigneeId);
         event.setCreatedAt(LocalDateTime.now());
         ticketEventRepository.save(event);
@@ -200,16 +203,16 @@ public class TicketService {
 
         if (projectIds == null || projectIds.isEmpty()) {
             stats.put("total", ticketRepository.count());
-            stats.put("open", ticketRepository.countByStatus("open"));
-            stats.put("processing", ticketRepository.countByStatus("processing"));
-            stats.put("resolved", ticketRepository.countByStatus("resolved"));
-            stats.put("closed", ticketRepository.countByStatus("closed"));
+            stats.put("open", ticketRepository.countByStatus(TicketStatus.OPEN));
+            stats.put("processing", ticketRepository.countByStatus(TicketStatus.PROCESSING));
+            stats.put("resolved", ticketRepository.countByStatus(TicketStatus.RESOLVED));
+            stats.put("closed", ticketRepository.countByStatus(TicketStatus.CLOSED));
         } else {
             stats.put("total", ticketRepository.countByProjectIdIn(projectIds));
-            stats.put("open", ticketRepository.countByProjectIdInAndStatus(projectIds, "open"));
-            stats.put("processing", ticketRepository.countByProjectIdInAndStatus(projectIds, "processing"));
-            stats.put("resolved", ticketRepository.countByProjectIdInAndStatus(projectIds, "resolved"));
-            stats.put("closed", ticketRepository.countByProjectIdInAndStatus(projectIds, "closed"));
+            stats.put("open", ticketRepository.countByProjectIdInAndStatus(projectIds, TicketStatus.OPEN));
+            stats.put("processing", ticketRepository.countByProjectIdInAndStatus(projectIds, TicketStatus.PROCESSING));
+            stats.put("resolved", ticketRepository.countByProjectIdInAndStatus(projectIds, TicketStatus.RESOLVED));
+            stats.put("closed", ticketRepository.countByProjectIdInAndStatus(projectIds, TicketStatus.CLOSED));
         }
 
         return stats;

@@ -1,4 +1,5 @@
 import api from './index'
+import { StorageKeys } from '@/constants'
 
 export interface LoginRequest {
   username: string
@@ -41,8 +42,8 @@ export const authService = {
   // 登出
   logout: async (): Promise<void> => {
     await api.post('/admin/auth/logout')
-    localStorage.removeItem('auth_token')
-    localStorage.removeItem('user_info')
+    localStorage.removeItem(StorageKeys.AUTH_TOKEN)
+    localStorage.removeItem(StorageKeys.USER_INFO)
   },
 
   // 获取当前用户信息
@@ -59,18 +60,18 @@ export const authService = {
 
   // 获取保存的令牌
   getToken: (): string | null => {
-    return localStorage.getItem('auth_token')
+    return localStorage.getItem(StorageKeys.AUTH_TOKEN)
   },
 
   // 获取保存的用户信息
   getUserInfo: () => {
-    const info = localStorage.getItem('user_info')
+    const info = localStorage.getItem(StorageKeys.USER_INFO)
     return info ? JSON.parse(info) : null
   },
 
   // 检查是否已认证
   isAuthenticated: (): boolean => {
-    return !!localStorage.getItem('auth_token')
+    return !!localStorage.getItem(StorageKeys.AUTH_TOKEN)
   },
 }
 

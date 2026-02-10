@@ -1,5 +1,6 @@
 import axios, { AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
+import { StorageKeys, API_TIMEOUT } from '@/constants'
 
 export interface ApiResponse<T = any> {
   code: number
@@ -9,12 +10,12 @@ export interface ApiResponse<T = any> {
 
 const api = axios.create({
   baseURL: '/api',
-  timeout: 10000,
+  timeout: API_TIMEOUT,
 })
 
 // 请求拦截器
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('auth_token')
+  const token = localStorage.getItem(StorageKeys.AUTH_TOKEN)
   if (token) {
     config.headers.Authorization = `Bearer ${token}`
   }
@@ -30,8 +31,8 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // 未登录或token过期
-      localStorage.removeItem('auth_token')
-      localStorage.removeItem('user_info')
+      localStorage.removeItem(StorageKeys.AUTH_TOKEN)
+      localStorage.removeItem(StorageKeys.USER_INFO)
       ElMessage.error('登录已过期，请重新登录')
       window.location.href = '/login'
     } else if (error.response?.status === 403) {

@@ -1,5 +1,6 @@
 package com.customer_service.admin.service;
 
+import com.customer_service.shared.constant.UserStatus;
 import com.customer_service.shared.entity.SysRole;
 import com.customer_service.shared.entity.SysUser;
 import com.customer_service.shared.repository.SysRoleRepository;
@@ -57,7 +58,7 @@ public class SysUserService {
         user.setPasswordHash(passwordEncoder.encode(password));
         user.setEmail(email);
         user.setPhone(phone);
-        user.setStatus("active");
+        user.setStatus(UserStatus.ACTIVE);
 
         if (roleId != null) {
             SysRole role = sysRoleRepository.findById(roleId)
@@ -133,7 +134,7 @@ public class SysUserService {
             throw new RuntimeException("不能禁用管理员账号");
         }
 
-        user.setStatus("active".equals(user.getStatus()) ? "disabled" : "active");
+        user.setStatus(UserStatus.ACTIVE.equals(user.getStatus()) ? UserStatus.DISABLED : UserStatus.ACTIVE);
         return sysUserRepository.save(user);
     }
 }

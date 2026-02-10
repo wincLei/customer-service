@@ -1,5 +1,7 @@
 package com.customer_service.shared.entity;
 
+import com.customer_service.shared.constant.TicketPriority;
+import com.customer_service.shared.constant.TicketStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -46,11 +48,11 @@ public class Ticket {
 
     @Column(length = 10)
     @Builder.Default
-    private String priority = "medium"; // low, medium, high, urgent
+    private String priority = TicketPriority.MEDIUM; // low, medium, high, urgent
 
     @Column(length = 20)
     @Builder.Default
-    private String status = "open"; // open, processing, resolved, closed
+    private String status = TicketStatus.OPEN; // open, processing, resolved, closed
 
     @Column(name = "contact_info", length = 100)
     private String contactInfo;

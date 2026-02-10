@@ -2,6 +2,7 @@ package com.customer_service.admin.controller;
 
 import com.customer_service.admin.service.KbCategoryService;
 import com.customer_service.shared.annotation.RequirePermission;
+import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.KbCategory;
 import lombok.RequiredArgsConstructor;
@@ -23,7 +24,7 @@ public class KbCategoryController {
      * 获取分类列表（扁平）
      */
     @GetMapping
-    @RequirePermission(value = "workbench", roles = { "admin", "agent" })
+    @RequirePermission(value = "workbench", roles = { RoleCode.ADMIN, RoleCode.AGENT })
     public ApiResponse<List<KbCategory>> getCategories(@RequestParam Long projectId) {
         return ApiResponse.success(kbCategoryService.getAllCategories(projectId));
     }
@@ -32,7 +33,7 @@ public class KbCategoryController {
      * 获取分类树
      */
     @GetMapping("/tree")
-    @RequirePermission(value = "workbench", roles = { "admin", "agent" })
+    @RequirePermission(value = "workbench", roles = { RoleCode.ADMIN, RoleCode.AGENT })
     public ApiResponse<List<KbCategoryService.CategoryTreeNode>> getCategoryTree(@RequestParam Long projectId) {
         return ApiResponse.success(kbCategoryService.getCategoryTree(projectId));
     }
@@ -41,7 +42,7 @@ public class KbCategoryController {
      * 获取分类详情
      */
     @GetMapping("/{id}")
-    @RequirePermission(value = "workbench", roles = { "admin", "agent" })
+    @RequirePermission(value = "workbench", roles = { RoleCode.ADMIN, RoleCode.AGENT })
     public ApiResponse<KbCategory> getCategory(@PathVariable Long id) {
         KbCategory category = kbCategoryService.getCategoryById(id);
         if (category == null) {
@@ -54,7 +55,7 @@ public class KbCategoryController {
      * 创建分类
      */
     @PostMapping
-    @RequirePermission(value = "kb:manage", roles = { "admin", "agent" })
+    @RequirePermission(value = "kb:manage", roles = { RoleCode.ADMIN, RoleCode.AGENT })
     public ApiResponse<KbCategory> createCategory(@RequestBody KbCategory category) {
         try {
             KbCategory created = kbCategoryService.createCategory(category);
@@ -68,7 +69,7 @@ public class KbCategoryController {
      * 更新分类
      */
     @PutMapping("/{id}")
-    @RequirePermission(value = "kb:manage", roles = { "admin", "agent" })
+    @RequirePermission(value = "kb:manage", roles = { RoleCode.ADMIN, RoleCode.AGENT })
     public ApiResponse<KbCategory> updateCategory(@PathVariable Long id, @RequestBody KbCategory category) {
         try {
             KbCategory updated = kbCategoryService.updateCategory(id, category);
@@ -82,7 +83,7 @@ public class KbCategoryController {
      * 删除分类
      */
     @DeleteMapping("/{id}")
-    @RequirePermission(value = "kb:manage", roles = { "admin", "agent" })
+    @RequirePermission(value = "kb:manage", roles = { RoleCode.ADMIN, RoleCode.AGENT })
     public ApiResponse<Void> deleteCategory(@PathVariable Long id) {
         try {
             kbCategoryService.deleteCategory(id);

@@ -1,6 +1,7 @@
 package com.customer_service.admin.service;
 
 import com.customer_service.admin.dto.ConversationDTO;
+import com.customer_service.shared.constant.ConversationStatus;
 import com.customer_service.shared.repository.MessageRepository;
 import com.customer_service.shared.entity.Conversation;
 import com.customer_service.shared.entity.User;
@@ -37,7 +38,7 @@ public class ConversationService {
      */
     public List<ConversationDTO> getQueuedConversations(Long projectId) {
         List<Conversation> conversations = conversationRepository
-                .findByProjectIdAndStatusOrderByLastMessageTimeDesc(projectId, "queued");
+                .findByProjectIdAndStatusOrderByLastMessageTimeDesc(projectId, ConversationStatus.QUEUED);
         return enrichConversationsWithUserInfo(conversations);
     }
 
@@ -46,7 +47,7 @@ public class ConversationService {
      */
     public List<ConversationDTO> getAgentConversations(Long agentId) {
         List<Conversation> conversations = conversationRepository
-                .findByAgentIdAndStatusOrderByLastMessageTimeDesc(agentId, "active");
+                .findByAgentIdAndStatusOrderByLastMessageTimeDesc(agentId, ConversationStatus.ACTIVE);
         return enrichConversationsWithUserInfo(conversations);
     }
 
@@ -84,12 +85,12 @@ public class ConversationService {
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new RuntimeException("会话不存在"));
 
-        if (!"queued".equals(conversation.getStatus())) {
+        if (!ConversationStatus.QUEUED.equals(conversation.getStatus())) {
             throw new RuntimeException("会话不在排队状态");
         }
 
         conversation.setAgentId(agentId);
-        conversation.setStatus("active");
+        conversation.setStatus(ConversationStatus.ACTIVE);
 
         Conversation savedConversation = conversationRepository.save(conversation);
 
@@ -106,7 +107,7 @@ public class ConversationService {
         Conversation conversation = conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new RuntimeException("会话不存在"));
 
-        conversation.setStatus("closed");
+        conversation.setStatus(ConversationStatus.CLOSED);
         Conversation savedConversation = conversationRepository.save(conversation);
 
         log.info("Conversation {} closed", conversationId);

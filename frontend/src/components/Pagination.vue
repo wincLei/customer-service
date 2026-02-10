@@ -16,6 +16,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { DEFAULT_PAGE_SIZE } from '@/constants'
 
 interface Props {
   total: number
@@ -30,7 +31,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   total: 0,
   page: 1,
-  size: 10,
+  size: DEFAULT_PAGE_SIZE,
   pageSizes: () => [10, 20, 50, 100],
   layout: 'total, sizes, prev, pager, next, jumper',
   background: true,

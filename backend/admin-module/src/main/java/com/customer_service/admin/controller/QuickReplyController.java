@@ -2,6 +2,7 @@ package com.customer_service.admin.controller;
 
 import com.customer_service.admin.repository.QuickReplyRepository;
 import com.customer_service.shared.annotation.RequirePermission;
+import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.QuickReply;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/quick-replies")
 @RequiredArgsConstructor
-@RequirePermission(value = "workbench", roles = { "admin", "agent" })
+@RequirePermission(value = "workbench", roles = { RoleCode.ADMIN, RoleCode.AGENT })
 public class QuickReplyController {
 
     private final QuickReplyRepository quickReplyRepository;

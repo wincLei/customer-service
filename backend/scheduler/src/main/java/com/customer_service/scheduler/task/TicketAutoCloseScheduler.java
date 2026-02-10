@@ -1,5 +1,9 @@
 package com.customer_service.scheduler.task;
 
+import com.customer_service.shared.constant.AppDefaults;
+import com.customer_service.shared.constant.OperatorType;
+import com.customer_service.shared.constant.TicketAction;
+import com.customer_service.shared.constant.TicketStatus;
 import com.customer_service.shared.entity.Ticket;
 import com.customer_service.shared.entity.TicketEvent;
 import com.customer_service.shared.repository.TicketEventRepository;
@@ -37,7 +41,7 @@ public class TicketAutoCloseScheduler {
 
         try {
             // 计算 48 小时前的截止时间
-            LocalDateTime cutoffTime = LocalDateTime.now().minusHours(48);
+            LocalDateTime cutoffTime = LocalDateTime.now().minusHours(AppDefaults.AUTO_CLOSE_TIMEOUT_HOURS);
 
             // 查找符合条件的工单：
             // 1. 状态为 open 或 processing
@@ -57,7 +61,7 @@ public class TicketAutoCloseScheduler {
                 try {
                     // 更新工单状态为已解决
                     String oldStatus = ticket.getStatus();
-                    ticket.setStatus("resolved");
+                    ticket.setStatus(TicketStatus.RESOLVED);
                     ticket.setResolvedAt(LocalDateTime.now());
                     ticket.setUpdatedAt(LocalDateTime.now());
                     ticketRepository.save(ticket);
@@ -65,11 +69,11 @@ public class TicketAutoCloseScheduler {
                     // 记录系统自动关闭事件
                     TicketEvent event = TicketEvent.builder()
                             .ticketId(ticket.getId())
-                            .operatorType("system")
-                            .action("auto_close")
+                            .operatorType(OperatorType.SYSTEM)
+                            .action(TicketAction.AUTO_CLOSE)
                             .content(String.format(
-                                    "系统自动关闭：客服回复后用户超过48小时未回复，工单状态从 %s 变更为 resolved",
-                                    oldStatus))
+                                    "系统自动关闭：客服回复后用户超过%d小时未回复，工单状态从 %s 变更为 resolved",
+                                    AppDefaults.AUTO_CLOSE_TIMEOUT_HOURS, oldStatus))
                             .createdAt(LocalDateTime.now())
                             .build();
                     ticketEventRepository.save(event);

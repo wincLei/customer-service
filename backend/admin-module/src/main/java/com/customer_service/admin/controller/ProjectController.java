@@ -2,6 +2,7 @@ package com.customer_service.admin.controller;
 
 import com.customer_service.admin.service.ProjectService;
 import com.customer_service.shared.annotation.RequirePermission;
+import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.context.UserContextHolder;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.Project;
@@ -33,7 +34,7 @@ public class ProjectController {
      * 客服只能看到关联的项目，管理员可以看到所有项目
      */
     @GetMapping("/all")
-    @RequirePermission(value = "workbench", roles = { "admin", "agent" })
+    @RequirePermission(value = "workbench", roles = { RoleCode.ADMIN, RoleCode.AGENT })
     public ApiResponse<List<Map<String, Object>>> getAllProjects() {
         String roleCode = UserContextHolder.getRoleCode();
         Long userId = UserContextHolder.getUserId();
@@ -57,7 +58,7 @@ public class ProjectController {
      * 获取项目列表（支持分页和搜索）
      */
     @GetMapping
-    @RequirePermission(value = "project:manage", roles = { "admin" })
+    @RequirePermission(value = "project:manage", roles = { RoleCode.ADMIN })
     public ApiResponse<?> listProjects(
             @RequestParam(required = false, defaultValue = "") String keyword,
             @RequestParam(required = false, defaultValue = "1") int page,
@@ -80,7 +81,7 @@ public class ProjectController {
      * 获取单个项目详情
      */
     @GetMapping("/{id}")
-    @RequirePermission(value = "project:manage", roles = { "admin", "agent" })
+    @RequirePermission(value = "project:manage", roles = { RoleCode.ADMIN, RoleCode.AGENT })
     public ApiResponse<?> getProject(@PathVariable Long id) {
         return projectService.getProjectById(id)
                 .map(project -> ApiResponse.success(toProjectVO(project)))
@@ -91,7 +92,7 @@ public class ProjectController {
      * 创建项目
      */
     @PostMapping
-    @RequirePermission(value = "project:manage", roles = { "admin" })
+    @RequirePermission(value = "project:manage", roles = { RoleCode.ADMIN })
     public ApiResponse<?> createProject(@RequestBody CreateProjectRequest request) {
         if (request.getName() == null || request.getName().trim().isEmpty()) {
             return ApiResponse.error("项目名称不能为空");
@@ -112,7 +113,7 @@ public class ProjectController {
      * 更新项目
      */
     @PutMapping("/{id}")
-    @RequirePermission(value = "project:manage", roles = { "admin" })
+    @RequirePermission(value = "project:manage", roles = { RoleCode.ADMIN })
     public ApiResponse<?> updateProject(@PathVariable Long id, @RequestBody UpdateProjectRequest request) {
         if (request.getName() == null || request.getName().trim().isEmpty()) {
             return ApiResponse.error("项目名称不能为空");
@@ -132,7 +133,7 @@ public class ProjectController {
      * 删除项目
      */
     @DeleteMapping("/{id}")
-    @RequirePermission(value = "project:manage", roles = { "admin" })
+    @RequirePermission(value = "project:manage", roles = { RoleCode.ADMIN })
     public ApiResponse<?> deleteProject(@PathVariable Long id) {
         try {
             projectService.deleteProject(id);
@@ -147,7 +148,7 @@ public class ProjectController {
      * 重新生成AppSecret
      */
     @PostMapping("/{id}/regenerate-secret")
-    @RequirePermission(value = "project:manage", roles = { "admin" })
+    @RequirePermission(value = "project:manage", roles = { RoleCode.ADMIN })
     public ApiResponse<?> regenerateSecret(@PathVariable Long id) {
         try {
             Project project = projectService.regenerateAppSecret(id);

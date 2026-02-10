@@ -3,6 +3,7 @@ package com.customer_service.admin.controller;
 import com.customer_service.admin.dto.CustomerTagDTO;
 import com.customer_service.admin.service.CustomerUserService;
 import com.customer_service.shared.annotation.RequirePermission;
+import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.context.UserContextHolder;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.CustomerTag;
@@ -27,7 +28,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin/customers")
 @RequiredArgsConstructor
-@RequirePermission(value = "workbench", roles = { "admin", "agent" })
+@RequirePermission(value = "workbench", roles = { RoleCode.ADMIN, RoleCode.AGENT })
 public class CustomerUserController {
 
     private final CustomerUserService customerUserService;

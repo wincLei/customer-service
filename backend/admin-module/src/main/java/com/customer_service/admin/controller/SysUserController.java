@@ -2,6 +2,7 @@ package com.customer_service.admin.controller;
 
 import com.customer_service.admin.service.SysUserService;
 import com.customer_service.shared.annotation.RequirePermission;
+import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.SysUser;
 import lombok.Data;
@@ -23,7 +24,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
-@RequirePermission(value = "user:manage", roles = { "admin" })
+@RequirePermission(value = "user:manage", roles = { RoleCode.ADMIN })
 public class SysUserController {
 
     private final SysUserService sysUserService;

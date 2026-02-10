@@ -1,5 +1,6 @@
 package com.customer_service.portal.service;
 
+import com.customer_service.shared.constant.IMConstants;
 import com.customer_service.shared.entity.User;
 import com.customer_service.shared.event.VisitorChannelCreateEvent;
 import com.customer_service.shared.repository.UserRepository;
@@ -141,7 +142,8 @@ public class PortalUserService {
         }
 
         // 情况3: 既没有外部UID也没有游客UID，创建匿名游客
-        String anonymousUid = "anon_" + System.currentTimeMillis() + "_" + (int) (Math.random() * 10000);
+        String anonymousUid = IMConstants.ANON_UID_PREFIX + System.currentTimeMillis() + "_"
+                + (int) (Math.random() * 10000);
         User anonymousUser = createNewUser(projectId, anonymousUid, null, true, nickname, avatar, phone);
         String imToken = getImToken(anonymousUser, projectId, deviceFlag);
         publishVisitorChannelEvent(projectId, anonymousUser);

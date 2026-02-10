@@ -1,5 +1,7 @@
 package com.customer_service.portal.service;
 
+import com.customer_service.shared.constant.MessageType;
+import com.customer_service.shared.constant.OperatorType;
 import com.customer_service.shared.constant.WKChannelType;
 import com.customer_service.shared.entity.Message;
 import com.customer_service.shared.repository.MessageRepository;
@@ -99,14 +101,14 @@ public class PortalMessageService {
 
         // 构建消息内容 JSON
         ObjectNode contentNode = objectMapper.createObjectNode();
-        if ("text".equals(msgType)) {
+        if (MessageType.TEXT.equals(msgType)) {
             contentNode.put("text", content);
-        } else if ("image".equals(msgType)) {
+        } else if (MessageType.IMAGE.equals(msgType)) {
             contentNode.put("url", content);
-            contentNode.put("type", "image");
-        } else if ("file".equals(msgType)) {
+            contentNode.put("type", MessageType.IMAGE);
+        } else if (MessageType.FILE.equals(msgType)) {
             contentNode.put("url", content);
-            contentNode.put("type", "file");
+            contentNode.put("type", MessageType.FILE);
         }
 
         // 创建消息记录
@@ -114,7 +116,7 @@ public class PortalMessageService {
                 .projectId(conv.getProjectId())
                 .conversationId(conversationId)
                 .msgId(UUID.randomUUID().toString())
-                .senderType("user")
+                .senderType(OperatorType.USER)
                 .senderId(userId)
                 .msgType(msgType)
                 .content(contentNode)
@@ -124,7 +126,7 @@ public class PortalMessageService {
         messageRepository.save(message);
 
         // 更新会话最后消息
-        String lastContent = "text".equals(msgType) ? content : "[" + msgType + "]";
+        String lastContent = MessageType.TEXT.equals(msgType) ? content : "[" + msgType + "]";
         conversationService.updateLastMessage(conversationId, lastContent);
 
         log.info("Message saved: convId={}, userId={}, type={}", conversationId, userId, msgType);
@@ -140,9 +142,9 @@ public class PortalMessageService {
         String visitorChannelId = senderUid;
 
         boolean messageSent = false;
-        if ("text".equals(msgType)) {
+        if (MessageType.TEXT.equals(msgType)) {
             messageSent = wuKongIMService.sendTextMessage(senderUid, visitorChannelId, WKChannelType.VISITOR, content);
-        } else if ("image".equals(msgType)) {
+        } else if (MessageType.IMAGE.equals(msgType)) {
             messageSent = wuKongIMService.sendImageMessage(senderUid, visitorChannelId, WKChannelType.VISITOR, content);
         }
 

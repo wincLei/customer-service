@@ -3,6 +3,7 @@ package com.customer_service.admin.controller;
 import com.customer_service.admin.dto.ConversationDTO;
 import com.customer_service.admin.service.ConversationService;
 import com.customer_service.shared.annotation.RequirePermission;
+import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.Conversation;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +22,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/admin/conversations")
 @RequiredArgsConstructor
-@RequirePermission(value = "workbench", roles = { "admin", "agent" })
+@RequirePermission(value = "workbench", roles = { RoleCode.ADMIN, RoleCode.AGENT })
 public class ConversationController {
 
     private final ConversationService conversationService;

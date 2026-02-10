@@ -1,6 +1,7 @@
 package com.customer_service.portal.controller;
 
 import com.customer_service.portal.service.WebhookService;
+import com.customer_service.shared.constant.WebhookEvent;
 import com.customer_service.shared.dto.WKMessageNotify;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,15 +39,15 @@ public class WebhookController {
 
         try {
             switch (event) {
-                case "msg.notify":
+                case WebhookEvent.MSG_NOTIFY:
                     // 所有消息通知
                     webhookService.handleMessageNotify(body);
                     break;
-                case "msg.offline":
+                case WebhookEvent.MSG_OFFLINE:
                     // 离线消息通知（需要推送）
                     webhookService.handleOfflineMessage(body);
                     break;
-                case "user.onlinestatus":
+                case WebhookEvent.USER_ONLINE_STATUS:
                     // 用户在线状态变更
                     webhookService.handleUserOnlineStatus(body);
                     break;

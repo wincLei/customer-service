@@ -1,4 +1,5 @@
 import { reactive, computed } from 'vue'
+import { StorageKeys } from '@/constants'
 
 export interface UserPermissions {
   menus: string[]
@@ -31,7 +32,7 @@ const state = reactive<PermissionState>({
 export const usePermissionStore = () => {
   // 初始化：从localStorage加载用户信息
   const init = () => {
-    const userInfo = localStorage.getItem('user_info')
+    const userInfo = localStorage.getItem(StorageKeys.USER_INFO)
     if (userInfo) {
       try {
         state.user = JSON.parse(userInfo)
@@ -46,15 +47,15 @@ export const usePermissionStore = () => {
   const setUser = (user: UserInfo) => {
     state.user = user
     state.isLoaded = true
-    localStorage.setItem('user_info', JSON.stringify(user))
+    localStorage.setItem(StorageKeys.USER_INFO, JSON.stringify(user))
   }
 
   // 清除用户信息
   const clearUser = () => {
     state.user = null
     state.isLoaded = false
-    localStorage.removeItem('user_info')
-    localStorage.removeItem('auth_token')
+    localStorage.removeItem(StorageKeys.USER_INFO)
+    localStorage.removeItem(StorageKeys.AUTH_TOKEN)
   }
 
   // 获取用户信息
@@ -102,7 +103,7 @@ export const usePermissionStore = () => {
   }
 
   // 是否已登录
-  const isAuthenticated = computed(() => !!state.user && !!localStorage.getItem('auth_token'))
+  const isAuthenticated = computed(() => !!state.user && !!localStorage.getItem(StorageKeys.AUTH_TOKEN))
 
   return {
     // 状态

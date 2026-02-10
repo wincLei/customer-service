@@ -2,6 +2,7 @@ package com.customer_service.admin.interceptor;
 
 import com.customer_service.shared.annotation.Public;
 import com.customer_service.shared.annotation.RequirePermission;
+import com.customer_service.shared.constant.AppDefaults;
 import com.customer_service.shared.context.UserContextHolder;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.dto.UserContext;
@@ -69,7 +70,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         }
 
         // 从Redis获取用户信息
-        String userInfoJson = redisTemplate.opsForValue().get("token:" + token);
+        String userInfoJson = redisTemplate.opsForValue().get(AppDefaults.REDIS_TOKEN_PREFIX + token);
         if (userInfoJson == null) {
             sendUnauthorized(response, "登录已过期，请重新登录");
             return false;
@@ -193,8 +194,8 @@ public class AuthInterceptor implements HandlerInterceptor {
      */
     private String extractToken(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
+        if (bearerToken != null && bearerToken.startsWith(AppDefaults.BEARER_PREFIX)) {
+            return bearerToken.substring(AppDefaults.BEARER_PREFIX.length());
         }
         return null;
     }

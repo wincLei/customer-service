@@ -530,7 +530,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { User, Close, Notebook, ChatDotSquare, Search, Loading, Bell, MuteNotification, Check, Picture, Tickets } from '@element-plus/icons-vue'
 import { WKIM, WKIMEvent } from 'easyjssdk'
-import { DeviceType, WKChannelType } from '@/constants'
+import { DeviceType, WKChannelType, StorageKeys, TicketStatusLabel, TicketStatusType, TicketPriorityLabel, TicketPriorityType, IMPayloadType, IM_INITIAL_LOAD_LIMIT, IM_LOAD_MORE_LIMIT, WORKBENCH_PAGE_SIZE, MAX_UPLOAD_SIZE, ALLOWED_IMAGE_TYPES, AGENT_UID_PREFIX } from '@/constants'
 import api from '@/api/index'
 
 // IM 相关状态
@@ -634,7 +634,7 @@ const ticketReplyContent = ref('')
 const ticketNewStatus = ref('')
 const submittingTicketReply = ref(false)
 const hasUnreadUserTicket = ref(false)  // 是否有用户回复的未读工单
-const AGENT_TICKET_READ_KEY = 'mini_cs_agent_ticket_read_'  // 客服端工单已读状态 key
+const AGENT_TICKET_READ_KEY = StorageKeys.AGENT_TICKET_READ_PREFIX  // 客服端工单已读状态 key
 
 // 消息分页加载相关状态
 const loadingMoreMessages = ref(false)
@@ -643,7 +643,7 @@ const oldestMessageSeq = ref<number>(0)  // 当前最旧消息的序号
 
 // 会话列表分页状态
 const conversationPage = ref(0)  // 当前页码（从0开始）
-const conversationPageSize = 20  // 每页大小
+const conversationPageSize = WORKBENCH_PAGE_SIZE  // 每页大小
 const loadingMoreConversations = ref(false)
 const hasMoreConversations = ref(true)
 const totalConversations = ref(0)
@@ -685,7 +685,7 @@ const fetchKbArticles = async (projectIds: number[]) => {
     const projectIdsParam = projectIds.join(',')
     const response = await fetch(`/api/admin/kb/articles?projectIds=${projectIdsParam}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       }
     })
     const data = await response.json()
@@ -707,7 +707,7 @@ const fetchQuickReplies = async (projectIds: number[]) => {
     const projectIdsParam = projectIds.join(',')
     const response = await fetch(`/api/admin/quick-replies?projectIds=${projectIdsParam}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       }
     })
     const data = await response.json()
@@ -729,7 +729,7 @@ const agentId = ref(1)
 
 // 从localStorage获取当前登录的客服ID和项目ID列表
 const initAgentInfo = () => {
-  const userInfo = localStorage.getItem('user_info')
+  const userInfo = localStorage.getItem(StorageKeys.USER_INFO)
   if (userInfo) {
     try {
       const user = JSON.parse(userInfo)
@@ -806,7 +806,7 @@ const fetchMyConversations = async (keyword?: string) => {
     
     const response = await fetch(url, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       }
     })
     
@@ -846,7 +846,7 @@ const loadMoreConversations = async () => {
     
     const response = await fetch(url, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       }
     })
     
@@ -987,7 +987,7 @@ const markConversationAsRead = async (userId: number, messageSeq?: number) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       },
       body: JSON.stringify({ messageSeq: messageSeq || null })
     })
@@ -1023,7 +1023,7 @@ const parseMessage = (msg: any): Message & { messageSeq?: number } => {
     conversationId: 0,
     senderId: isAgent ? agentId.value : 0,
     senderType: isAgent ? 'agent' : 'user',
-    contentType: payload.type === 2 ? 'image' : 'text',
+    contentType: payload.type === IMPayloadType.IMAGE ? 'image' : 'text',
     content: payload.content || payload.url || '',
     createdAt: new Date(timestamp).toISOString(),
     messageSeq: msg.message_seq || msg.messageSeq || 0
@@ -1044,13 +1044,13 @@ const fetchMessagesByUserUid = async (userUid: string) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       },
       body: JSON.stringify({
         loginUid: getAgentUid(),
         channelId: userUid,
         channelType: WKChannelType.VISITOR,  // Visitor Channel
-        limit: 50
+        limit: IM_INITIAL_LOAD_LIMIT
       })
     })
     
@@ -1066,7 +1066,7 @@ const fetchMessagesByUserUid = async (userUid: string) => {
         if (seqs.length > 0) {
           oldestMessageSeq.value = Math.min(...seqs)
         }
-        hasMoreMessages.value = parsedMessages.length >= 50
+        hasMoreMessages.value = parsedMessages.length >= IM_INITIAL_LOAD_LIMIT
       } else {
         hasMoreMessages.value = false
       }
@@ -1098,14 +1098,14 @@ const loadMoreMessages = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       },
       body: JSON.stringify({
         loginUid: getAgentUid(),
         channelId: selectedConversation.value.userUid,
         channelType: WKChannelType.VISITOR,
         startMessageSeq: oldestMessageSeq.value,
-        limit: 30,
+        limit: IM_LOAD_MORE_LIMIT,
         pullMode: 0  // 向上拉取更旧消息
       })
     })
@@ -1286,7 +1286,7 @@ const checkUserHasUnreadTicket = async () => {
   try {
     const response = await fetch(`/api/admin/ticket/user/${selectedConversation.value.userId}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       }
     })
     const data = await response.json()
@@ -1316,7 +1316,7 @@ const openUserTickets = async () => {
   try {
     const response = await fetch(`/api/admin/ticket/user/${selectedConversation.value.userId}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       }
     })
     const data = await response.json()
@@ -1348,7 +1348,7 @@ const viewTicketDetail = async (ticket: Ticket) => {
   try {
     const response = await fetch(`/api/admin/ticket/${ticket.id}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       }
     })
     const data = await response.json()
@@ -1375,7 +1375,7 @@ const submitTicketReply = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       },
       body: JSON.stringify({ content: ticketReplyContent.value.trim() })
     })
@@ -1392,7 +1392,7 @@ const submitTicketReply = async () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+          'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
         },
         body: JSON.stringify({ status: ticketNewStatus.value })
       })
@@ -1428,48 +1428,22 @@ const closeTicketDialog = () => {
 
 // 获取工单状态类型
 const getTicketStatusType = (status: string) => {
-  const statusMap: Record<string, string> = {
-    'open': 'warning',
-    'pending': 'warning',
-    'processing': 'primary',
-    'resolved': 'success',
-    'closed': 'info'
-  }
-  return statusMap[status] || 'info'
+  return TicketStatusType[status] || 'info'
 }
 
 // 获取工单状态标签
 const getTicketStatusLabel = (status: string) => {
-  const labelMap: Record<string, string> = {
-    'open': '待处理',
-    'pending': '待处理',
-    'processing': '处理中',
-    'resolved': '已解决',
-    'closed': '已关闭'
-  }
-  return labelMap[status] || status
+  return TicketStatusLabel[status] || status
 }
 
 // 获取工单优先级类型
 const getTicketPriorityType = (priority: string) => {
-  const priorityMap: Record<string, string> = {
-    'low': 'info',
-    'medium': '',
-    'high': 'warning',
-    'urgent': 'danger'
-  }
-  return priorityMap[priority] || ''
+  return TicketPriorityType[priority] || ''
 }
 
 // 获取工单优先级标签
 const getTicketPriorityLabel = (priority: string) => {
-  const labelMap: Record<string, string> = {
-    'low': '低',
-    'medium': '中',
-    'high': '高',
-    'urgent': '紧急'
-  }
-  return labelMap[priority] || priority
+  return TicketPriorityLabel[priority] || priority
 }
 
 // 格式化工单时间
@@ -1493,14 +1467,13 @@ const goToTicketManagement = () => {
 // 核心图片上传并发送方法（供文件选择和粘贴共用）
 const uploadAndSendImage = async (file: File) => {
   // 验证文件类型
-  const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/bmp']
-  if (!allowedTypes.includes(file.type)) {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     ElMessage.warning('只支持上传图片文件（JPG、PNG、GIF、WEBP、BMP）')
     return
   }
 
   // 限制文件大小（10MB）
-  if (file.size > 10 * 1024 * 1024) {
+  if (file.size > MAX_UPLOAD_SIZE) {
     ElMessage.warning('图片大小不能超过 10MB')
     return
   }
@@ -1522,7 +1495,7 @@ const uploadAndSendImage = async (file: File) => {
     // 获取 OSS 上传凭证
     const tokenRes = await fetch('/api/admin/oss/token', {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       }
     })
     const tokenData = await tokenRes.json()
@@ -1662,7 +1635,7 @@ const fetchAvailableTags = async (projectId: number) => {
   try {
     const response = await fetch(`/api/admin/customer-tags?projectId=${projectId}`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       }
     })
     const data = await response.json()
@@ -1680,7 +1653,7 @@ const fetchUserTags = async (userId: number) => {
   try {
     const response = await fetch(`/api/admin/customers/${userId}/tags`, {
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       }
     })
     const data = await response.json()
@@ -1719,7 +1692,7 @@ const addTagToUser = async (tag: CustomerTag) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       },
       body: JSON.stringify({ tagId: tag.id })
     })
@@ -1747,7 +1720,7 @@ const removeTag = async (tag: CustomerTag) => {
     const response = await fetch(`/api/admin/customers/${selectedConversation.value.userId}/tags/${tag.id}`, {
       method: 'DELETE',
       headers: {
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       }
     })
     const data = await response.json()
@@ -1779,7 +1752,7 @@ const createAndAddTag = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       },
       body: JSON.stringify({
         projectId: projectId,
@@ -1940,7 +1913,7 @@ const formatTime = (time?: string) => {
 // ================= WuKongIM 集成 =================
 
 // 客服 UID（格式: agent_{userId}）
-const getAgentUid = () => `agent_${agentId.value}`
+const getAgentUid = () => `${AGENT_UID_PREFIX}${agentId.value}`
 
 // 解析 userUid（格式: {projectId}_{userId}）
 const parseUserUid = (userUid: string): { projectId: number; userId: number } | null => {
@@ -2031,7 +2004,7 @@ const handleIMMessage = (message: any) => {
           conversationId: conv.userId,
           senderId: 0,
           senderType: 'user',
-          contentType: payload.type === 2 ? 'image' : 'text',
+          contentType: payload.type === IMPayloadType.IMAGE ? 'image' : 'text',
           content: messageContent,
           createdAt: new Date().toISOString()
         }
@@ -2077,7 +2050,7 @@ const handleIMMessage = (message: any) => {
           conversationId: pendingQueue.value[pendingIndex].userId || 0,
           senderId: 0,
           senderType: 'user',
-          contentType: payload.type === 2 ? 'image' : 'text',
+          contentType: payload.type === IMPayloadType.IMAGE ? 'image' : 'text',
           content: messageContent,
           createdAt: new Date().toISOString()
         }
@@ -2139,7 +2112,7 @@ const initIMConnection = async () => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        'Authorization': `Bearer ${localStorage.getItem(StorageKeys.AUTH_TOKEN)}`
       },
       body: JSON.stringify({
         uid: getAgentUid(),

@@ -1,5 +1,7 @@
 package com.customer_service.shared.entity;
 
+import com.customer_service.shared.constant.AppDefaults;
+import com.customer_service.shared.constant.WorkStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -66,13 +68,13 @@ public class Agent {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
         if (maxLoad == null) {
-            maxLoad = 5;
+            maxLoad = AppDefaults.DEFAULT_MAX_LOAD;
         }
         if (currentLoad == null) {
             currentLoad = 0;
         }
         if (workStatus == null) {
-            workStatus = "offline";
+            workStatus = WorkStatus.OFFLINE;
         }
         if (autoReplyEnabled == null) {
             autoReplyEnabled = false;

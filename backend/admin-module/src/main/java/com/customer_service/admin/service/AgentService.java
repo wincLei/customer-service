@@ -1,5 +1,8 @@
 package com.customer_service.admin.service;
 
+import com.customer_service.shared.constant.AppDefaults;
+import com.customer_service.shared.constant.RoleCode;
+import com.customer_service.shared.constant.WorkStatus;
 import com.customer_service.shared.entity.Agent;
 import com.customer_service.shared.entity.Project;
 import com.customer_service.shared.entity.SysUser;
@@ -84,9 +87,9 @@ public class AgentService {
         Agent agent = Agent.builder()
                 .userId(userId)
                 .nickname(nickname != null ? nickname : user.getUsername())
-                .maxLoad(maxLoad != null ? maxLoad : 5)
+                .maxLoad(maxLoad != null ? maxLoad : AppDefaults.DEFAULT_MAX_LOAD)
                 .currentLoad(0)
-                .workStatus("offline")
+                .workStatus(WorkStatus.OFFLINE)
                 .welcomeMessage(welcomeMessage)
                 .autoReplyEnabled(autoReplyEnabled != null ? autoReplyEnabled : false)
                 .build();
@@ -207,7 +210,7 @@ public class AgentService {
      * 获取可以成为客服的用户列表（角色为agent且尚未创建客服记录的用户）
      */
     public List<SysUser> getAvailableUsersForAgent() {
-        List<SysUser> agentRoleUsers = sysUserRepository.findByRoleCode("agent");
+        List<SysUser> agentRoleUsers = sysUserRepository.findByRoleCode(RoleCode.AGENT);
         return agentRoleUsers.stream()
                 .filter(user -> !agentRepository.existsByUserId(user.getId()))
                 .toList();

@@ -1,6 +1,7 @@
 package com.customer_service.admin.controller;
 
 import com.customer_service.shared.annotation.RequirePermission;
+import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.admin.service.SysMenuService;
 import com.customer_service.shared.entity.SysMenu;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ public class SysMenuController {
      * 获取菜单树（用于管理界面）
      */
     @GetMapping("/tree")
-    @RequirePermission(value = "menu:manage", roles = { "admin" })
+    @RequirePermission(value = "menu:manage", roles = { RoleCode.ADMIN })
     public ResponseEntity<Map<String, Object>> getMenuTree() {
         Map<String, Object> response = new HashMap<>();
         response.put("code", 0);
@@ -35,7 +36,7 @@ public class SysMenuController {
      * 获取启用的菜单树（用于角色授权选择）
      */
     @GetMapping("/enabled-tree")
-    @RequirePermission(value = "role:manage", roles = { "admin" })
+    @RequirePermission(value = "role:manage", roles = { RoleCode.ADMIN })
     public ResponseEntity<Map<String, Object>> getEnabledMenuTree() {
         Map<String, Object> response = new HashMap<>();
         response.put("code", 0);
@@ -48,7 +49,7 @@ public class SysMenuController {
      * 获取所有菜单（平铺列表）
      */
     @GetMapping
-    @RequirePermission(value = "menu:manage", roles = { "admin" })
+    @RequirePermission(value = "menu:manage", roles = { RoleCode.ADMIN })
     public ResponseEntity<Map<String, Object>> getAllMenus() {
         Map<String, Object> response = new HashMap<>();
         response.put("code", 0);
@@ -61,7 +62,7 @@ public class SysMenuController {
      * 获取菜单详情
      */
     @GetMapping("/{id}")
-    @RequirePermission(value = "menu:manage", roles = { "admin" })
+    @RequirePermission(value = "menu:manage", roles = { RoleCode.ADMIN })
     public ResponseEntity<Map<String, Object>> getMenuById(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
         return menuService.getMenuById(id)
@@ -82,7 +83,7 @@ public class SysMenuController {
      * 创建菜单
      */
     @PostMapping
-    @RequirePermission(value = "menu:manage", roles = { "admin" })
+    @RequirePermission(value = "menu:manage", roles = { RoleCode.ADMIN })
     public ResponseEntity<Map<String, Object>> createMenu(@RequestBody SysMenu menu) {
         Map<String, Object> response = new HashMap<>();
         try {
@@ -102,7 +103,7 @@ public class SysMenuController {
      * 更新菜单
      */
     @PutMapping("/{id}")
-    @RequirePermission(value = "menu:manage", roles = { "admin" })
+    @RequirePermission(value = "menu:manage", roles = { RoleCode.ADMIN })
     public ResponseEntity<Map<String, Object>> updateMenu(@PathVariable Long id, @RequestBody SysMenu menu) {
         Map<String, Object> response = new HashMap<>();
         try {
@@ -122,7 +123,7 @@ public class SysMenuController {
      * 删除菜单
      */
     @DeleteMapping("/{id}")
-    @RequirePermission(value = "menu:manage", roles = { "admin" })
+    @RequirePermission(value = "menu:manage", roles = { RoleCode.ADMIN })
     public ResponseEntity<Map<String, Object>> deleteMenu(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
         try {
@@ -141,7 +142,7 @@ public class SysMenuController {
      * 切换菜单启用状态
      */
     @PostMapping("/{id}/toggle")
-    @RequirePermission(value = "menu:manage", roles = { "admin" })
+    @RequirePermission(value = "menu:manage", roles = { RoleCode.ADMIN })
     public ResponseEntity<Map<String, Object>> toggleMenuStatus(@PathVariable Long id) {
         Map<String, Object> response = new HashMap<>();
         try {

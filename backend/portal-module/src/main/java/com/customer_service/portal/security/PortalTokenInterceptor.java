@@ -1,5 +1,6 @@
 package com.customer_service.portal.security;
 
+import com.customer_service.shared.constant.AppDefaults;
 import com.customer_service.shared.dto.ApiResponse;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -22,7 +23,6 @@ import org.springframework.web.servlet.HandlerInterceptor;
 public class PortalTokenInterceptor implements HandlerInterceptor {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
-    private static final String BEARER_PREFIX = "Bearer ";
 
     private final PortalTokenProvider tokenProvider;
     private final ObjectMapper objectMapper;
@@ -73,8 +73,8 @@ public class PortalTokenInterceptor implements HandlerInterceptor {
      */
     private String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
-            return bearerToken.substring(BEARER_PREFIX.length());
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(AppDefaults.BEARER_PREFIX)) {
+            return bearerToken.substring(AppDefaults.BEARER_PREFIX.length());
         }
         return null;
     }

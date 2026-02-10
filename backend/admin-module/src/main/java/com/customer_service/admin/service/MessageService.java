@@ -1,5 +1,7 @@
 package com.customer_service.admin.service;
 
+import com.customer_service.shared.constant.IMConstants;
+import com.customer_service.shared.constant.MessageType;
 import com.customer_service.shared.constant.WKChannelType;
 import com.customer_service.shared.repository.ConversationRepository;
 import com.customer_service.shared.repository.MessageRepository;
@@ -97,9 +99,9 @@ public class MessageService {
         // 访客频道: channel_id = 用户UID，客服和用户都向此频道发送消息
         if (targetUserUid != null) {
             try {
-                String fromUid = "agent_" + senderId;
+                String fromUid = IMConstants.AGENT_UID_PREFIX + senderId;
 
-                if ("text".equals(contentType)) {
+                if (MessageType.TEXT.equals(contentType)) {
                     boolean sent = wuKongIMService.sendTextMessage(fromUid, targetUserUid, WKChannelType.VISITOR,
                             content);
                     if (sent) {
@@ -108,7 +110,7 @@ public class MessageService {
                         log.warn("Failed to send IM message to visitor channel: from={} channelId={}", fromUid,
                                 targetUserUid);
                     }
-                } else if ("image".equals(contentType)) {
+                } else if (MessageType.IMAGE.equals(contentType)) {
                     boolean sent = wuKongIMService.sendImageMessage(fromUid, targetUserUid, WKChannelType.VISITOR,
                             content);
                     if (sent) {

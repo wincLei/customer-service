@@ -231,6 +231,7 @@ import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, User } from '@element-plus/icons-vue'
 import request from '@/api'
+import { DEFAULT_PAGE_SIZE } from '@/constants'
 
 interface Project {
   id: number
@@ -268,7 +269,7 @@ const projectTags = ref<CustomerTag[]>([])
 const keyword = ref('')
 const activeTab = ref('all')
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(DEFAULT_PAGE_SIZE)
 const total = ref(0)
 const stats = ref<{ total: number; guests: number; registered: number } | null>(null)
 

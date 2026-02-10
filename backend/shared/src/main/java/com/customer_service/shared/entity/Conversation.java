@@ -1,5 +1,7 @@
 package com.customer_service.shared.entity;
 
+import com.customer_service.shared.constant.AppDefaults;
+import com.customer_service.shared.constant.ConversationStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,10 +12,10 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "conversations", indexes = {
-    @Index(name = "idx_conv_project_status", columnList = "project_id,status"),
-    @Index(name = "idx_conv_agent_active", columnList = "agent_id,status"),
-    @Index(name = "idx_conv_user_history", columnList = "user_id,created_at"),
-    @Index(name = "idx_conv_updated", columnList = "project_id,last_message_time")
+        @Index(name = "idx_conv_project_status", columnList = "project_id,status"),
+        @Index(name = "idx_conv_agent_active", columnList = "agent_id,status"),
+        @Index(name = "idx_conv_user_history", columnList = "user_id,created_at"),
+        @Index(name = "idx_conv_updated", columnList = "project_id,last_message_time")
 })
 @Data
 @Builder
@@ -65,10 +67,10 @@ public class Conversation {
         createdAt = LocalDateTime.now();
         lastMessageTime = LocalDateTime.now();
         if (status == null) {
-            status = "queued";
+            status = ConversationStatus.QUEUED;
         }
         if (priority == null) {
-            priority = 0;
+            priority = AppDefaults.DEFAULT_PRIORITY;
         }
     }
 }

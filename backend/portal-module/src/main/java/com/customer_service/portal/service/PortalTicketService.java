@@ -1,5 +1,9 @@
 package com.customer_service.portal.service;
 
+import com.customer_service.shared.constant.OperatorType;
+import com.customer_service.shared.constant.TicketAction;
+import com.customer_service.shared.constant.TicketPriority;
+import com.customer_service.shared.constant.TicketStatus;
 import com.customer_service.shared.entity.Ticket;
 import com.customer_service.shared.entity.TicketEvent;
 import com.customer_service.shared.repository.TicketEventRepository;
@@ -31,12 +35,12 @@ public class PortalTicketService {
         Ticket ticket = Ticket.builder()
                 .projectId(projectId)
                 .userId(userId)
-                .creatorType("user")
+                .creatorType(OperatorType.USER)
                 .title(title)
                 .description(description)
                 .contactInfo(contactInfo)
-                .priority(priority != null ? priority : "medium")
-                .status("open")
+                .priority(priority != null ? priority : TicketPriority.MEDIUM)
+                .status(TicketStatus.OPEN)
                 .build();
 
         ticketRepository.save(ticket);
@@ -44,9 +48,9 @@ public class PortalTicketService {
         // 创建工单事件
         TicketEvent event = TicketEvent.builder()
                 .ticketId(ticket.getId())
-                .operatorType("user")
+                .operatorType(OperatorType.USER)
                 .operatorId(userId)
-                .action("create")
+                .action(TicketAction.CREATE)
                 .content("用户创建工单")
                 .build();
 
@@ -92,9 +96,9 @@ public class PortalTicketService {
 
         TicketEvent event = TicketEvent.builder()
                 .ticketId(ticketId)
-                .operatorType("user")
+                .operatorType(OperatorType.USER)
                 .operatorId(userId)
-                .action("reply")
+                .action(TicketAction.REPLY)
                 .content(content)
                 .build();
 

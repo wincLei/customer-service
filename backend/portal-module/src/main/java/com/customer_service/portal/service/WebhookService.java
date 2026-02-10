@@ -1,5 +1,6 @@
 package com.customer_service.portal.service;
 
+import com.customer_service.shared.constant.IMConstants;
 import com.customer_service.shared.constant.WKChannelType;
 import com.customer_service.shared.dto.WKMessageNotify;
 import com.customer_service.shared.entity.User;
@@ -86,7 +87,7 @@ public class WebhookService {
             // 判断消息发送者是否为用户（非客服）
             // 客服 UID 格式: agent_{sysUserId}
             // 用户 UID 格式: {projectId}_{userId}
-            boolean isFromUser = !fromUid.startsWith("agent_");
+            boolean isFromUser = !fromUid.startsWith(IMConstants.AGENT_UID_PREFIX);
 
             // 只有用户发送的消息才需要更新 user_conversations
             if (!isFromUser) {
@@ -260,7 +261,7 @@ public class WebhookService {
             log.debug("Processing online status: uid={}, status={}", userUid, onlineStatus);
 
             // 跳过客服状态更新（客服 UID 格式: agent_{sysUserId}）
-            if (userUid.startsWith("agent_")) {
+            if (userUid.startsWith(IMConstants.AGENT_UID_PREFIX)) {
                 log.debug("Skipping agent online status: {}", userUid);
                 return;
             }

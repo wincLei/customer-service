@@ -1,5 +1,6 @@
 package com.customer_service.shared.entity;
 
+import com.customer_service.shared.constant.UserStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -39,7 +40,7 @@ public class SysUser {
     private SysRole role;
 
     @Column(length = 20)
-    private String status = "active";
+    private String status = UserStatus.ACTIVE;
 
     @Column(name = "last_login_at")
     private LocalDateTime lastLoginAt;

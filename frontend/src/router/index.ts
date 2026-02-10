@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import { authService } from '@/api/auth'
 import { getPermissionStore } from '@/stores/permission'
+import { StorageKeys } from '@/constants'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -19,7 +20,7 @@ const routes: RouteRecordRaw[] = [
     meta: { requiresAuth: true },
     redirect: () => {
       // 根据用户权限重定向到第一个有权限的菜单
-      const userInfo = localStorage.getItem('user_info')
+      const userInfo = localStorage.getItem(StorageKeys.USER_INFO)
       if (userInfo) {
         try {
           const user = JSON.parse(userInfo)
@@ -176,7 +177,7 @@ router.beforeEach((to, _from, next) => {
         const permissionStore = getPermissionStore()
         if (!permissionStore.hasMenu(menu)) {
           // 无权限访问，重定向到第一个有权限的菜单
-          const userInfo = localStorage.getItem('user_info')
+          const userInfo = localStorage.getItem(StorageKeys.USER_INFO)
           if (userInfo) {
             try {
               const user = JSON.parse(userInfo)
@@ -204,7 +205,7 @@ router.beforeEach((to, _from, next) => {
   } else {
     // 如果已登录且访问登录页，重定向到有权限的页面
     if (isAuthenticated && to.path === '/login') {
-      const userInfo = localStorage.getItem('user_info')
+      const userInfo = localStorage.getItem(StorageKeys.USER_INFO)
       if (userInfo) {
         try {
           const user = JSON.parse(userInfo)

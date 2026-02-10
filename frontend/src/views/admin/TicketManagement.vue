@@ -60,16 +60,16 @@
         </template>
       </el-input>
       <el-select v-model="filterStatus" placeholder="状态" clearable @change="handleSearch">
-        <el-option label="待处理" value="open" />
-        <el-option label="处理中" value="processing" />
-        <el-option label="已解决" value="resolved" />
-        <el-option label="已关闭" value="closed" />
+        <el-option label="待处理" :value="TicketStatus.OPEN" />
+        <el-option label="处理中" :value="TicketStatus.PROCESSING" />
+        <el-option label="已解决" :value="TicketStatus.RESOLVED" />
+        <el-option label="已关闭" :value="TicketStatus.CLOSED" />
       </el-select>
       <el-select v-model="filterPriority" placeholder="优先级" clearable @change="handleSearch">
-        <el-option label="紧急" value="urgent" />
-        <el-option label="高" value="high" />
-        <el-option label="中" value="medium" />
-        <el-option label="低" value="low" />
+        <el-option label="紧急" :value="TicketPriority.URGENT" />
+        <el-option label="高" :value="TicketPriority.HIGH" />
+        <el-option label="中" :value="TicketPriority.MEDIUM" />
+        <el-option label="低" :value="TicketPriority.LOW" />
       </el-select>
       <el-button type="primary" @click="handleSearch">
         <el-icon><Search /></el-icon>
@@ -122,7 +122,7 @@
                 size="small"
                 type="primary"
                 @click="openReplyDialog(row)"
-                :disabled="row.status === 'closed'"
+                :disabled="row.status === TicketStatus.CLOSED"
               >
                 回复
               </el-button>
@@ -132,13 +132,13 @@
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="processing" :disabled="row.status !== 'open'">
+                    <el-dropdown-item :command="TicketStatus.PROCESSING" :disabled="row.status !== TicketStatus.OPEN">
                       标记处理中
                     </el-dropdown-item>
-                    <el-dropdown-item command="resolved" :disabled="row.status === 'closed'">
+                    <el-dropdown-item :command="TicketStatus.RESOLVED" :disabled="row.status === TicketStatus.CLOSED">
                       标记已解决
                     </el-dropdown-item>
-                    <el-dropdown-item command="closed" :disabled="row.status === 'closed'">
+                    <el-dropdown-item :command="TicketStatus.CLOSED" :disabled="row.status === TicketStatus.CLOSED">
                       关闭工单
                     </el-dropdown-item>
                     <el-dropdown-item command="assign" divided>
@@ -220,7 +220,7 @@
         </div>
 
         <!-- 快捷回复 -->
-        <div class="detail-reply" v-if="currentTicket.ticket.status !== 'closed'">
+        <div class="detail-reply" v-if="currentTicket.ticket.status !== TicketStatus.CLOSED">
           <h4>快捷回复</h4>
           <el-input
             v-model="quickReplyContent"
@@ -232,7 +232,7 @@
             <el-button type="primary" @click="submitQuickReply" :loading="replyLoading">
               发送回复
             </el-button>
-            <el-button @click="updateTicketStatus('resolved')">
+            <el-button @click="updateTicketStatus(TicketStatus.RESOLVED)">
               标记已解决
             </el-button>
           </div>
@@ -301,6 +301,7 @@ import {
   Clock
 } from '@element-plus/icons-vue'
 import request from '@/api'
+import { TicketStatus, TicketPriority, TicketStatusLabel, TicketPriorityLabel, TicketPriorityType, DEFAULT_PAGE_SIZE } from '@/constants'
 
 // 状态数据
 const stats = ref({
@@ -315,7 +316,7 @@ const stats = ref({
 const tickets = ref<any[]>([])
 const loading = ref(false)
 const currentPage = ref(1)
-const pageSize = ref(10)
+const pageSize = ref(DEFAULT_PAGE_SIZE)
 const totalElements = ref(0)
 
 // 搜索筛选
@@ -546,42 +547,24 @@ const formatTime = (time: string) => {
 
 const getStatusType = (status: string) => {
   const types: Record<string, string> = {
-    open: 'danger',
-    processing: 'warning',
-    resolved: 'success',
-    closed: 'info'
+    [TicketStatus.OPEN]: 'danger',
+    [TicketStatus.PROCESSING]: 'warning',
+    [TicketStatus.RESOLVED]: 'success',
+    [TicketStatus.CLOSED]: 'info'
   }
   return types[status] || 'info'
 }
 
 const getStatusLabel = (status: string) => {
-  const labels: Record<string, string> = {
-    open: '待处理',
-    processing: '处理中',
-    resolved: '已解决',
-    closed: '已关闭'
-  }
-  return labels[status] || status
+  return TicketStatusLabel[status] || status
 }
 
 const getPriorityType = (priority: string) => {
-  const types: Record<string, string> = {
-    urgent: 'danger',
-    high: 'warning',
-    medium: '',
-    low: 'info'
-  }
-  return types[priority] || ''
+  return TicketPriorityType[priority] || ''
 }
 
 const getPriorityLabel = (priority: string) => {
-  const labels: Record<string, string> = {
-    urgent: '紧急',
-    high: '高',
-    medium: '中',
-    low: '低'
-  }
-  return labels[priority] || priority
+  return TicketPriorityLabel[priority] || priority
 }
 
 const getEventType = (action: string) => {

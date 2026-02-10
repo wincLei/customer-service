@@ -1,4 +1,5 @@
 import axios, { AxiosResponse } from 'axios'
+import { StorageKeys, API_TIMEOUT } from '@/constants'
 
 export interface ApiResponse<T = any> {
   code: number
@@ -6,11 +7,11 @@ export interface ApiResponse<T = any> {
   data: T
 }
 
-const PORTAL_TOKEN_KEY = 'portal_token'
+const PORTAL_TOKEN_KEY = StorageKeys.PORTAL_TOKEN
 
 const portalApi = axios.create({
   baseURL: '/api',
-  timeout: 10000,
+  timeout: API_TIMEOUT,
 })
 
 // 请求拦截器

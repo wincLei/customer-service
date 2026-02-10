@@ -122,6 +122,7 @@ import { useRouter } from 'vue-router'
 import { authService } from '@/api/auth'
 import api from '@/api/index'
 import { getPermissionStore } from '@/stores/permission'
+import { StorageKeys } from '@/constants'
 
 const router = useRouter()
 const permissionStore = getPermissionStore()
@@ -193,8 +194,8 @@ const handleLogin = async () => {
         projectIds: responseUser.projectIds || []  // 关联的项目ID列表
       }
 
-      localStorage.setItem('auth_token', token)
-      localStorage.setItem('user_info', JSON.stringify(userInfo))
+      localStorage.setItem(StorageKeys.AUTH_TOKEN, token)
+      localStorage.setItem(StorageKeys.USER_INFO, JSON.stringify(userInfo))
       
       // 更新权限store
       permissionStore.setUser(userInfo)
@@ -250,7 +251,7 @@ const handleRegister = () => {
 
 onMounted(() => {
   // 检查是否已登录
-  const token = localStorage.getItem('auth_token')
+  const token = localStorage.getItem(StorageKeys.AUTH_TOKEN)
   if (token) {
     console.log('已登录，跳转到工作台')
     router.replace('/admin/dashboard')

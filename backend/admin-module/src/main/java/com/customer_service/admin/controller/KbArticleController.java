@@ -2,6 +2,7 @@ package com.customer_service.admin.controller;
 
 import com.customer_service.admin.service.KbArticleService;
 import com.customer_service.shared.annotation.RequirePermission;
+import com.customer_service.shared.constant.RoleCode;
 import com.customer_service.shared.dto.ApiResponse;
 import com.customer_service.shared.entity.KbArticle;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/admin/kb/articles")
 @RequiredArgsConstructor
-@RequirePermission(value = "workbench", roles = { "admin", "agent" })
+@RequirePermission(value = "workbench", roles = { RoleCode.ADMIN, RoleCode.AGENT })
 public class KbArticleController {
 
     private final KbArticleService kbArticleService;

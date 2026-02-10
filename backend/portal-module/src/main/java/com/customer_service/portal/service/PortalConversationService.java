@@ -1,5 +1,7 @@
 package com.customer_service.portal.service;
 
+import com.customer_service.shared.constant.AppDefaults;
+import com.customer_service.shared.constant.ConversationStatus;
 import com.customer_service.shared.constant.WKChannelType;
 import com.customer_service.shared.entity.Conversation;
 import com.customer_service.shared.entity.Project;
@@ -44,7 +46,7 @@ public class PortalConversationService {
     @Transactional
     public ConversationInitResult initOrGetConversation(Long projectId, Long userId) {
         // 获取项目欢迎语（无论会话是否已存在，都需要返回）
-        String welcomeMessage = "您好，请问有什么需要帮助的？";
+        String welcomeMessage = AppDefaults.DEFAULT_WELCOME_MESSAGE;
         Optional<Project> projectOpt = projectRepository.findById(projectId);
         if (projectOpt.isPresent() && projectOpt.get().getConfig() != null) {
             try {
@@ -71,8 +73,8 @@ public class PortalConversationService {
         Conversation newConv = Conversation.builder()
                 .projectId(projectId)
                 .userId(userId)
-                .status("queued")
-                .priority(0)
+                .status(ConversationStatus.QUEUED)
+                .priority(AppDefaults.DEFAULT_PRIORITY)
                 .build();
 
         conversationRepository.save(newConv);
@@ -118,7 +120,7 @@ public class PortalConversationService {
     @Transactional
     public void endConversation(Long conversationId) {
         conversationRepository.findById(conversationId).ifPresent(conv -> {
-            conv.setStatus("closed");
+            conv.setStatus(ConversationStatus.CLOSED);
             conv.setEndedAt(LocalDateTime.now());
             conversationRepository.save(conv);
             log.info("Conversation ended: id={}", conversationId);
