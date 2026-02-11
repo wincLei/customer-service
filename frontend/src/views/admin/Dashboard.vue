@@ -17,141 +17,43 @@
       </div>
     </div>
 
-    <!-- 实时统计卡片 -->
-    <div class="stats-cards">
-      <el-card class="stat-card">
-        <div class="stat-content">
-          <div class="stat-icon queue">
-            <el-icon :size="32"><Clock /></el-icon>
+    <!-- 只保留客服状态卡片 -->
+    <div class="agent-status-panel">
+      <el-card class="chart-card">
+        <template #header>
+          <div class="card-header">
+            <span>{{ $t('dashboard.agentStatus') }}</span>
+            <el-tag size="small">{{ $t('dashboard.online') }} {{ onlineAgents.length }}/{{ allAgents.length }}</el-tag>
           </div>
-          <div class="stat-info">
-            <div class="stat-label">{{ $t('dashboard.queueing') }}</div>
-            <div class="stat-value">{{ stats.queueCount }}</div>
-            <div class="stat-trend up">+{{ stats.queueTrend }}%</div>
-          </div>
-        </div>
-      </el-card>
-
-      <el-card class="stat-card">
-        <div class="stat-content">
-          <div class="stat-icon active">
-            <el-icon :size="32"><ChatDotRound /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-label">{{ $t('dashboard.activeConversations') }}</div>
-            <div class="stat-value">{{ stats.activeConversations }}</div>
-            <div class="stat-trend">{{ $t('dashboard.realtime') }}</div>
-          </div>
-        </div>
-      </el-card>
-
-      <el-card class="stat-card">
-        <div class="stat-content">
-          <div class="stat-icon total">
-            <el-icon :size="32"><MessageBox /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-label">{{ $t('dashboard.todayConversations') }}</div>
-            <div class="stat-value">{{ stats.todayConversations }}</div>
-            <div class="stat-trend" :class="stats.conversationTrend >= 0 ? 'up' : 'down'">
-              {{ stats.conversationTrend >= 0 ? '+' : '' }}{{ stats.conversationTrend }}%
+        </template>
+        <div class="agent-list">
+          <div v-for="agent in allAgents" :key="agent.id" class="agent-item">
+            <el-badge :value="agent.activeCount" :max="99" :hidden="agent.activeCount === 0">
+              <el-avatar :size="40">{{ agent.nickname?.charAt(0) || 'A' }}</el-avatar>
+            </el-badge>
+            <div class="agent-info">
+              <div class="agent-name">{{ agent.nickname }}</div>
+              <div class="agent-meta">
+                <el-tag :type="agent.status === 'online' ? 'success' : 'info'" size="small">
+                  {{ agent.status === 'online' ? $t('dashboard.online') : $t('dashboard.offline') }}
+                </el-tag>
+                <span class="conversation-count">{{ $t('dashboard.ongoing') }} {{ agent.activeCount }}</span>
+              </div>
             </div>
-          </div>
-        </div>
-      </el-card>
-
-      <el-card class="stat-card">
-        <div class="stat-content">
-          <div class="stat-icon messages">
-            <el-icon :size="32"><ChatLineRound /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-label">{{ $t('dashboard.todayMessages') }}</div>
-            <div class="stat-value">{{ stats.todayMessages }}</div>
-            <div class="stat-trend up">+{{ stats.messageTrend }}%</div>
           </div>
         </div>
       </el-card>
     </div>
-
-    <!-- 满意度统计 -->
-    <el-row :gutter="20" class="charts-row">
-      <el-col :span="12">
-        <el-card class="chart-card">
-          <template #header>
-            <div class="card-header">
-              <span>{{ $t('dashboard.satisfactionStats') }}</span>
-            </div>
-          </template>
-          <div class="satisfaction-stats">
-            <div class="satisfaction-summary">
-              <div class="avg-score">
-                <div class="score-label">{{ $t('dashboard.averageRating') }}</div>
-                <div class="score-value">{{ stats.avgSatisfaction }}</div>
-                <el-rate v-model="stats.avgSatisfaction" disabled show-score text-color="#ff9900" />
-              </div>
-            </div>
-            <div class="satisfaction-breakdown">
-              <div v-for="item in satisfactionData" :key="item.score" class="breakdown-item">
-                <div class="breakdown-label">
-                  {{ item.label }}
-                  <span class="breakdown-count">{{ item.count }}{{ $t('dashboard.times') }}</span>
-                </div>
-                <el-progress :percentage="item.percentage" :color="item.color" />
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <el-col :span="12">
-        <el-card class="chart-card">
-          <template #header>
-            <div class="card-header">
-              <span>{{ $t('dashboard.agentStatus') }}</span>
-              <el-tag size="small">{{ $t('dashboard.online') }} {{ onlineAgents.length }}/{{ allAgents.length }}</el-tag>
-            </div>
-          </template>
-          <div class="agent-list">
-            <div v-for="agent in allAgents" :key="agent.id" class="agent-item">
-              <el-badge :value="agent.activeCount" :max="99" :hidden="agent.activeCount === 0">
-                <el-avatar :size="40">{{ agent.nickname?.charAt(0) || 'A' }}</el-avatar>
-              </el-badge>
-              <div class="agent-info">
-                <div class="agent-name">{{ agent.nickname }}</div>
-                <div class="agent-meta">
-                  <el-tag :type="agent.status === 'online' ? 'success' : 'info'" size="small">
-                    {{ agent.status === 'online' ? $t('dashboard.online') : $t('dashboard.offline') }}
-                  </el-tag>
-                  <span class="conversation-count">{{ $t('dashboard.ongoing') }} {{ agent.activeCount }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
   </div>
 </template>
 
 <script setup lang="ts">
+
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useI18n } from 'vue-i18n'
-import { Clock, ChatDotRound, MessageBox, ChatLineRound, Refresh } from '@element-plus/icons-vue'
+import { StorageKeys } from '@/constants'
 import { logger } from '@/utils/logger'
+import { Refresh } from '@element-plus/icons-vue'
 
-const { t } = useI18n()
-
-interface Stats {
-  queueCount: number
-  queueTrend: number
-  activeConversations: number
-  todayConversations: number
-  conversationTrend: number
-  todayMessages: number
-  messageTrend: number
-  avgSatisfaction: number
-}
 
 interface Agent {
   id: number
@@ -164,61 +66,26 @@ interface Agent {
 const projectId = ref(1)
 const dateRange = ref<[Date, Date]>()
 
-const stats = ref<Stats>({
-  queueCount: 0,
-  queueTrend: 0,
-  activeConversations: 0,
-  todayConversations: 0,
-  conversationTrend: 0,
-  todayMessages: 0,
-  messageTrend: 0,
-  avgSatisfaction: 4.5
-})
-
-const satisfactionData = ref([
-  { score: 5, label: t('dashboard.satisfaction.veryGood'), percentage: 60, count: 120, color: '#67c23a' },
-  { score: 4, label: t('dashboard.satisfaction.good'), percentage: 25, count: 50, color: '#409eff' },
-  { score: 3, label: t('dashboard.satisfaction.average'), percentage: 10, count: 20, color: '#e6a23c' },
-  { score: 2, label: t('dashboard.satisfaction.bad'), percentage: 3, count: 6, color: '#f56c6c' },
-  { score: 1, label: t('dashboard.satisfaction.veryBad'), percentage: 2, count: 4, color: '#909399' }
-])
 
 const allAgents = ref<Agent[]>([])
 const onlineAgents = ref<Agent[]>([])
 
 let refreshTimer: any = null
 
-// 获取统计数据
-const fetchStats = async () => {
-  try {
-    // 从统计API获取真实数据
-    const statsRes = await fetch(`/api/admin/conversations/statistics?projectId=${projectId.value}`)
-    const statsData = await statsRes.json()
-    if (statsData.code === 0) {
-      stats.value.queueCount = statsData.data.queueCount || 0
-      stats.value.activeConversations = statsData.data.activeConversations || 0
-      stats.value.todayConversations = statsData.data.todayConversations || 0
-      stats.value.todayMessages = statsData.data.todayMessages || 0
-      
-      // 模拟趋势数据（可以后续添加趋势API）
-      stats.value.queueTrend = Math.floor(Math.random() * 20)
-      stats.value.conversationTrend = Math.floor(Math.random() * 30) - 10
-      stats.value.messageTrend = Math.floor(Math.random() * 40)
-    }
-  } catch (error) {
-    logger.error('获取统计数据失败:', error)
-  }
-}
 
 // 获取客服列表
 const fetchAgents = async () => {
   try {
-    // 从真实API获取客服列表
-    const agentsRes = await fetch(`/api/admin/users/agents?projectId=${projectId.value}`)
+    const token = localStorage.getItem(StorageKeys.AUTH_TOKEN)
+    const agentsRes = await fetch(`/api/admin/users/agents?projectId=${projectId.value}`, {
+      headers: {
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    })
     const agentsData = await agentsRes.json()
     if (agentsData.agents) {
       allAgents.value = agentsData.agents
-      onlineAgents.value = allAgents.value.filter(a => a.status === 'online')
+      onlineAgents.value = allAgents.value.filter((a: Agent) => a.status === 'online')
     }
   } catch (error) {
     logger.error('获取客服列表失败:', error)
@@ -227,7 +94,6 @@ const fetchAgents = async () => {
 
 // 刷新数据
 const refreshData = () => {
-  fetchStats()
   fetchAgents()
 }
 
