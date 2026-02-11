@@ -777,6 +777,8 @@ export default {
     addAgentTitle: '添加客服',
     mockAgent1: '李客服',
     mockAgent2: '王客服',
+    themeColor: '主题色',
+    workingHours: '工作时间',
   },
 
   // ========================

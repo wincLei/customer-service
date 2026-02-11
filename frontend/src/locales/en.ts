@@ -770,6 +770,8 @@ export default {
     addAgentTitle: 'Add Agent',
     mockAgent1: 'Agent Li',
     mockAgent2: 'Agent Wang',
+    themeColor: 'Theme Color',
+    workingHours: 'Working Hours',
   },
 
   // ========================
