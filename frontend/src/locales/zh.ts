@@ -36,6 +36,12 @@ export default {
     normal: '正常',
     enable: '启用',
     disable: '禁用',
+    add: '添加',
+    colon: '：',
+    confirmDelete: '确定删除',
+    updateFailed: '更新失败',
+    createFailed: '创建失败',
+    saveSuccess: '保存成功',
     selectProject: '请先选择项目',
   },
 
@@ -446,6 +452,13 @@ export default {
     deleteConfirm: '确定要删除客服 "{name}" 吗？删除后该用户将无法处理客服业务！',
     confirmDelete: '确定删除',
     updateFailed: '修改失败',
+    receptionCount: '接待量',
+    relatedProjects: '关联项目',
+    noProject: '未关联项目',
+    projectTip: '客服只能查看和处理关联项目的会话',
+    selectUserRequired: '请选择用户',
+    statusUpdateFailed: '状态修改失败',
+    userTip: '仅显示角色为“客服”且尚未创建客服记录的用户',
   },
 
   // ========================
@@ -494,6 +507,11 @@ export default {
     passwordSuccess: '密码修改成功',
     statusSuccess: '{action}成功',
     statusFailed: '{action}失败',
+    disable: '禁用',
+    enable: '启用',
+    disabled: '已禁用',
+    passwordChangeFailed: '密码修改失败',
+    passwordChangeSuccess: '密码修改成功',
   },
 
   // ========================
@@ -533,6 +551,12 @@ export default {
     confirmDelete: '确定删除',
     permissionFailed: '保存权限失败',
     menuLoadFailed: '加载菜单失败',
+    type: '类型',
+    codeTip: '编码一旦创建后不可修改',
+    codePattern: '编码只能包含字母、数字和下划线，且以字母开头',
+    loadMenuFailed: '加载菜单失败',
+    permSaveFailed: '保存权限失败',
+    permSaveSuccess: '权限保存成功',
   },
 
   // ========================
@@ -574,6 +598,11 @@ export default {
     codePlaceholder: '如：dashboard、user:manage',
     pathPlaceholder: '如：/admin/dashboard',
     iconPlaceholder: 'Element Plus 图标名称',
+    type: '类型',
+    codeTip: '唯一标识，用于权限判断',
+    sortTip: '数值越小越靠前',
+    enabled: '是否启用',
+    codePattern: '编码只能包含字母、数字、下划线和冒号，且以字母开头',
   },
 
   // ========================
@@ -625,6 +654,14 @@ export default {
     deleteArticleConfirm: '确定要删除文章"{title}"吗？',
     confirmAction: '确认{action}',
     confirmDelete: '确认删除',
+    belongCategory: '所属分类',
+    articleContent: '文章内容',
+    viewCount: '浏览量',
+    hitCount: '命中次数',
+    categoryNamePlaceholder: '请输入分类名称',
+    categoryNameMaxLength: '分类名称不能超过50个字符',
+    selectCategoryRequired: '请选择分类',
+    titleMaxLength: '标题不能超过200个字符',
   },
 
   // ========================
@@ -648,6 +685,11 @@ export default {
     nameRequired: '请输入标签名称',
     nameLength: '标签名称长度在 1 到 50 个字符',
     deleteConfirm: '确定要删除标签 "{name}" 吗？删除后，所有关联此标签的用户将失去该标签。',
+    sort: '排序',
+    sortTip: '数值越小越靠前',
+    tagNameLength: '标签名称长度在1到50个字符',
+    tagNamePlaceholder: '请输入标签名称',
+    tagNameRequired: '请输入标签名称',
   },
 
   // ========================
@@ -716,6 +758,10 @@ export default {
     batchSuccess: '批量添加成功',
     selectTag: '请选择标签',
     setFailed: '设置失败',
+    registeredUsers: '注册用户',
+    batchAddSuccess: '批量添加成功',
+    email: '邮箱',
+    tagSetFailed: '标签设置失败',
   },
 
   // ========================

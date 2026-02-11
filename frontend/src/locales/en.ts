@@ -36,6 +36,12 @@ export default {
     normal: 'Normal',
     enable: 'Enable',
     disable: 'Disable',
+    add: 'Add',
+    colon: ': ',
+    confirmDelete: 'Confirm Delete',
+    updateFailed: 'Update failed',
+    createFailed: 'Create failed',
+    saveSuccess: 'Saved successfully',
     selectProject: 'Please select a project first',
   },
 
@@ -439,6 +445,13 @@ export default {
     deleteConfirm: 'Are you sure you want to delete agent "{name}"? The user will no longer be able to handle support!',
     confirmDelete: 'Confirm Delete',
     updateFailed: 'Update failed',
+    receptionCount: 'Load',
+    relatedProjects: 'Linked Projects',
+    noProject: 'No linked projects',
+    projectTip: 'Agents can only view and handle conversations for linked projects',
+    selectUserRequired: 'Please select a user',
+    statusUpdateFailed: 'Status update failed',
+    userTip: 'Only users with "Agent" role and no existing agent record are shown',
   },
 
   // ========================
@@ -487,6 +500,11 @@ export default {
     passwordSuccess: 'Password changed successfully',
     statusSuccess: '{action} successful',
     statusFailed: '{action} failed',
+    disable: 'Disable',
+    enable: 'Enable',
+    disabled: 'Disabled',
+    passwordChangeFailed: 'Password change failed',
+    passwordChangeSuccess: 'Password changed successfully',
   },
 
   // ========================
@@ -526,6 +544,12 @@ export default {
     confirmDelete: 'Confirm Delete',
     permissionFailed: 'Failed to save permissions',
     menuLoadFailed: 'Failed to load menus',
+    type: 'Type',
+    codeTip: 'Code cannot be changed after creation',
+    codePattern: 'Code can only contain letters, numbers and underscores, starting with a letter',
+    loadMenuFailed: 'Failed to load menus',
+    permSaveFailed: 'Failed to save permissions',
+    permSaveSuccess: 'Permissions saved',
   },
 
   // ========================
@@ -567,6 +591,11 @@ export default {
     codePlaceholder: 'e.g., dashboard, user:manage',
     pathPlaceholder: 'e.g., /admin/dashboard',
     iconPlaceholder: 'Element Plus icon name',
+    type: 'Type',
+    codeTip: 'Unique identifier for permission check',
+    sortTip: 'Smaller number = higher priority',
+    enabled: 'Enabled',
+    codePattern: 'Code can only contain letters, numbers, underscores and colons, starting with a letter',
   },
 
   // ========================
@@ -618,6 +647,14 @@ export default {
     deleteArticleConfirm: 'Are you sure you want to delete article "{title}"?',
     confirmAction: 'Confirm {action}',
     confirmDelete: 'Confirm Delete',
+    belongCategory: 'Category',
+    articleContent: 'Article Content',
+    viewCount: 'Views',
+    hitCount: 'Hits',
+    categoryNamePlaceholder: 'Enter category name',
+    categoryNameMaxLength: 'Category name cannot exceed 50 characters',
+    selectCategoryRequired: 'Please select a category',
+    titleMaxLength: 'Title cannot exceed 200 characters',
   },
 
   // ========================
@@ -641,6 +678,11 @@ export default {
     nameRequired: 'Please enter tag name',
     nameLength: 'Tag name must be 1-50 characters',
     deleteConfirm: 'Are you sure you want to delete tag "{name}"? All users with this tag will lose it.',
+    sort: 'Sort',
+    sortTip: 'Smaller number = higher priority',
+    tagNameLength: 'Tag name must be 1-50 characters',
+    tagNamePlaceholder: 'Enter tag name',
+    tagNameRequired: 'Please enter tag name',
   },
 
   // ========================
@@ -709,6 +751,10 @@ export default {
     batchSuccess: 'Batch addition successful',
     selectTag: 'Please select a tag',
     setFailed: 'Setting failed',
+    registeredUsers: 'Registered',
+    batchAddSuccess: 'Batch addition successful',
+    email: 'Email',
+    tagSetFailed: 'Tag setting failed',
   },
 
   // ========================
