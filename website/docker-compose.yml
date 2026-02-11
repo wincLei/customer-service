@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  website:
+    build: .
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+    networks:
+      - website-network
+
+networks:
+  website-network:
+    driver: bridge

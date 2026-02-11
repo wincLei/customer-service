@@ -1,0 +1,16 @@
+{
+  "name": "客服系统官网",
+  "short_name": "客服系统",
+  "description": "极简客服系统官方网站",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1890ff",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}
