@@ -118,6 +118,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { logger } from '@/utils/logger'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { authService } from '@/api/auth'
@@ -151,7 +152,7 @@ const refreshCaptcha = async () => {
       form.value.captcha = ''  // 清空输入
     }
   } catch (error) {
-    console.error('获取验证码失败:', error)
+    logger.error('获取验证码失败:', error)
     // 使用模拟验证码用于测试
     captchaQuestion.value = '1 + 1 = ?'
     captchaKey.value = 'test-key'
@@ -209,7 +210,7 @@ const handleLogin = async () => {
       }
 
       // 根据菜单权限决定跳转目标
-      console.log('登录成功，用户角色:', userInfo.role, '权限:', userInfo.permissions)
+      logger.info('登录成功，用户角色:', userInfo.role, '权限:', userInfo.permissions)
       let targetPath = '/admin/settings'  // 默认跳转到设置页
       
       const menus = userInfo.permissions?.menus || []
@@ -236,7 +237,7 @@ const handleLogin = async () => {
       form.value.captcha = ''
     }
   } catch (error: any) {
-    console.error('登录错误:', error)
+    logger.error('登录错误:', error)
     const message = error?.message || error?.data?.message || t('auth.loginFailedRetry')
     errorMessage.value = message
     refreshCaptcha()
@@ -255,7 +256,7 @@ onMounted(() => {
   // 检查是否已登录
   const token = localStorage.getItem(StorageKeys.AUTH_TOKEN)
   if (token) {
-    console.log('已登录，跳转到工作台')
+    logger.info('已登录，跳转到工作台')
     router.replace('/admin/dashboard')
     return
   }

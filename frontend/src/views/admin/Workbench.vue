@@ -527,6 +527,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
+import { logger } from '@/utils/logger'
 import { useI18n } from 'vue-i18n'
 import { ElMessage } from 'element-plus'
 import { User, Close, Notebook, ChatDotSquare, Search, Loading, Bell, MuteNotification, Check, Picture, Tickets } from '@element-plus/icons-vue'
@@ -700,7 +701,7 @@ const fetchKbArticles = async (projectIds: number[]) => {
       }))
     }
   } catch (error) {
-    console.error('加载知识库失败:', error)
+    logger.error('加载知识库失败:', error)
   }
 }
 
@@ -722,7 +723,7 @@ const fetchQuickReplies = async (projectIds: number[]) => {
       }))
     }
   } catch (error) {
-    console.error('加载快捷回复失败:', error)
+    logger.error('加载快捷回复失败:', error)
   }
 }
 
@@ -749,9 +750,9 @@ const initAgentInfo = () => {
       if (user.projectIds && Array.isArray(user.projectIds) && user.projectIds.length > 0) {
         projectIds.value = user.projectIds
       }
-      console.log('Agent info loaded:', { agentId: agentId.value, projectIds: projectIds.value })
+      logger.info('Agent info loaded:', { agentId: agentId.value, projectIds: projectIds.value })
     } catch (e) {
-      console.error('解析用户信息失败:', e)
+      logger.error('解析用户信息失败:', e)
     }
   }
 }
@@ -820,12 +821,12 @@ const fetchMyConversations = async (keyword?: string) => {
       myConversations.value = data.data.list || []
       totalConversations.value = data.data.total || 0
       hasMoreConversations.value = data.data.hasMore || false
-      console.log('My conversations loaded:', myConversations.value.length, 'total:', totalConversations.value, 'hasMore:', hasMoreConversations.value, 'keyword:', keyword)
+      logger.info('My conversations loaded:', myConversations.value.length, 'total:', totalConversations.value, 'hasMore:', hasMoreConversations.value, 'keyword:', keyword)
     } else {
-      console.error('获取会话列表失败:', data.message)
+      logger.error('获取会话列表失败:', data.message)
     }
   } catch (error) {
-    console.error('获取会话列表失败:', error)
+    logger.error('获取会话列表失败:', error)
   }
 }
 
@@ -869,10 +870,10 @@ const loadMoreConversations = async () => {
       }
       
       hasMoreConversations.value = data.data.hasMore || false
-      console.log('Loaded more conversations, page:', nextPage, 'total now:', myConversations.value.length, 'hasMore:', hasMoreConversations.value)
+      logger.info('Loaded more conversations, page:', nextPage, 'total now:', myConversations.value.length, 'hasMore:', hasMoreConversations.value)
     }
   } catch (error) {
-    console.error('加载更多会话失败:', error)
+    logger.error('加载更多会话失败:', error)
   } finally {
     loadingMoreConversations.value = false
   }
@@ -928,7 +929,7 @@ const fetchProjectName = async (pid?: number) => {
       projectName.value = '-'
     }
   } catch (error) {
-    console.error('Failed to fetch project name:', error)
+    logger.error('Failed to fetch project name:', error)
     projectName.value = '-'
   }
 }
@@ -941,7 +942,7 @@ const selectConversation = async (conv: UserConversation) => {
     if (parsed) {
       conv.userId = parsed.userId
       conv.projectId = parsed.projectId
-      console.log('Parsed userId from userUid:', conv.userUid, '-> userId:', parsed.userId, 'projectId:', parsed.projectId)
+      logger.info('Parsed userId from userUid:', conv.userUid, '-> userId:', parsed.userId, 'projectId:', parsed.projectId)
     }
   }
   
@@ -1010,7 +1011,7 @@ const markConversationAsRead = async (userId: number, messageSeq?: number) => {
       }
     }
   } catch (error) {
-    console.error('标记已读失败:', error)
+    logger.error('标记已读失败:', error)
   }
 }
 
@@ -1078,7 +1079,7 @@ const fetchMessagesByUserUid = async (userUid: string) => {
       scrollToBottom()
     }
   } catch (error) {
-    console.error('获取消息失败:', error)
+    logger.error('获取消息失败:', error)
   }
 }
 
@@ -1158,7 +1159,7 @@ const loadMoreMessages = async () => {
       hasMoreMessages.value = false
     }
   } catch (error) {
-    console.error('加载更多消息失败:', error)
+    logger.error('加载更多消息失败:', error)
   } finally {
     loadingMoreMessages.value = false
   }
@@ -1216,7 +1217,7 @@ const sendMessage = async () => {
       payload
     )
     
-    console.log('Message sent to visitor channel:', result)
+    logger.info('Message sent to visitor channel:', result)
     
     if (result.reasonCode !== 1) {
       ElMessage.error(t('workbench.sendFailed'))
@@ -1233,7 +1234,7 @@ const sendMessage = async () => {
       }
     }
   } catch (error) {
-    console.error('发送消息失败:', error)
+    logger.error('发送消息失败:', error)
     ElMessage.error(t('workbench.sendError'))
     messages.value = messages.value.filter(m => m.id !== tempMsg.id)
   }
@@ -1300,7 +1301,7 @@ const checkUserHasUnreadTicket = async () => {
       hasUnreadUserTicket.value = false
     }
   } catch (error) {
-    console.error('检查未读工单失败:', error)
+    logger.error('检查未读工单失败:', error)
     hasUnreadUserTicket.value = false
   }
 }
@@ -1331,7 +1332,7 @@ const openUserTickets = async () => {
       userTickets.value = []
     }
   } catch (error) {
-    console.error('加载用户工单失败:', error)
+    logger.error('加载用户工单失败:', error)
     userTickets.value = []
     ElMessage.error(t('workbench.loadTicketFailed'))
   } finally {
@@ -1359,7 +1360,7 @@ const viewTicketDetail = async (ticket: Ticket) => {
       currentTicketDetail.value = data.data
     }
   } catch (error) {
-    console.error('加载工单详情失败:', error)
+    logger.error('加载工单详情失败:', error)
     ElMessage.error(t('workbench.loadTicketDetailFailed'))
   } finally {
     loadingTicketDetail.value = false
@@ -1414,7 +1415,7 @@ const submitTicketReply = async () => {
       userTickets.value[ticketIndex].status = ticketNewStatus.value
     }
   } catch (error) {
-    console.error('回复工单失败:', error)
+    logger.error('回复工单失败:', error)
     ElMessage.error(t('workbench.replyRetry'))
   } finally {
     submittingTicketReply.value = false
@@ -1549,7 +1550,7 @@ const uploadAndSendImage = async (file: File) => {
           payload
         )
         
-        console.log('Image sent to visitor channel:', result)
+        logger.info('Image sent to visitor channel:', result)
         
         if (result.reasonCode !== 1) {
           ElMessage.error(t('workbench.imageSendFailed'))
@@ -1566,15 +1567,15 @@ const uploadAndSendImage = async (file: File) => {
           }
         }
       } else {
-        console.error('Upload failed:', uploadRes.status, await uploadRes.text())
+        logger.error('Upload failed:', uploadRes.status, await uploadRes.text())
         ElMessage.error(t('workbench.imageUploadFailed'))
       }
     } else {
-      console.error('Failed to get OSS token:', tokenData)
+      logger.error('Failed to get OSS token:', tokenData)
       ElMessage.error(t('workbench.uploadCredentialFailed'))
     }
   } catch (error) {
-    console.error('图片上传失败:', error)
+    logger.error('图片上传失败:', error)
     ElMessage.error(t('workbench.imageUploadFailed'))
   } finally {
     uploadingImage.value = false
@@ -1648,7 +1649,7 @@ const fetchAvailableTags = async (projectId: number) => {
       availableTags.value = data.data
     }
   } catch (error) {
-    console.error('加载项目标签失败:', error)
+    logger.error('加载项目标签失败:', error)
   }
 }
 
@@ -1668,7 +1669,7 @@ const fetchUserTags = async (userId: number) => {
       userTags.value = []
     }
   } catch (error) {
-    console.error('加载用户标签失败:', error)
+    logger.error('加载用户标签失败:', error)
     userTags.value = []
   } finally {
     loadingTags.value = false
@@ -1712,7 +1713,7 @@ const addTagToUser = async (tag: CustomerTag) => {
       ElMessage.error(data.message || t('workbench.tagAddFailed'))
     }
   } catch (error) {
-    console.error('添加标签失败:', error)
+    logger.error('添加标签失败:', error)
     ElMessage.error(t('workbench.tagAddFailed'))
   }
 }
@@ -1736,7 +1737,7 @@ const removeTag = async (tag: CustomerTag) => {
       ElMessage.error(data.message || '移除标签失败')
     }
   } catch (error) {
-    console.error('移除标签失败:', error)
+    logger.error('移除标签失败:', error)
     ElMessage.error('移除标签失败')
   }
 }
@@ -1778,7 +1779,7 @@ const createAndAddTag = async () => {
       ElMessage.error(createData.message || '创建标签失败')
     }
   } catch (error) {
-    console.error('创建标签失败:', error)
+    logger.error('创建标签失败:', error)
     ElMessage.error('创建标签失败')
   }
 }
@@ -1811,7 +1812,7 @@ const getAudioContext = (): AudioContext | null => {
     }
     return audioContext
   } catch (error) {
-    console.warn('Web Audio API 不支持:', error)
+    logger.warn('Web Audio API 不支持:', error)
     return null
   }
 }
@@ -1853,7 +1854,7 @@ const playNotificationSound = () => {
     
     playSoundWithWebAudio(soundOption.frequency, soundOption.duration)
   } catch (error) {
-    console.error('播放提示音出错:', error)
+    logger.error('播放提示音出错:', error)
   }
 }
 
@@ -1865,7 +1866,7 @@ const previewSound = (soundId: string) => {
   try {
     playSoundWithWebAudio(soundOption.frequency, soundOption.duration)
   } catch (error) {
-    console.error('播放预览音出错:', error)
+    logger.error('播放预览音出错:', error)
   }
 }
 
@@ -1936,7 +1937,7 @@ const parseUserUid = (userUid: string): { projectId: number; userId: number } | 
 
 // IM 事件处理函数
 const handleIMConnect = async (result: any) => {
-  console.log('Agent IM Connected:', result)
+  logger.info('Agent IM Connected:', result)
   imConnected.value = true
   imConnecting.value = false
   
@@ -1947,13 +1948,13 @@ const handleIMConnect = async (result: any) => {
 }
 
 const handleIMDisconnect = (disconnectInfo: any) => {
-  console.log('Agent IM Disconnected:', disconnectInfo.code, disconnectInfo.reason)
+  logger.info('Agent IM Disconnected:', disconnectInfo.code, disconnectInfo.reason)
   imConnected.value = false
   imConnecting.value = false
 }
 
 const handleIMMessage = (message: any) => {
-  console.log('Agent IM Message Received:', message)
+  logger.debug('Agent IM Message Received:', message)
   
   // 解析消息 - 注意：WuKongIM SDK 使用小写字段名
   const payload = message.payload || {}
@@ -1965,29 +1966,29 @@ const handleIMMessage = (message: any) => {
   
   // 忽略客服自己发的消息
   if (fromUid.startsWith('agent_')) {
-    console.log('Ignoring agent message from:', fromUid)
+    logger.debug('Ignoring agent message from:', fromUid)
     return
   }
   
   // 只处理访客频道消息
   if (channelType !== WKChannelType.VISITOR) {
-    console.log('Ignoring non-visitor channel message, channelType:', channelType)
+    logger.debug('Ignoring non-visitor channel message, channelType:', channelType)
     return
   }
   
   const userUid = channelId
-  console.log('=== Message Routing Debug ===')
-  console.log('userUid from channelId:', userUid, 'type:', typeof userUid)
-  console.log('myConversations count:', myConversations.value.length)
-  console.log('myConversations userUids:', myConversations.value.map(c => ({ userUid: c.userUid, type: typeof c.userUid })))
-  console.log('First conversation full object:', JSON.stringify(myConversations.value[0]))
+  logger.debug('=== Message Routing Debug ===')
+  logger.debug('userUid from channelId:', userUid, 'type:', typeof userUid)
+  logger.debug('myConversations count:', myConversations.value.length)
+  logger.debug('myConversations userUids:', myConversations.value.map(c => ({ userUid: c.userUid, type: typeof c.userUid })))
+  logger.debug('First conversation full object:', JSON.stringify(myConversations.value[0]))
   
   // 检查用户是否在"我的会话"中
   const isInMyConversations = isUserInMyConversations(userUid)
   const currentConv = selectedConversation.value
   const isCurrentlySelected = currentConv && currentConv.userUid === userUid
   
-  console.log('isInMyConversations:', isInMyConversations, 'isCurrentlySelected:', isCurrentlySelected)
+  logger.debug('isInMyConversations:', isInMyConversations, 'isCurrentlySelected:', isCurrentlySelected)
   
   if (isInMyConversations) {
     // 用户在"我的会话"中
@@ -2015,7 +2016,7 @@ const handleIMMessage = (message: any) => {
         }
         messages.value.push(newMsg)
         nextTick(() => scrollToBottom())
-        console.log('Message added to chat window for selected conversation')
+        logger.debug('Message added to chat window for selected conversation')
         
         // 调用后端接口清除未读（传递 messageSeq）
         if (conv.userId) {
@@ -2027,7 +2028,7 @@ const handleIMMessage = (message: any) => {
           ...myConversations.value[convIndex],
           unreadCount: (conv.unreadCount || 0) + 1
         }
-        console.log('Unread count updated for conversation:', conv.userUid, 'new count:', myConversations.value[convIndex].unreadCount)
+        logger.debug('Unread count updated for conversation:', conv.userUid, 'new count:', myConversations.value[convIndex].unreadCount)
         
         // 播放新消息提示音
         playNotificationSound()
@@ -2061,9 +2062,9 @@ const handleIMMessage = (message: any) => {
         }
         messages.value.push(newMsg)
         nextTick(() => scrollToBottom())
-        console.log('Message added to chat window for pending user')
+        logger.debug('Message added to chat window for pending user')
       } else {
-        console.log('Pending queue updated for user:', userUid)
+        logger.debug('Pending queue updated for user:', userUid)
         // 播放新消息提示音
         playNotificationSound()
       }
@@ -2083,7 +2084,7 @@ const handleIMMessage = (message: any) => {
         projectId: parsed?.projectId || projectIds.value[0] || 1
       }
       pendingQueue.value.unshift(newUserConv)
-      console.log('New user added to pending queue:', userUid, 'parsed userId:', parsed?.userId, 'projectId:', parsed?.projectId)
+      logger.info('New user added to pending queue:', userUid, 'parsed userId:', parsed?.userId, 'projectId:', parsed?.projectId)
       
       // 播放新用户提示音
       playNotificationSound()
@@ -2092,19 +2093,19 @@ const handleIMMessage = (message: any) => {
 }
 
 const handleIMError = (error: any) => {
-  console.error('Agent IM Error:', error.message || error)
+  logger.error('Agent IM Error:', error.message || error)
   imConnecting.value = false
 }
 
 // 初始化 IM 连接
 const initIMConnection = async () => {
-  console.log('[IM] initIMConnection called, agentId:', agentId.value, 'imInstance:', !!imInstance)
+  logger.info('[IM] initIMConnection called, agentId:', agentId.value, 'imInstance:', !!imInstance)
   if (imInstance) {
-    console.log('[IM] Already has imInstance, skipping')
+    logger.debug('[IM] Already has imInstance, skipping')
     return
   }
   if (!agentId.value) {
-    console.log('[IM] No agentId, skipping')
+    logger.debug('[IM] No agentId, skipping')
     return
   }
   
@@ -2112,7 +2113,7 @@ const initIMConnection = async () => {
   
   try {
     // 1. 获取 IM Token（使用 DeviceType.WEB 常量）
-    console.log('[IM] Fetching token for uid:', getAgentUid(), 'deviceFlag:', DeviceType.WEB)
+    logger.debug('[IM] Fetching token for uid:', getAgentUid(), 'deviceFlag:', DeviceType.WEB)
     const response = await fetch('/api/admin/im/token', {
       method: 'POST',
       headers: {
@@ -2126,22 +2127,22 @@ const initIMConnection = async () => {
       })
     })
     
-    console.log('[IM] Token API response status:', response.status)
+    logger.debug('[IM] Token API response status:', response.status)
     const data = await response.json()
-    console.log('[IM] Token API response:', data)
+    logger.debug('[IM] Token API response:', data)
     
     if (!data.success || !data.token) {
-      console.error('[IM] Failed to get agent IM token:', data.error || data)
+      logger.error('[IM] Failed to get agent IM token:', data.error || data)
       imConnecting.value = false
       return
     }
     
-    console.log('[IM] Agent IM Token obtained:', data.token.substring(0, 8) + '...')
+    logger.info('[IM] Agent IM Token obtained:', data.token.substring(0, 8) + '...')
     
     // 2. 初始化 SDK（使用相同的 deviceFlag）
     // 优先使用运行时配置，其次使用构建时环境变量，最后使用默认值
     const wsUrl = (window as any).__RUNTIME_CONFIG__?.WUKONGIM_WS_URL || import.meta.env.VITE_WUKONGIM_WS_URL || 'ws://localhost:5200'
-    console.log('[IM] Connecting to WebSocket:', wsUrl, 'with deviceFlag:', DeviceType.WEB)
+    logger.info('[IM] Connecting to WebSocket:', wsUrl, 'with deviceFlag:', DeviceType.WEB)
     
     imInstance = WKIM.init(wsUrl, {
       uid: getAgentUid(),
@@ -2157,10 +2158,10 @@ const initIMConnection = async () => {
     
     // 4. 连接服务器
     await imInstance.connect()
-    console.log('Agent IM connection initiated')
+    logger.info('Agent IM connection initiated')
     
   } catch (error) {
-    console.error('Failed to init agent IM connection:', error)
+    logger.error('Failed to init agent IM connection:', error)
     imConnecting.value = false
   }
 }

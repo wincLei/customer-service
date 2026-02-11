@@ -230,6 +230,7 @@ import { Plus, Edit, Delete, Search } from '@element-plus/icons-vue'
 import request from '@/api'
 import Pagination from '@/components/Pagination.vue'
 import { marked } from 'marked'
+import { logger } from '@/utils/logger'
 
 const { t } = useI18n()
 
@@ -391,7 +392,7 @@ const loadProjects = async () => {
       }
     }
   } catch (error) {
-    console.error('加载项目列表失败', error)
+    logger.error('加载项目列表失败', error)
   }
 }
 
@@ -416,7 +417,7 @@ const loadCategories = async () => {
       flatCategories.value = flattenTree(res.data)
     }
   } catch (error) {
-    console.error('加载分类失败', error)
+    logger.error('加载分类失败', error)
   } finally {
     categoryLoading.value = false
   }
@@ -441,7 +442,7 @@ const loadArticles = async () => {
       pagination.total = res.data.totalElements
     }
   } catch (error) {
-    console.error('加载文章失败', error)
+    logger.error('加载文章失败', error)
   } finally {
     articleLoading.value = false
   }

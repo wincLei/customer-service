@@ -366,6 +366,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
+import { logger } from '@/utils/logger';
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from 'vue-i18n';
 import portalApi, { setPortalToken } from "@/api/portal";
@@ -634,13 +635,13 @@ const initUser = async () => {
       // 保存 Portal Token（用于后续接口认证）
       if (userData.portalToken) {
         setPortalToken(userData.portalToken);
-        console.log("Portal Token saved");
+        logger.debug("Portal Token saved");
       }
 
       // 保存 IM Token（从 user/init 接口直接获取，无需单独调用）
       if (userData.imToken) {
         imToken.value = userData.imToken;
-        console.log("IM Token obtained from user init");
+        logger.debug("IM Token obtained from user init");
       }
 
       if (userData.avatar) {
@@ -648,7 +649,7 @@ const initUser = async () => {
       }
     }
   } catch (error) {
-    console.error("Failed to init user:", error);
+    logger.error("Failed to init user:", error);
     currentUser.value = {
       uid: guestUid,
       projectId: pid,
@@ -672,7 +673,7 @@ const initConversation = async () => {
       // 保存已分配客服的 UID（如果有）
       if (response.data.agentUid) {
         agentUid.value = response.data.agentUid;
-        console.log("Agent assigned:", agentUid.value);
+        logger.debug("Agent assigned:", agentUid.value);
       }
 
       await loadHistory();
@@ -702,7 +703,7 @@ const initConversation = async () => {
       initIMConnection();
     }
   } catch (error) {
-    console.error("Failed to init conversation:", error);
+    logger.error("Failed to init conversation:", error);
     addMessage({
       senderType: "agent",
       msgType: "text",
@@ -736,7 +737,7 @@ const parseHistoryMessage = (msg: any): Message & { messageSeq?: number } => {
 const loadHistory = async () => {
   // 访客频道: channel_id = {projectId}_{userId}, channel_type = 10
   if (!imUid.value) {
-    console.log("No imUid (projectId_userId), skip loading history");
+    logger.debug("No imUid (projectId_userId), skip loading history");
     return;
   }
 
@@ -776,7 +777,7 @@ const loadHistory = async () => {
       scrollToBottom();
     }
   } catch (error) {
-    console.error("Failed to load history from WuKongIM:", error);
+    logger.error("Failed to load history from WuKongIM:", error);
   } finally {
     loading.value = false;
   }
@@ -853,7 +854,7 @@ const loadMoreMessages = async () => {
       hasMoreMessages.value = false;
     }
   } catch (error) {
-    console.error("Failed to load more messages:", error);
+    logger.error("Failed to load more messages:", error);
   } finally {
     loadingMoreMessages.value = false;
   }
@@ -872,19 +873,19 @@ const handleMessagesScroll = () => {
 
 // IM 事件处理函数（需要保持引用以便移除）
 const handleIMConnect = (result: any) => {
-  console.log("IM Connected:", result);
+  logger.info("IM Connected:", result);
   imConnected.value = true;
   imConnecting.value = false;
 };
 
 const handleIMDisconnect = (disconnectInfo: any) => {
-  console.log("IM Disconnected:", disconnectInfo.code, disconnectInfo.reason);
+  logger.info("IM Disconnected:", disconnectInfo.code, disconnectInfo.reason);
   imConnected.value = false;
   imConnecting.value = false;
 };
 
 const handleIMMessage = (message: any) => {
-  console.log("IM Message Received:", message);
+  logger.debug("IM Message Received:", message);
 
   // 解析消息内容
   const payload = message.payload || {};
@@ -907,7 +908,7 @@ const handleIMMessage = (message: any) => {
     messageId &&
     messages.value.some((m) => m.id === messageId || m.id === String(messageId))
   ) {
-    console.log("Duplicate message ignored:", messageId);
+    logger.debug("Duplicate message ignored:", messageId);
     return;
   }
 
@@ -930,7 +931,7 @@ const handleIMMessage = (message: any) => {
 };
 
 const handleIMError = (error: any) => {
-  console.error("IM Error:", error.message || error);
+  logger.error("IM Error:", error.message || error);
   imConnecting.value = false;
 };
 
@@ -939,13 +940,13 @@ const initIMConnection = async () => {
 
   // 检查是否已有 IM Token（从 user/init 接口获取）
   if (!imToken.value) {
-    console.error("No IM token available, cannot connect to IM");
+    logger.error("No IM token available, cannot connect to IM");
     return;
   }
 
   // 检查 imUid 是否已计算好
   if (!imUid.value) {
-    console.error(
+    logger.error(
       "No imUid (projectId_userId) available, cannot connect to IM",
     );
     return;
@@ -974,9 +975,9 @@ const initIMConnection = async () => {
 
     // 连接服务器
     await imInstance.connect();
-    console.log("IM connection initiated with token from user init");
+    logger.info("IM connection initiated with token from user init");
   } catch (error) {
-    console.error("Failed to init IM connection:", error);
+    logger.error("Failed to init IM connection:", error);
     imConnecting.value = false;
   }
 };
@@ -1045,7 +1046,7 @@ const sendTextMessage = async () => {
   const text = inputMessage.value.trim();
   if (!text || !imInstance || !imConnected.value) {
     if (!imConnected.value) {
-      console.warn("IM not connected, cannot send message");
+      logger.warn("IM not connected, cannot send message");
     }
     return;
   }
@@ -1068,7 +1069,7 @@ const sendTextMessage = async () => {
   // Visitor Channel (channel_type=10), channel_id = {projectId}_{userId}
   const visitorChannelId = imUid.value;
   if (!visitorChannelId) {
-    console.error("No imUid (projectId_userId) for visitor channel");
+    logger.error("No imUid (projectId_userId) for visitor channel");
     return;
   }
 
@@ -1080,9 +1081,9 @@ const sendTextMessage = async () => {
       WKChannelType.VISITOR as any,
       payload,
     );
-    console.log("Message sent to visitor channel:", result);
+    logger.info("Message sent to visitor channel:", result);
   } catch (error) {
-    console.error("Failed to send message via IM:", error);
+    logger.error("Failed to send message via IM:", error);
   }
 };
 
@@ -1149,7 +1150,7 @@ const handleImageUpload = async (event: Event) => {
           );
         }
       } else {
-        console.error(
+        logger.error(
           "Upload failed:",
           uploadRes.status,
           await uploadRes.text(),
@@ -1157,11 +1158,11 @@ const handleImageUpload = async (event: Event) => {
         alert(t('h5chat.imageUploadFailed'));
       }
     } else {
-      console.error("Failed to get OSS token:", tokenRes);
+      logger.error("Failed to get OSS token:", tokenRes);
       alert(t('h5chat.ossTokenFailed'));
     }
   } catch (error) {
-    console.error("Failed to upload image:", error);
+    logger.error("Failed to upload image:", error);
     alert(t('h5chat.imageUploadFailed'));
   }
 
@@ -1226,7 +1227,7 @@ const handleSubmitTicket = async () => {
       await fetchMyTickets();
     }
   } catch (error) {
-    console.error("Failed to submit ticket:", error);
+    logger.error("Failed to submit ticket:", error);
     alert(t('h5chat.ticketSubmitFailed'));
   }
 };
@@ -1292,7 +1293,7 @@ const fetchMyTickets = async () => {
       hasUnreadTicketReply.value = myTickets.value.some((t: any) => t.hasNewReply);
     }
   } catch (error) {
-    console.error("Failed to fetch tickets:", error);
+    logger.error("Failed to fetch tickets:", error);
   } finally {
     loadingTickets.value = false;
   }
@@ -1325,7 +1326,7 @@ const openTicketDetail = async (ticket: any) => {
       hasUnreadTicketReply.value = myTickets.value.some((t: any) => t.hasNewReply);
     }
   } catch (error) {
-    console.error("Failed to fetch ticket detail:", error);
+    logger.error("Failed to fetch ticket detail:", error);
     alert(t('h5chat.ticketDetailFailed'));
   }
 };
@@ -1358,7 +1359,7 @@ const submitTicketReply = async () => {
       alert(response.message || t('h5chat.replyFailed'));
     }
   } catch (error) {
-    console.error("Failed to reply ticket:", error);
+    logger.error("Failed to reply ticket:", error);
     alert(t('h5chat.replyRetryFailed'));
   } finally {
     submittingReply.value = false;

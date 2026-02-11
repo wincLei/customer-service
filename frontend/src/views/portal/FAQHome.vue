@@ -108,6 +108,7 @@ import { useI18n } from 'vue-i18n'
 import { useRoute } from 'vue-router'
 import { marked } from 'marked'
 import portalApi from '@/api/portal'
+import { logger } from '@/utils/logger'
 
 interface FAQ {
   id: number
@@ -147,7 +148,7 @@ const renderedContent = computed(() => {
   try {
     return marked(selectedFAQ.value.content) as string
   } catch (e) {
-    console.error('Markdown parse error:', e)
+    logger.error('Markdown parse error:', e)
     return selectedFAQ.value.content
   }
 })
@@ -168,7 +169,7 @@ const fetchKbData = async () => {
       categories.value = response.data.categories || []
     }
   } catch (error) {
-    console.error('Failed to fetch KB data:', error)
+    logger.error('Failed to fetch KB data:', error)
   } finally {
     loading.value = false
   }
@@ -196,7 +197,7 @@ const handleSearch = () => {
         searchResults.value = response.data
       }
     } catch (error) {
-      console.error('Failed to search articles:', error)
+      logger.error('Failed to search articles:', error)
       searchResults.value = []
     }
   }, 300)
@@ -222,7 +223,7 @@ const viewFAQ = async (faq: FAQ) => {
       }
     }
   } catch (error) {
-    console.error('Failed to fetch article detail:', error)
+    logger.error('Failed to fetch article detail:', error)
     selectedFAQ.value = { ...faq, content: `<p>${t('faq.loadFailed')}</p>` }
   }
 }

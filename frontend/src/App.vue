@@ -6,10 +6,11 @@
 
 <script setup lang="ts">
 import { onMounted } from 'vue'
+import { logger } from '@/utils/logger'
 
 onMounted(() => {
   // TODO: 初始化应用
-  console.log('App mounted')
+  logger.info('App mounted')
 })
 </script>
 

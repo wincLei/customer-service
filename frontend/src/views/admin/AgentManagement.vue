@@ -173,6 +173,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import request from '@/api'
+import { logger } from '@/utils/logger'
 
 const { t } = useI18n()
 
@@ -264,7 +265,7 @@ const loadAvailableUsers = async () => {
       availableUsers.value = res.data
     }
   } catch (error) {
-    console.error('加载可用用户失败', error)
+    logger.error('加载可用用户失败', error)
   }
 }
 
@@ -276,7 +277,7 @@ const loadProjects = async () => {
       projects.value = res.data
     }
   } catch (error) {
-    console.error('加载项目列表失败', error)
+    logger.error('加载项目列表失败', error)
   }
 }
 

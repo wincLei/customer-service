@@ -29,6 +29,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import request from '@/api'
+import { logger } from '@/utils/logger'
 
 const router = useRouter()
 const route = useRoute()
@@ -48,7 +49,7 @@ const loadProjectConfig = async () => {
       projectName.value = response.data.projectName + '-在线客服'
     }
   } catch (error) {
-    console.error('Failed to load project config:', error)
+    logger.error('Failed to load project config:', error)
   }
 }
 

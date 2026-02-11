@@ -114,6 +114,7 @@ import { useI18n } from 'vue-i18n'
 import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import request from '@/api'
+import { logger } from '@/utils/logger'
 
 const { t } = useI18n()
 
@@ -171,7 +172,7 @@ const loadProjects = async () => {
       }
     }
   } catch (error) {
-    console.error('加载项目失败', error)
+    logger.error('加载项目失败', error)
   }
 }
 

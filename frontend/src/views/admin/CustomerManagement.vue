@@ -233,6 +233,7 @@ import { ElMessage } from 'element-plus'
 import { Search, User } from '@element-plus/icons-vue'
 import request from '@/api'
 import { DEFAULT_PAGE_SIZE } from '@/constants'
+import { logger } from '@/utils/logger'
 
 const { t } = useI18n()
 
@@ -310,7 +311,7 @@ const loadProjects = async () => {
       }
     }
   } catch (error) {
-    console.error('加载项目失败', error)
+    logger.error('加载项目失败', error)
   }
 }
 
@@ -389,7 +390,7 @@ const loadProjectTags = async () => {
       projectTags.value = res.data
     }
   } catch (error) {
-    console.error('加载标签失败', error)
+    logger.error('加载标签失败', error)
   }
 }
 
@@ -405,7 +406,7 @@ const loadStats = async () => {
       stats.value = res.data
     }
   } catch (error) {
-    console.error('加载统计失败', error)
+    logger.error('加载统计失败', error)
   }
 }
 

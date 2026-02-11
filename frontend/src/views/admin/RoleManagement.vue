@@ -175,6 +175,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Plus, Search } from '@element-plus/icons-vue'
 import request from '@/api'
 import Pagination from '@/components/Pagination.vue'
+import { logger } from '@/utils/logger'
 import type { ElTree } from 'element-plus'
 
 const { t } = useI18n()
@@ -327,7 +328,7 @@ const showPermissionDialog = async (role: Role) => {
         menus = parsed.menus || []
         actions = parsed.actions || []
       } catch (e) {
-        console.error('解析权限失败', e)
+        logger.error('解析权限失败', e)
       }
     } else if (typeof role.permissions === 'object') {
       menus = role.permissions.menus || []

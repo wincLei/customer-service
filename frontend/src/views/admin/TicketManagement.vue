@@ -303,6 +303,7 @@ import {
 } from '@element-plus/icons-vue'
 import request from '@/api'
 import { TicketStatus, TicketPriority, TicketStatusLabel, TicketPriorityLabel, TicketPriorityType, DEFAULT_PAGE_SIZE } from '@/constants'
+import { logger } from '@/utils/logger'
 
 const { t } = useI18n()
 
@@ -366,7 +367,7 @@ const fetchTickets = async () => {
     tickets.value = res.data.content || []
     totalElements.value = res.data.totalElements || 0
   } catch (error) {
-    console.error('获取工单列表失败', error)
+    logger.error('获取工单列表失败', error)
     ElMessage.error(t('ticketMgmt.fetchListFailed'))
   } finally {
     loading.value = false
@@ -379,7 +380,7 @@ const fetchStats = async () => {
     const res = await request.get('/api/admin/ticket/stats')
     stats.value = res.data
   } catch (error) {
-    console.error('获取统计数据失败', error)
+    logger.error('获取统计数据失败', error)
   }
 }
 
@@ -389,7 +390,7 @@ const fetchAgents = async () => {
     const res = await request.get('/api/admin/user/agents')
     agents.value = res.data || []
   } catch (error) {
-    console.error('获取客服列表失败', error)
+    logger.error('获取客服列表失败', error)
   }
 }
 

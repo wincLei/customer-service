@@ -138,6 +138,7 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { Clock, ChatDotRound, MessageBox, ChatLineRound, Refresh } from '@element-plus/icons-vue'
+import { logger } from '@/utils/logger'
 
 const { t } = useI18n()
 
@@ -205,7 +206,7 @@ const fetchStats = async () => {
       stats.value.messageTrend = Math.floor(Math.random() * 40)
     }
   } catch (error) {
-    console.error('获取统计数据失败:', error)
+    logger.error('获取统计数据失败:', error)
   }
 }
 
@@ -220,7 +221,7 @@ const fetchAgents = async () => {
       onlineAgents.value = allAgents.value.filter(a => a.status === 'online')
     }
   } catch (error) {
-    console.error('获取客服列表失败:', error)
+    logger.error('获取客服列表失败:', error)
   }
 }
 

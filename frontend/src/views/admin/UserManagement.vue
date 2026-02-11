@@ -176,6 +176,7 @@ import { ElMessage, ElMessageBox, type FormInstance, type FormRules } from 'elem
 import { Plus, Search } from '@element-plus/icons-vue'
 import request from '@/api'
 import Pagination from '@/components/Pagination.vue'
+import { logger } from '@/utils/logger'
 
 const { t } = useI18n()
 
@@ -274,7 +275,7 @@ const loadRoles = async () => {
       roles.value = res.data
     }
   } catch (error) {
-    console.error('加载角色列表失败', error)
+    logger.error('加载角色列表失败', error)
   }
 }
 

@@ -59,17 +59,7 @@ app:
     secret: mini-customer-service-secret-key-for-jwt-token-generation-and-validation-2024-2025
     expiration: 86400000 # 24 hours in milliseconds
 
-logging:
-  level:
-    root: INFO
-    com.customer_service: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: logs/application.log
-    max-size: 10MB
-    max-history: 30
+# 日志配置已迁移至 logback-spring.xml，支持通过 LOG_LEVEL/LOG_RETENTION_DAYS 环境变量控制
 
 # WuKongIM 配置
 wukongim:
