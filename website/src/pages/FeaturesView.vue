@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
+import { ref, onMounted } from 'vue'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const features = [
   {
@@ -27,10 +28,19 @@ const features = [
 ]
 
 const techStack = [
-  { key: 'features.frontendApp', descriptionKey: 'features.frontendDesc' },
+  { 
+    key: locale.value === 'zh' ? 'features.frontendApp' : 'features.techStack.frontendAppShort', 
+    descriptionKey: 'features.architecture.frontendDesc' 
+  },
   { key: 'common.typescript', descriptionKey: 'features.techStack.typescriptDesc' },
-  { key: 'features.im', descriptionKey: 'features.imDesc' },
-  { key: 'features.backend', descriptionKey: 'features.backendDesc' },
+  { 
+    key: locale.value === 'zh' ? 'features.im' : 'features.techStack.imShort', 
+    descriptionKey: 'features.architecture.imDesc' 
+  },
+  { 
+    key: locale.value === 'zh' ? 'features.backend' : 'features.techStack.backendShort', 
+    descriptionKey: 'features.architecture.backendDesc' 
+  },
   { key: 'features.postgresql', descriptionKey: 'features.postgresqlDesc' },
   { key: 'features.docker', descriptionKey: 'features.dockerDesc' }
 ]
@@ -121,27 +131,33 @@ const techStack = [
         <div class="bg-gray-50 rounded-xl p-8">
           <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>
-              <div class="bg-blue-500 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span class="text-xl font-bold">{{ t('features.frontendApp') }}</span>
+              <div class="bg-blue-500 text-white rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <span class="text-xl font-bold whitespace-normal text-center">
+                  {{ locale === 'zh' ? t('features.frontendApp') : t('features.architecture.frontendAppShort') }}
+                </span>
               </div>
               <h3 class="font-semibold text-gray-900 mb-2">{{ t('features.frontendApp') }}</h3>
-              <p class="text-gray-600 text-sm">{{ t('features.frontendDesc') }}</p>
+              <p class="text-gray-600 text-sm">{{ t('features.architecture.frontendDesc') }}</p>
             </div>
             
             <div>
-              <div class="bg-green-500 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span class="text-xl font-bold">{{ t('features.backend') }}</span>
+              <div class="bg-green-500 text-white rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <span class="text-xl font-bold whitespace-normal text-center">
+                  {{ locale === 'zh' ? t('features.backend') : t('features.architecture.backendShort') }}
+                </span>
               </div>
               <h3 class="font-semibold text-gray-900 mb-2">{{ t('features.backend') }}</h3>
-              <p class="text-gray-600 text-sm">{{ t('features.backendDesc') }}</p>
+              <p class="text-gray-600 text-sm">{{ t('features.architecture.backendDesc') }}</p>
             </div>
             
             <div>
-              <div class="bg-purple-500 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                <span class="text-xl font-bold">{{ t('features.im') }}</span>
+              <div class="bg-purple-500 text-white rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-4">
+                <span class="text-xl font-bold whitespace-normal text-center">
+                  {{ locale === 'zh' ? t('features.im') : t('features.architecture.imShort') }}
+                </span>
               </div>
               <h3 class="font-semibold text-gray-900 mb-2">{{ t('features.im') }}</h3>
-              <p class="text-gray-600 text-sm">{{ t('features.imDesc') }}</p>
+              <p class="text-gray-600 text-sm">{{ t('features.architecture.imDesc') }}</p>
             </div>
           </div>
           
