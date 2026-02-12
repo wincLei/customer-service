@@ -33,7 +33,7 @@ const isActive = (path: string) => {
             <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
               <span class="text-white font-bold text-lg">CS</span>
             </div>
-            <span class="text-xl font-bold text-gray-900">Mini客服</span>
+            <span class="text-xl font-bold text-gray-900">{{ t('app.title') }}</span>
           </router-link>
         </div>
 

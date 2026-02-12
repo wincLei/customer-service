@@ -117,10 +117,10 @@ const handleCTAClick = () => {
     <section class="section-padding bg-white">
       <div class="container-max text-center">
         <h2 class="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
-          准备开始使用了吗？
+          {{ t('home.ctaSection.title') }}
         </h2>
         <p class="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-          立即体验极简客服系统，为您的企业提供专业高效的客户服务解决方案
+          {{ t('home.ctaSection.description') }}
         </p>
         <button @click="handleCTAClick" class="btn-primary text-lg px-8 py-4">
           {{ t('home.hero.cta') }}

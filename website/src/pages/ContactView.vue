@@ -13,17 +13,17 @@ const contactForm = ref({
 const contactInfo = [
   {
     title: 'email',
-    value: 'contact@customerservice.com',
+    value: 'leijiang@fulitoutiao.cn',
     icon: 'M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z'
   },
   {
     title: 'phone',
-    value: '+86 400-123-4567',
+    value: '+86 13386232717',
     icon: 'M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z'
   },
   {
     title: 'address',
-    value: '北京市朝阳区xxx大厦',
+    value: '上海市闵行区华一实业大厦 ',
     icon: 'M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z'
   }
 ]
@@ -31,7 +31,7 @@ const contactInfo = [
 const handleSubmit = () => {
   // 这里可以添加表单提交逻辑
   console.log('Form submitted:', contactForm.value)
-  alert('感谢您的留言！我们会尽快回复您。')
+  alert(t('contact.submitSuccess'))
   contactForm.value = { name: '', email: '', message: '' }
 }
 </script>
@@ -46,7 +46,7 @@ const handleSubmit = () => {
             {{ t('contact.title') }}
           </h1>
           <p class="text-xl text-gray-700">
-            我们期待与您合作，为您提供最优质的客服解决方案
+            {{ t('contact.subtitle') }}
           </p>
         </div>
       </div>
@@ -59,7 +59,7 @@ const handleSubmit = () => {
           <!-- Contact Form -->
           <div class="card">
             <h2 class="text-2xl font-bold text-gray-900 mb-6">
-              发送消息
+              {{ t('contact.sendMessage') }}
             </h2>
             <form @submit.prevent="handleSubmit" class="space-y-6">
               <div>
@@ -75,7 +75,7 @@ const handleSubmit = () => {
                   :placeholder="t('contact.form.name')"
                 />
               </div>
-              
+
               <div>
                 <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
                   {{ t('contact.form.email') }}
@@ -89,7 +89,7 @@ const handleSubmit = () => {
                   :placeholder="t('contact.form.email')"
                 />
               </div>
-              
+
               <div>
                 <label for="message" class="block text-sm font-medium text-gray-700 mb-2">
                   {{ t('contact.form.message') }}
@@ -103,7 +103,7 @@ const handleSubmit = () => {
                   :placeholder="t('contact.form.message')"
                 ></textarea>
               </div>
-              
+
               <button type="submit" class="btn-primary w-full">
                 {{ t('contact.form.submit') }}
               </button>
@@ -114,7 +114,7 @@ const handleSubmit = () => {
           <div>
             <div class="mb-12">
               <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                联系信息
+                {{ t('contact.contactInfo') }}
               </h2>
               <div class="space-y-6">
                 <div
@@ -144,20 +144,20 @@ const handleSubmit = () => {
             <!-- Business Hours -->
             <div class="card">
               <h3 class="text-lg font-semibold text-gray-900 mb-4">
-                工作时间
+                {{ t('contact.businessHours') }}
               </h3>
               <div class="space-y-2 text-gray-600">
                 <div class="flex justify-between">
-                  <span>周一 - 周五</span>
+                  <span>{{ t('contact.weekdays.mondayToFriday') }}</span>
                   <span>9:00 - 18:00</span>
                 </div>
                 <div class="flex justify-between">
-                  <span>周六</span>
+                  <span>{{ t('contact.weekdays.saturday') }}</span>
                   <span>9:00 - 12:00</span>
                 </div>
                 <div class="flex justify-between">
-                  <span>周日</span>
-                  <span>休息</span>
+                  <span>{{ t('contact.weekdays.sunday') }}</span>
+                  <span>{{ t('contact.weekdays.rest') }}</span>
                 </div>
               </div>
             </div>
@@ -171,13 +171,13 @@ const handleSubmit = () => {
       <div class="container-max">
         <div class="text-center mb-12">
           <h2 class="text-3xl font-bold text-gray-900 mb-4">
-            公司位置
+            {{ t('contact.companyLocation') }}
           </h2>
           <p class="text-gray-700 max-w-2xl mx-auto">
-            欢迎实地考察我们的办公环境，了解我们的团队和文化
+            {{ t('contact.locationDescription') }}
           </p>
         </div>
-        
+
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
           <div class="h-96 bg-gray-200 flex items-center justify-center">
             <div class="text-center">
@@ -197,38 +197,38 @@ const handleSubmit = () => {
       <div class="container-max">
         <div class="text-center mb-12">
           <h2 class="text-3xl font-bold text-gray-900 mb-4">
-            常见问题
+            {{ t('contact.faqTitle') }}
           </h2>
           <p class="text-gray-700 max-w-2xl mx-auto">
-            解答您可能关心的问题
+            {{ t('contact.faqDescription') }}
           </p>
         </div>
-        
+
         <div class="max-w-3xl mx-auto space-y-6">
           <div class="card">
             <h3 class="font-semibold text-gray-900 mb-2">
-              如何开始使用客服系统？
+              {{ t('contact.faq.q1') }}
             </h3>
             <p class="text-gray-600">
-              您可以通过我们的快速开始指南，在几分钟内完成系统部署和基本配置。
+              {{ t('contact.faq.a1') }}
             </p>
           </div>
-          
+
           <div class="card">
             <h3 class="font-semibold text-gray-900 mb-2">
-              系统支持哪些部署方式？
+              {{ t('contact.faq.q2') }}
             </h3>
             <p class="text-gray-600">
-              我们支持Docker容器化部署、传统服务器部署以及云平台部署等多种方式。
+              {{ t('contact.faq.a2') }}
             </p>
           </div>
-          
+
           <div class="card">
             <h3 class="font-semibold text-gray-900 mb-2">
-              是否提供技术支持？
+              {{ t('contact.faq.q3') }}
             </h3>
             <p class="text-gray-600">
-              是的，我们提供7×24小时的技术支持服务，包括在线客服、邮件支持和电话支持。
+              {{ t('contact.faq.a3') }}
             </p>
           </div>
         </div>
