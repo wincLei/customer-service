@@ -91,7 +91,7 @@
 > **UI 规范**：仿微信/主流 IM 布局，适配移动端触控。
 
 - **URL 参数解析**：
-  - 自动解析 URL 中的 `token`, `project_id`, `uid`, `avatar` , `nick_name` , `phone` , `device_type`等参数进行静默登录或身份绑定。
+  - 自动解析 URL 中的 `project_id`, `guest_uid`, `external_uid`, `avatar` , `nick_name` , `phone` , `device_type`等参数进行静默登录或身份绑定。
 - **功能**：
   - 底部输入框：支持文本、语音（录音）、表情面板、更多（发图/文件）、留言板/工单提交（无客服在线时触发）。
   - 顶部导航：显示客服昵称/状态，支持“结束会话”按钮。

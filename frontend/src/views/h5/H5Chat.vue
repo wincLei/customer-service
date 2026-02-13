@@ -610,7 +610,7 @@ const initUser = async () => {
         (route.query.nick_name as string) || (route.query.nickname as string),
       avatar: route.query.avatar as string,
       phone: route.query.phone as string,
-      deviceFlag: DeviceType.H5, // H5 端使用 H5 设备类型
+      deviceFlag: route.query.device_type || DeviceType.H5, // H5 端使用 H5 设备类型
     })) as any;
 
     if (response.code === 0 && response.data) {
