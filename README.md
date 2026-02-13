@@ -215,7 +215,7 @@ npm run preview
 #### 3.1 完整功能
 
 - **URL参数支持**:
-  - `project_id`: 项目ID
+  - `project_id`: 项目ID(必传)
   - `guest_uid`: 用户ID
   - `external_uid`: 外部用户ID
   - `avatar`: 用户头像
