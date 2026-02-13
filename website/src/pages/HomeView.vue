@@ -51,10 +51,10 @@ const handleCTAClick = () => {
             {{ t('home.hero.description') }}
           </p>
           <div class="flex flex-col sm:flex-row gap-4 justify-center">
-            <button @click="handleCTAClick" class="btn-primary text-lg px-8 py-4">
+            <a href="https://github.com/wincLei/customer-service" target="_blank" rel="noopener noreferrer" class="btn-primary text-lg px-8 py-4">
               {{ t('home.hero.cta') }}
-            </button>
-            <a href="https://github.com" target="_blank" class="btn-secondary text-lg px-8 py-4">
+            </a>
+            <a href="https://github.com/wincLei/customer-service" target="_blank" rel="noopener noreferrer" class="btn-secondary text-lg px-8 py-4">
               {{ t('home.hero.github') }}
             </a>
           </div>
@@ -70,7 +70,7 @@ const handleCTAClick = () => {
             {{ t('home.features.title') }}
           </h2>
         </div>
-        
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div
             v-for="(feature, index) in features"

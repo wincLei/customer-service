@@ -48,6 +48,10 @@ const techStack = [
 
 <template>
   <div class="min-h-screen">
+    <!-- SEO Semantic Headings -->
+    <h1 class="sr-only">极简客服系统：为效率而生的开源客服方案</h1>
+    <h2 class="sr-only">功能特性: 多端支持、智能分配、多渠道接入、数据统计</h2>
+    <h3 class="sr-only">安装指南: 容器化部署、负载均衡、缓存服务</h3>
     <!-- Hero Section -->
     <section class="gradient-bg">
       <div class="container-max section-padding">
@@ -164,7 +168,7 @@ const techStack = [
           <div class="mt-8 pt-8 border-t border-gray-200">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div>
-                <h4 class="font-semibold text-gray-900 mb-3">{{ t('features.infrastructure') }}</h4>
+                <h4 class="font-semibold text-gray-900 mb-3">{{ t('features.architecture.infrastructure') }}</h4>
                 <ul class="text-gray-600 space-y-1">
                   <li>• {{ t('features.infrastructureItems.docker') }}</li>
                   <li>• {{ t('features.infrastructureItems.nginx') }}</li>
@@ -187,4 +191,8 @@ const techStack = [
       </div>
     </section>
   </div>
+
+  <!-- FAQ Section -->
+  <FAQSection />
+
 </template>

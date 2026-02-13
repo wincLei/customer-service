@@ -9,9 +9,9 @@ const zh = {
   nav: {
     home: '首页',
     features: '功能特性',
-    docs: '文档',
-    demo: '演示',
-    contact: '联系我们'
+    contact: '联系我们',
+    sourceCode: '源码',
+    documentation: '文档'
   },
 
   // 首页
@@ -169,7 +169,8 @@ const zh = {
   // 联系我们
   contact: {
     title: '联系我们',
-    email: '邮箱',
+    email: 'leijiang@fulitoutiao.cn',
+    emailTitle: '邮箱',
     phone: '电话',
     address: '地址',
     wechat: '微信',
@@ -224,9 +225,9 @@ const en = {
   nav: {
     home: 'Home',
     features: 'Features',
-    docs: 'Documentation',
-    demo: 'Demo',
-    contact: 'Contact'
+    contact: 'Contact',
+    sourceCode: 'Source Code',
+    documentation: 'Documentation'
   },
 
   // Home
@@ -359,7 +360,7 @@ const en = {
         start: 'Start Service',
         access: 'Access System',
         accessDesc: 'Open browser to access',
-        githubUrl: 'https://github.com/your-repo/customer-service.git',
+        githubUrl: 'https://github.com/wincLei/customer-service',
         installCmd: 'cd customer-service && npm install',
         startCmd: 'docker-compose up -d',
         localUrl: 'http://localhost:3000'
@@ -378,10 +379,37 @@ const en = {
     viewDetails: 'View Details'
   },
 
+  // FAQ
+  faq: {
+    title: 'Frequently Asked Questions',
+    description: 'Common questions about Mini-Customer-Service',
+    questions: [
+      {
+        question: 'How to install the open-source customer service system?',
+        answer: 'You can follow our quick start guide to complete system deployment and basic configuration in minutes.'
+      },
+      {
+        question: 'Which databases does Mini-Customer-Service support?',
+        answer: 'We support PostgreSQL as the main database, with Redis for caching.'
+      },
+      {
+        question: 'Does Mini-Customer-Service support multi-channel access?',
+        answer: 'Yes, it supports Web, H5 mobile, and PC management backend access.'
+      },
+      {
+        question: 'Is there technical support available?',
+        answer: 'Yes, we provide 7×24 technical support service, including online customer service, email support, and phone support.'
+      }
+    ]
+  },
+
+
+
   // Contact
   contact: {
     title: 'Contact Us',
-    email: 'Email',
+    email: 'leijiang@fulitoutiao.cn',
+    emailTitle: 'Email',
     phone: 'Phone',
     address: 'Address',
     wechat: 'WeChat',

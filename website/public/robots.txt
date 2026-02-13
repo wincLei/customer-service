@@ -1,0 +1,23 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://minics.kefuchat.com/sitemap.xml
+
+# Allow all crawlers
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Specific directories
+Allow: /assets/
+Allow: /images/
+Allow: /icons/
+
+# Disallow certain file types
+Disallow: /*.json$
+Disallow: /*.map$
+
+# Crawl delay
+Crawl-delay: 10
