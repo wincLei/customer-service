@@ -215,9 +215,9 @@ npm run preview
 #### 3.1 完整功能
 
 - **URL参数支持**:
-  - `token`: 认证令牌
   - `project_id`: 项目ID
-  - `uid`: 用户ID
+  - `guest_uid`: 用户ID
+  - `external_uid`: 外部用户ID
   - `avatar`: 用户头像
   - `nick_name`: 用户昵称
   - `phone`: 用户电话
