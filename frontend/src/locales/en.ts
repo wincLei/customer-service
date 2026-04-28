@@ -364,6 +364,11 @@ export default {
     replySuccess: 'Reply sent',
     statusUpdateSuccess: 'Status updated',
     assignSuccess: 'Assignment successful',
+    userInfoTitle: 'User Info',
+    userId: 'User ID',
+    projectName: 'Project',
+    nickname: 'Nickname',
+    externalUid: 'External UID',
   },
 
   // ========================

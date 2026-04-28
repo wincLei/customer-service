@@ -371,6 +371,11 @@ export default {
     replySuccess: '回复成功',
     statusUpdateSuccess: '状态更新成功',
     assignSuccess: '分配成功',
+    userInfoTitle: '用户信息',
+    userId: '用户ID',
+    projectName: '项目名称',
+    nickname: '昵称',
+    externalUid: '外部UID',
   },
 
   // ========================

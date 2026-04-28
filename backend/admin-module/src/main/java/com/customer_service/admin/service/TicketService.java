@@ -3,9 +3,11 @@ package com.customer_service.admin.service;
 import com.customer_service.shared.constant.OperatorType;
 import com.customer_service.shared.constant.TicketAction;
 import com.customer_service.shared.constant.TicketStatus;
+import com.customer_service.shared.entity.Project;
 import com.customer_service.shared.entity.Ticket;
 import com.customer_service.shared.entity.TicketEvent;
 import com.customer_service.shared.entity.User;
+import com.customer_service.shared.repository.ProjectRepository;
 import com.customer_service.shared.repository.TicketEventRepository;
 import com.customer_service.shared.repository.TicketRepository;
 import com.customer_service.shared.repository.UserRepository;
@@ -37,6 +39,7 @@ public class TicketService {
     private final TicketRepository ticketRepository;
     private final TicketEventRepository ticketEventRepository;
     private final UserRepository userRepository;
+    private final ProjectRepository projectRepository;
 
     /**
      * 获取工单列表（带权限过滤）
@@ -89,13 +92,32 @@ public class TicketService {
 
         // 获取用户信息
         String userName = I18nUtil.getMessage("ticket.unknown.user");
-        if (ticket.getUserId() != null) {
-            Optional<User> user = userRepository.findById(ticket.getUserId());
-            userName = user.map(User::getNickname)
-                    .orElse(I18nUtil.getMessage("ticket.user.prefix") + ticket.getUserId());
+        Long userId = ticket.getUserId();
+        String userNickname = null;
+        String userExternalUid = null;
+        if (userId != null) {
+            Optional<User> userOpt = userRepository.findById(userId);
+            if (userOpt.isPresent()) {
+                User user = userOpt.get();
+                userNickname = user.getNickname();
+                userExternalUid = user.getExternalUid();
+                userName = userNickname != null ? userNickname
+                        : I18nUtil.getMessage("ticket.user.prefix") + userId;
+            } else {
+                userName = I18nUtil.getMessage("ticket.user.prefix") + userId;
+            }
         }
 
-        return Optional.of(new TicketDetailDTO(ticket, events, userName));
+        // 获取项目名称
+        String projectName = null;
+        if (ticket.getProjectId() != null) {
+            projectName = projectRepository.findById(ticket.getProjectId())
+                    .map(Project::getName)
+                    .orElse(null);
+        }
+
+        return Optional
+                .of(new TicketDetailDTO(ticket, events, userName, userId, userNickname, userExternalUid, projectName));
     }
 
     /**
@@ -224,6 +246,10 @@ public class TicketService {
     public record TicketDetailDTO(
             Ticket ticket,
             List<TicketEvent> events,
-            String userName) {
+            String userName,
+            Long userId,
+            String userNickname,
+            String userExternalUid,
+            String projectName) {
     }
 }

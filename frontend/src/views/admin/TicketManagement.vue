@@ -195,6 +195,29 @@
           </div>
         </div>
 
+        <!-- 用户信息 -->
+        <div class="detail-user-info">
+          <h4>{{ $t('ticketMgmt.userInfoTitle') }}</h4>
+          <div class="user-info-grid">
+            <div class="user-info-item">
+              <label>{{ $t('ticketMgmt.userId') }}</label>
+              <span>{{ currentTicket.userId || '-' }}</span>
+            </div>
+            <div class="user-info-item">
+              <label>{{ $t('ticketMgmt.projectName') }}</label>
+              <span>{{ currentTicket.projectName || '-' }}</span>
+            </div>
+            <div class="user-info-item">
+              <label>{{ $t('ticketMgmt.nickname') }}</label>
+              <span>{{ currentTicket.userNickname || '-' }}</span>
+            </div>
+            <div class="user-info-item">
+              <label>{{ $t('ticketMgmt.externalUid') }}</label>
+              <span>{{ currentTicket.userExternalUid || '-' }}</span>
+            </div>
+          </div>
+        </div>
+
         <!-- 工单描述 -->
         <div class="detail-content">
           <h4>{{ $t('ticketMgmt.problemDesc') }}</h4>
@@ -724,6 +747,43 @@ onMounted(() => {
   gap: 4px;
   color: #666;
   font-size: 14px;
+}
+
+.detail-user-info {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f5f7fa;
+  border-radius: 8px;
+  border-left: 3px solid #409eff;
+}
+
+.detail-user-info h4 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #606266;
+}
+
+.user-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.user-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.user-info-item label {
+  font-size: 12px;
+  color: #909399;
+}
+
+.user-info-item span {
+  font-size: 14px;
+  color: #303133;
+  word-break: break-all;
 }
 
 .detail-content {
