@@ -3,15 +3,19 @@ package com.customer_service.portal.service;
 import com.customer_service.shared.constant.IMConstants;
 import com.customer_service.shared.constant.WKChannelType;
 import com.customer_service.shared.dto.WKMessageNotify;
+import com.customer_service.shared.entity.AutoReplyRule;
 import com.customer_service.shared.entity.User;
 import com.customer_service.shared.entity.UserConversation;
+import com.customer_service.shared.repository.AutoReplyRuleRepository;
 import com.customer_service.shared.repository.UserConversationRepository;
 import com.customer_service.shared.repository.UserRepository;
+import com.customer_service.shared.service.WuKongIMService;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,6 +23,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -35,6 +40,8 @@ public class WebhookService {
     private final ObjectMapper objectMapper;
     private final UserRepository userRepository;
     private final UserConversationRepository userConversationRepository;
+    private final AutoReplyRuleRepository autoReplyRuleRepository;
+    private final WuKongIMService wuKongIMService;
 
     /**
      * 处理消息通知事件 (msg.notify)
@@ -137,8 +144,47 @@ public class WebhookService {
             // 更新或创建 UserConversation
             updateUserConversation(user, messageContent, messageSeq, timestamp);
 
+            // 触发自动回复（异步，避免阻塞 webhook 响应）
+            triggerAutoReply(projectId, channelId, messageContent);
+
         } catch (Exception e) {
             log.error("Failed to process message: {}", msg, e);
+        }
+    }
+
+    /**
+     * 触发自动回复：匹配关键词规则，异步发送回复
+     */
+    @Async
+    public void triggerAutoReply(Long projectId, String channelId, String messageContent) {
+        if (messageContent == null || messageContent.isBlank()) {
+            return;
+        }
+        try {
+            List<AutoReplyRule> rules = autoReplyRuleRepository
+                    .findByProjectIdAndEnabledTrueOrderByPriorityAsc(projectId);
+
+            String lowerContent = messageContent.toLowerCase();
+            for (AutoReplyRule rule : rules) {
+                String[] keywords = rule.getKeywords().split(",");
+                boolean matched = Arrays.stream(keywords)
+                        .map(String::trim)
+                        .filter(k -> !k.isEmpty())
+                        .anyMatch(k -> lowerContent.contains(k.toLowerCase()));
+
+                if (matched) {
+                    log.info("Auto reply triggered: ruleId={}, keyword hit in message, channelId={}",
+                            rule.getId(), channelId);
+                    // 以系统身份发送自动回复
+                    wuKongIMService.sendTextMessage(
+                            IMConstants.SYSTEM_UID, channelId, WKChannelType.VISITOR,
+                            rule.getReplyContent());
+                    // 只回复第一条匹配的规则
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to trigger auto reply for channelId={}", channelId, e);
         }
     }
 

@@ -43,6 +43,7 @@ export default {
     createFailed: 'Create failed',
     saveSuccess: 'Saved successfully',
     selectProject: 'Please select a project first',
+    actions: 'Actions',
   },
 
   // ========================
@@ -89,6 +90,7 @@ export default {
     userManagement: 'User Management',
     tagManagement: 'Tag Management',
     quickReply: 'Quick Reply',
+    autoReply: 'Auto Reply',
     agentManagement: 'Agent Management',
     roleManagement: 'Role Management',
     menuManagement: 'Menu Management',
@@ -259,6 +261,7 @@ export default {
     processHistory: 'History',
     agentLabel: 'Agent',
     userLabel: 'Me',
+    systemLabel: 'System',
     noProcessHistory: 'No history yet',
     replyPlaceholder: 'Type your reply...',
     sending: 'Sending...',
@@ -279,6 +282,8 @@ export default {
     rateLimitExceeded: 'Sending too frequently, please wait',
     defaultWelcome: 'Hello, how can I help you?',
     dateFormat: '{month}/{day} {h}:{m}',
+    // Auto-reply keyword suggestion
+    autoReplySuggestTitle: 'Suggested answers based on your input:',
   },
 
   // ========================
@@ -588,19 +593,19 @@ export default {
     typeRequired: 'Please select menu type',
     codeLength: 'Code must be 2-50 characters',
     nameLength: 'Name must be 1-100 characters',
-    codeFormat: 'Code can only contain letters, numbers, underscores and colons, starting with a letter',
+    codeFormat: 'Code can only contain letters, numbers, underscores, colons and hyphens, starting with a letter',
     deleteConfirm: 'Are you sure you want to delete menu "{name}"?',
     confirmDelete: 'Confirm Delete',
     loadFailed: 'Failed to load menu list',
     deleteConfirmTitle: 'Delete Confirmation',
-    codePlaceholder: 'e.g., dashboard, user:manage',
+    codePlaceholder: 'e.g., dashboard, user:manage, quick-replies',
     pathPlaceholder: 'e.g., /admin/dashboard',
     iconPlaceholder: 'Element Plus icon name',
     type: 'Type',
     codeTip: 'Unique identifier for permission check',
     sortTip: 'Smaller number = higher priority',
     enabled: 'Enabled',
-    codePattern: 'Code can only contain letters, numbers, underscores and colons, starting with a letter',
+    codePattern: 'Code can only contain letters, numbers, underscores, colons and hyphens, starting with a letter',
   },
 
   // ========================
@@ -828,10 +833,40 @@ export default {
     customerManagement: 'Customer Management',
     tagManagement: 'Tag Management',
     quickReply: 'Quick Reply',
+    autoReply: 'Auto Reply',
     ticketManagement: 'Ticket Management',
     systemSettings: 'System Settings',
     helpCenter: 'Help Center',
     onlineService: 'Online Service',
     chatService: 'Chat Service',
+  },
+
+  // ========================
+  // Auto Reply Management
+  // ========================
+  autoReplyMgmt: {
+    title: 'Auto Reply Management',
+    addRule: 'Add Rule',
+    editRule: 'Edit Rule',
+    ruleName: 'Rule Name',
+    ruleNamePlaceholder: 'Enter rule name',
+    keywords: 'Keywords',
+    keywordsPlaceholder: 'Separate multiple keywords with commas, e.g.: refund,payment',
+    keywordsHint: 'Triggered when user message contains any keyword',
+    replyContent: 'Reply Content',
+    replyContentPlaceholder: 'Enter auto-reply content',
+    priority: 'Priority',
+    priorityHint: 'Lower number = higher priority',
+    enabled: 'Status',
+    enabledOn: 'Enabled',
+    enabledOff: 'Disabled',
+    selectProject: 'Select project',
+    selectProjectFirst: 'Please select a project first',
+    loadFailed: 'Failed to load rules',
+    ruleNameRequired: 'Rule name is required',
+    keywordsRequired: 'Keywords are required',
+    replyContentRequired: 'Reply content is required',
+    deleteConfirm: 'Delete rule "{name}"?',
+    confirmDeleteTitle: 'Confirm Delete',
   },
 }

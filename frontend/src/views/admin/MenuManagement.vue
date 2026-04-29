@@ -182,7 +182,7 @@ const rules: FormRules = {
   code: [
     { required: true, message: () => t('menuMgmt.codeRequired'), trigger: 'blur' },
     { min: 2, max: 50, message: () => t('menuMgmt.codeLength'), trigger: 'blur' },
-    { pattern: /^[a-zA-Z][a-zA-Z0-9_:]*$/, message: () => t('menuMgmt.codePattern'), trigger: 'blur' }
+    { pattern: /^[a-zA-Z][a-zA-Z0-9_:\-]*$/, message: () => t('menuMgmt.codePattern'), trigger: 'blur' }
   ],
   name: [
     { required: true, message: () => t('menuMgmt.nameRequired'), trigger: 'blur' },

@@ -103,6 +103,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: 'route.quickReply', menu: 'quick-replies' },
       },
       {
+        path: 'auto-reply',
+        name: 'AutoReplyManagement',
+        component: () => import('@/views/admin/AutoReplyManagement.vue'),
+        meta: { title: 'route.autoReply', menu: 'auto-reply' },
+      },
+      {
         path: 'tickets',
         name: 'TicketManagement',
         component: () => import('@/views/admin/TicketManagement.vue'),

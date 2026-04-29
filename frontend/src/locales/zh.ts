@@ -43,6 +43,7 @@ export default {
     createFailed: '创建失败',
     saveSuccess: '保存成功',
     selectProject: '请先选择项目',
+    actions: '操作',
   },
 
   // ========================
@@ -89,6 +90,7 @@ export default {
     userManagement: '用户管理',
     tagManagement: '标签管理',
     quickReply: '快捷回复',
+    autoReply: '自动回复',
     agentManagement: '客服管理',
     roleManagement: '角色管理',
     menuManagement: '菜单管理',
@@ -263,6 +265,7 @@ export default {
     processHistory: '处理记录',
     agentLabel: '客服',
     userLabel: '我',
+    systemLabel: '系统',
     noProcessHistory: '暂无处理记录',
     replyPlaceholder: '输入回复内容...',
     sending: '发送中...',
@@ -286,6 +289,8 @@ export default {
     // SVG avatar text
     agentAvatarChar: '客',
     userAvatarChar: '我',
+    // 自动回复关键词提示
+    autoReplySuggestTitle: '找到相关解答，可能对您有帮助：',
   },
 
   // ========================
@@ -595,19 +600,19 @@ export default {
     typeRequired: '请选择菜单类型',
     codeLength: '编码长度在2-50个字符之间',
     nameLength: '名称长度在1-100个字符之间',
-    codeFormat: '编码只能包含字母、数字、下划线和冒号，且以字母开头',
+    codeFormat: '编码只能包含字母、数字、下划线、冒号和中划线，且以字母开头',
     deleteConfirm: '确定要删除菜单 "{name}" 吗？',
     confirmDelete: '确定删除',
     loadFailed: '加载菜单列表失败',
     deleteConfirmTitle: '删除确认',
-    codePlaceholder: '如：dashboard、user:manage',
+    codePlaceholder: '如：dashboard、user:manage、quick-replies',
     pathPlaceholder: '如：/admin/dashboard',
     iconPlaceholder: 'Element Plus 图标名称',
     type: '类型',
     codeTip: '唯一标识，用于权限判断',
     sortTip: '数值越小越靠前',
     enabled: '是否启用',
-    codePattern: '编码只能包含字母、数字、下划线和冒号，且以字母开头',
+    codePattern: '编码只能包含字母、数字、下划线、冒号和中划线，且以字母开头',
   },
 
   // ========================
@@ -835,10 +840,40 @@ export default {
     customerManagement: '客户管理',
     tagManagement: '标签管理',
     quickReply: '快捷回复',
+    autoReply: '自动回复',
     ticketManagement: '工单管理',
     systemSettings: '系统设置',
     helpCenter: '帮助中心',
     onlineService: '在线客服',
     chatService: '客服对话',
+  },
+
+  // ========================
+  // Auto Reply Management
+  // ========================
+  autoReplyMgmt: {
+    title: '自动回复管理',
+    addRule: '新建规则',
+    editRule: '编辑规则',
+    ruleName: '规则名称',
+    ruleNamePlaceholder: '请输入规则名称',
+    keywords: '关键词',
+    keywordsPlaceholder: '多个关键词用英文逗号分隔，如：提现,到账',
+    keywordsHint: '用户消息包含任一关键词时触发此回复',
+    replyContent: '回复内容',
+    replyContentPlaceholder: '请输入自动回复的内容',
+    priority: '优先级',
+    priorityHint: '数字越小优先级越高',
+    enabled: '状态',
+    enabledOn: '启用',
+    enabledOff: '禁用',
+    selectProject: '请选择项目',
+    selectProjectFirst: '请先选择项目',
+    loadFailed: '加载规则列表失败',
+    ruleNameRequired: '规则名称不能为空',
+    keywordsRequired: '关键词不能为空',
+    replyContentRequired: '回复内容不能为空',
+    deleteConfirm: '确定要删除规则 "{name}" 吗？',
+    confirmDeleteTitle: '确认删除',
   },
 }

@@ -189,7 +189,9 @@ public class TicketService {
         event.setOperatorId(operatorId);
         event.setOperatorType(OperatorType.AGENT);
         event.setAction(TicketAction.STATUS_CHANGE);
-        event.setContent(I18nUtil.getMessage("ticket.status.change", oldStatus, status));
+        event.setContent(I18nUtil.getMessage("ticket.status.change",
+                I18nUtil.getMessage("ticket.status." + oldStatus),
+                I18nUtil.getMessage("ticket.status." + status)));
         event.setCreatedAt(LocalDateTime.now());
         ticketEventRepository.save(event);
 

@@ -202,6 +202,19 @@
               rows="4"
             ></textarea>
           </div>
+          <!-- 自动回复关键词匹配提示 -->
+          <div v-if="matchedAutoReplies.length > 0" class="auto-reply-hint">
+            <div class="auto-reply-hint-header">
+              <span class="hint-icon">💡</span>
+              <span>{{ $t('h5chat.autoReplySuggestTitle') }}</span>
+            </div>
+            <div
+              v-for="(reply, idx) in matchedAutoReplies"
+              :key="idx"
+              class="auto-reply-hint-item"
+            >{{ reply }}</div>
+          </div>
+
           <div class="form-group">
             <label>{{ $t('h5chat.ticketContact') }}</label>
             <input
@@ -315,10 +328,10 @@
                 v-for="event in currentTicketDetail.events" 
                 :key="event.id" 
                 class="event-item"
-                :class="{ 'event-agent': event.operatorType === 'agent', 'event-user': event.operatorType === 'user' }"
+                :class="{ 'event-agent': event.operatorType === 'agent', 'event-user': event.operatorType === 'user', 'event-system': event.operatorType === 'system' }"
               >
                 <div class="event-header">
-                  <span class="event-sender">{{ event.operatorType === 'agent' ? $t('h5chat.agentLabel') : $t('h5chat.userLabel') }}</span>
+                  <span class="event-sender">{{ event.operatorType === 'agent' ? $t('h5chat.agentLabel') : event.operatorType === 'system' ? $t('h5chat.systemLabel') : $t('h5chat.userLabel') }}</span>
                   <span class="event-time">{{ formatTicketTime(event.createdAt) }}</span>
                 </div>
                 <div class="event-content">{{ event.content }}</div>
@@ -365,7 +378,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, nextTick, computed } from "vue";
+import { ref, onMounted, onUnmounted, nextTick, computed, watch } from "vue";
 import { logger } from '@/utils/logger';
 import { useRoute, useRouter } from "vue-router";
 import { useI18n } from 'vue-i18n';
@@ -545,6 +558,15 @@ const ticketForm = ref({
   contactInfo: "",
   priority: "medium",
 });
+
+// 自动回复规则（工单表单关键词提示用）
+interface AutoReplyRuleSuggestion {
+  keywords: string;
+  replyContent: string;
+}
+const autoReplyRules = ref<AutoReplyRuleSuggestion[]>([]);
+const matchedAutoReplies = ref<string[]>([]);
+let autoReplyDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 // 游客 UID 存储 Key
 const GUEST_UID_KEY = StorageKeys.GUEST_UID_PREFIX;
@@ -1178,6 +1200,56 @@ const downloadFile = (msg: Message) => {
     window.open(msg.fileUrl, "_blank");
   }
 };
+
+const loadAutoReplyRules = async () => {
+  if (!projectId.value) return;
+  try {
+    const response = (await portalApi.get('/pub/auto-reply/rules', {
+      params: { projectId: parseInt(projectId.value) },
+    })) as any;
+    if (response.code === 0) {
+      autoReplyRules.value = response.data || [];
+    }
+  } catch {
+    // 静默失败，不影响主功能
+  }
+};
+
+const matchAutoReplyRules = () => {
+  if (autoReplyDebounceTimer) clearTimeout(autoReplyDebounceTimer);
+  autoReplyDebounceTimer = setTimeout(() => {
+    const text = (ticketForm.value.title + ' ' + ticketForm.value.description).toLowerCase().trim();
+    if (!text) {
+      matchedAutoReplies.value = [];
+      return;
+    }
+    const matched: string[] = [];
+    for (const rule of autoReplyRules.value) {
+      const keywords = rule.keywords.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+      if (keywords.some(kw => text.includes(kw))) {
+        matched.push(rule.replyContent);
+      }
+    }
+    matchedAutoReplies.value = matched;
+  }, 300);
+};
+
+// 打开工单对话框时加载自动回复规则
+watch(showTicketDialog, (val) => {
+  if (val) {
+    if (autoReplyRules.value.length === 0) {
+      loadAutoReplyRules();
+    }
+  } else {
+    matchedAutoReplies.value = [];
+  }
+});
+
+// 监听标题和描述变化，实时匹配关键词
+watch(
+  () => ticketForm.value.title + ticketForm.value.description,
+  () => matchAutoReplyRules()
+);
 
 const submitTicket = () => {
   showMorePanel.value = false;
@@ -1910,6 +1982,42 @@ onUnmounted(() => {
   background-color: #0050b3;
 }
 
+.auto-reply-hint {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  background: #fffbe6;
+  border: 1px solid #ffe58f;
+  border-radius: 6px;
+  border-left: 4px solid #faad14;
+}
+
+.auto-reply-hint-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #ad6800;
+  margin-bottom: 8px;
+}
+
+.hint-icon {
+  font-size: 15px;
+}
+
+.auto-reply-hint-item {
+  font-size: 13px;
+  color: #595959;
+  line-height: 1.6;
+  padding: 8px 10px;
+  background: #fff;
+  border-radius: 4px;
+  margin-top: 6px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid #f5e8b0;
+}
+
 .image-preview-overlay {
   position: fixed;
   top: 0;
@@ -2160,6 +2268,11 @@ onUnmounted(() => {
 .event-item.event-user {
   background: #f0f9eb;
   border-left: 3px solid #52c41a;
+}
+
+.event-item.event-system {
+  background: #fafafa;
+  border-left: 3px solid #faad14;
 }
 
 .event-header {

@@ -73,7 +73,8 @@ public class TicketAutoCloseScheduler {
                             .operatorType(OperatorType.SYSTEM)
                             .action(TicketAction.AUTO_CLOSE)
                             .content(I18nUtil.getMessage("ticket.auto.close",
-                                    AppDefaults.AUTO_CLOSE_TIMEOUT_HOURS, oldStatus))
+                                    AppDefaults.AUTO_CLOSE_TIMEOUT_HOURS,
+                                    I18nUtil.getMessage("ticket.status." + oldStatus)))
                             .createdAt(LocalDateTime.now())
                             .build();
                     ticketEventRepository.save(event);

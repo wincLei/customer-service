@@ -14,6 +14,9 @@ public final class IMConstants {
     /** 匿名用户 UID 前缀 */
     public static final String ANON_UID_PREFIX = "anon_";
 
+    /** 系统自动回复 UID */
+    public static final String SYSTEM_UID = "system";
+
     /** 消息同步默认数量 */
     public static final int DEFAULT_SYNC_LIMIT = 50;
 }

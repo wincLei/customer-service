@@ -29,7 +29,7 @@
 
         <!-- 客户端 - 包含客户管理、标签管理、快捷回复子菜单 -->
         <el-popover
-          v-if="hasMenu('customers') || hasMenu('customer-tags') || hasMenu('quick-replies')"
+          v-if="hasMenu('customers') || hasMenu('customer-tags') || hasMenu('quick-replies') || hasMenu('auto-reply')"
           placement="right-start"
           :width="140"
           trigger="hover"
@@ -69,6 +69,15 @@
             >
               <i class="el-icon-chat-line-round"></i>
               <span>{{ $t('nav.quickReply') }}</span>
+            </div>
+            <div 
+              v-if="hasMenu('auto-reply')" 
+              class="submenu-item" 
+              :class="{ active: currentView === 'auto-reply' }"
+              @click="navigateTo('auto-reply')"
+            >
+              <i class="el-icon-magic-stick"></i>
+              <span>{{ $t('nav.autoReply') }}</span>
             </div>
           </div>
         </el-popover>
@@ -192,9 +201,9 @@ const isSystemMenuActive = computed(() => {
   return ['users', 'agents', 'roles', 'menus'].includes(currentView.value)
 })
 
-// 客户端菜单是否激活（客户管理、标签管理、快捷回复任意一个激活时）
+// 客户端菜单是否激活（客户管理、标签管理、快捷回复、自动回复任意一个激活时）
 const isClientMenuActive = computed(() => {
-  return ['customers', 'customer-tags', 'quick-replies'].includes(currentView.value)
+  return ['customers', 'customer-tags', 'quick-replies', 'auto-reply'].includes(currentView.value)
 })
 
 const navigateTo = (view: string) => {
